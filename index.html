@@ -19,7 +19,7 @@
     background_color: "#0f0f0f",
     theme_color: "#0f0f0f",
     icons: [
-      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230f0f0f'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' font-family='system-ui'%3E💪%3C/text%3E%3C/svg%3E", sizes: "512x512", type: "image/svg+xml" }
+      { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230f0f0f'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' font-family='system-ui'%3E%F0%9F%92%AA%3C/text%3E%3C/svg%3E", sizes: "512x512", type: "image/svg+xml" }
     ]
   };
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -30,8 +30,7 @@
   document.head.appendChild(link);
 </script>
 
-<!-- Apple touch icon (inline SVG) -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230f0f0f'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' font-family='system-ui'%3E💪%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230f0f0f'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-size='280' font-family='system-ui'%3E%F0%9F%92%AA%3C/text%3E%3C/svg%3E">
 
 <style>
   :root {
@@ -46,6 +45,7 @@
     --warn: #ff9500;
     --green: #34c759;
     --blue: #0a84ff;
+    --teal: #5ac8fa;
     --radius: 14px;
   }
 
@@ -177,7 +177,7 @@
   .rest-card {
     background: var(--surface);
     border-radius: var(--radius);
-    padding: 40px 20px;
+    padding: 36px 20px 24px;
     text-align: center;
     border: 1px solid var(--border);
   }
@@ -195,6 +195,23 @@
     color: var(--text2);
     margin-top: 6px;
   }
+
+  .recovery-list {
+    text-align: left;
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 4px;
+  }
+
+  .recovery-item {
+    font-size: 14px;
+    color: var(--text2);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.4;
+  }
+
+  .recovery-item:last-child { border-bottom: none; }
 
   .run-card {
     background: var(--surface);
@@ -235,6 +252,30 @@
     font-size: 12px;
     color: var(--text2);
     font-weight: 400;
+  }
+
+  .rugby-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rugby-emoji { font-size: 28px; line-height: 1; padding-top: 2px; }
+
+  .rugby-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .rugby-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+    line-height: 1.5;
   }
 
   .principles-card {
@@ -300,6 +341,38 @@
     padding: 3px 0;
   }
 
+  .conditioning-block {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--teal);
+  }
+
+  .conditioning-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+
+  .conditioning-item {
+    font-size: 13px;
+    color: var(--text);
+    padding: 2px 0;
+    line-height: 1.5;
+  }
+
+  .conditioning-note {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 5px;
+    line-height: 1.4;
+    font-style: italic;
+  }
+
   .no-schedule {
     padding: 60px 20px;
     text-align: center;
@@ -315,190 +388,217 @@
 <script>
 // ─── Schedule ──────────────────────────────────────────────────────────────
 const SCHEDULE = {
+  // Week of May 18 (partial)
   "2026-05-23": { type: "running" },
-  "2026-05-24": { type: "running" },
+  "2026-05-24": { type: "recovery" },
+  // Week of May 25 — Back Week · Var A
   "2026-05-25": { type: "rest" },
   "2026-05-26": { type: "legs-hamstrings", variation: "A" },
   "2026-05-27": { type: "back", variation: "A" },
   "2026-05-28": { type: "arms-triceps", variation: "A" },
   "2026-05-29": { type: "shoulders", variation: "A" },
   "2026-05-30": { type: "running" },
-  "2026-05-31": { type: "running" },
+  "2026-05-31": { type: "recovery" },
+  // Week of Jun 01 — Front Week · Var B
   "2026-06-01": { type: "rest" },
   "2026-06-02": { type: "legs-quads", variation: "B" },
   "2026-06-03": { type: "chest", variation: "B" },
   "2026-06-04": { type: "arms-biceps", variation: "B" },
   "2026-06-05": { type: "shoulders", variation: "B" },
   "2026-06-06": { type: "running" },
-  "2026-06-07": { type: "running" },
+  "2026-06-07": { type: "recovery" },
+  // Week of Jun 08 — Back Week · Var B
   "2026-06-08": { type: "rest" },
   "2026-06-09": { type: "legs-hamstrings", variation: "B" },
   "2026-06-10": { type: "back", variation: "B" },
   "2026-06-11": { type: "arms-triceps", variation: "B" },
   "2026-06-12": { type: "shoulders", variation: "B" },
   "2026-06-13": { type: "running" },
-  "2026-06-14": { type: "running" },
+  "2026-06-14": { type: "recovery" },
+  // Week of Jun 15 — Front Week · Var A
   "2026-06-15": { type: "rest" },
   "2026-06-16": { type: "legs-quads", variation: "A" },
   "2026-06-17": { type: "chest", variation: "A" },
   "2026-06-18": { type: "arms-biceps", variation: "A" },
   "2026-06-19": { type: "shoulders", variation: "A" },
   "2026-06-20": { type: "running" },
-  "2026-06-21": { type: "running" },
+  "2026-06-21": { type: "recovery" },
+  // Week of Jun 22 — Back Week · Var A
   "2026-06-22": { type: "rest" },
   "2026-06-23": { type: "legs-hamstrings", variation: "A" },
   "2026-06-24": { type: "back", variation: "A" },
   "2026-06-25": { type: "arms-triceps", variation: "A" },
   "2026-06-26": { type: "shoulders", variation: "A" },
   "2026-06-27": { type: "running" },
-  "2026-06-28": { type: "running" },
+  "2026-06-28": { type: "recovery" },
+  // Week of Jun 29 — Front Week · Var B
   "2026-06-29": { type: "rest" },
   "2026-06-30": { type: "legs-quads", variation: "B" },
   "2026-07-01": { type: "chest", variation: "B" },
   "2026-07-02": { type: "arms-biceps", variation: "B" },
   "2026-07-03": { type: "shoulders", variation: "B" },
   "2026-07-04": { type: "running" },
-  "2026-07-05": { type: "running" },
+  "2026-07-05": { type: "recovery" },
+  // Week of Jul 06 — Back Week · Var B
   "2026-07-06": { type: "rest" },
   "2026-07-07": { type: "legs-hamstrings", variation: "B" },
   "2026-07-08": { type: "back", variation: "B" },
   "2026-07-09": { type: "arms-triceps", variation: "B" },
   "2026-07-10": { type: "shoulders", variation: "B" },
   "2026-07-11": { type: "running" },
-  "2026-07-12": { type: "running" },
+  "2026-07-12": { type: "recovery" },
+  // Week of Jul 13 — Front Week · Var A
   "2026-07-13": { type: "rest" },
   "2026-07-14": { type: "legs-quads", variation: "A" },
   "2026-07-15": { type: "chest", variation: "A" },
   "2026-07-16": { type: "arms-biceps", variation: "A" },
   "2026-07-17": { type: "shoulders", variation: "A" },
   "2026-07-18": { type: "running" },
-  "2026-07-19": { type: "running" },
+  "2026-07-19": { type: "recovery" },
+  // Week of Jul 20 — Back Week · Var A
   "2026-07-20": { type: "rest" },
   "2026-07-21": { type: "legs-hamstrings", variation: "A" },
   "2026-07-22": { type: "back", variation: "A" },
   "2026-07-23": { type: "arms-triceps", variation: "A" },
   "2026-07-24": { type: "shoulders", variation: "A" },
   "2026-07-25": { type: "running" },
-  "2026-07-26": { type: "running" },
+  "2026-07-26": { type: "recovery" },
+  // Week of Jul 27 — Front Week · Var B
   "2026-07-27": { type: "rest" },
   "2026-07-28": { type: "legs-quads", variation: "B" },
   "2026-07-29": { type: "chest", variation: "B" },
   "2026-07-30": { type: "arms-biceps", variation: "B" },
   "2026-07-31": { type: "shoulders", variation: "B" },
   "2026-08-01": { type: "running" },
-  "2026-08-02": { type: "running" },
+  "2026-08-02": { type: "recovery" },
+  // Week of Aug 03 — Back Week · Var B
   "2026-08-03": { type: "rest" },
   "2026-08-04": { type: "legs-hamstrings", variation: "B" },
   "2026-08-05": { type: "back", variation: "B" },
   "2026-08-06": { type: "arms-triceps", variation: "B" },
   "2026-08-07": { type: "shoulders", variation: "B" },
   "2026-08-08": { type: "running" },
-  "2026-08-09": { type: "running" },
+  "2026-08-09": { type: "recovery" },
+  // Week of Aug 10 — Front Week · Var A
   "2026-08-10": { type: "rest" },
   "2026-08-11": { type: "legs-quads", variation: "A" },
   "2026-08-12": { type: "chest", variation: "A" },
   "2026-08-13": { type: "arms-biceps", variation: "A" },
   "2026-08-14": { type: "shoulders", variation: "A" },
   "2026-08-15": { type: "running" },
-  "2026-08-16": { type: "running" },
+  "2026-08-16": { type: "recovery" },
+  // Week of Aug 17 — Back Week · Var A
   "2026-08-17": { type: "rest" },
   "2026-08-18": { type: "legs-hamstrings", variation: "A" },
   "2026-08-19": { type: "back", variation: "A" },
   "2026-08-20": { type: "arms-triceps", variation: "A" },
   "2026-08-21": { type: "shoulders", variation: "A" },
   "2026-08-22": { type: "running" },
-  "2026-08-23": { type: "running" },
+  "2026-08-23": { type: "recovery" },
+  // Week of Aug 24 — Front Week · Var B
   "2026-08-24": { type: "rest" },
   "2026-08-25": { type: "legs-quads", variation: "B" },
   "2026-08-26": { type: "chest", variation: "B" },
   "2026-08-27": { type: "arms-biceps", variation: "B" },
   "2026-08-28": { type: "shoulders", variation: "B" },
   "2026-08-29": { type: "running" },
-  "2026-08-30": { type: "running" },
+  "2026-08-30": { type: "recovery" },
+  // Week of Aug 31 — Back Week · Var B
   "2026-08-31": { type: "rest" },
   "2026-09-01": { type: "legs-hamstrings", variation: "B" },
   "2026-09-02": { type: "back", variation: "B" },
   "2026-09-03": { type: "arms-triceps", variation: "B" },
   "2026-09-04": { type: "shoulders", variation: "B" },
   "2026-09-05": { type: "running" },
-  "2026-09-06": { type: "running" },
+  "2026-09-06": { type: "recovery" },
+  // Week of Sep 07 — Front Week · Var A
   "2026-09-07": { type: "rest" },
   "2026-09-08": { type: "legs-quads", variation: "A" },
   "2026-09-09": { type: "chest", variation: "A" },
   "2026-09-10": { type: "arms-biceps", variation: "A" },
   "2026-09-11": { type: "shoulders", variation: "A" },
   "2026-09-12": { type: "running" },
-  "2026-09-13": { type: "running" },
+  "2026-09-13": { type: "recovery" },
+  // Week of Sep 14 — Back Week · Var A
   "2026-09-14": { type: "rest" },
   "2026-09-15": { type: "legs-hamstrings", variation: "A" },
   "2026-09-16": { type: "back", variation: "A" },
   "2026-09-17": { type: "arms-triceps", variation: "A" },
   "2026-09-18": { type: "shoulders", variation: "A" },
   "2026-09-19": { type: "running" },
-  "2026-09-20": { type: "running" },
+  "2026-09-20": { type: "recovery" },
+  // Week of Sep 21 — Front Week · Var B
   "2026-09-21": { type: "rest" },
   "2026-09-22": { type: "legs-quads", variation: "B" },
   "2026-09-23": { type: "chest", variation: "B" },
   "2026-09-24": { type: "arms-biceps", variation: "B" },
   "2026-09-25": { type: "shoulders", variation: "B" },
   "2026-09-26": { type: "running" },
-  "2026-09-27": { type: "running" },
+  "2026-09-27": { type: "recovery" },
+  // Week of Sep 28 — Back Week · Var B
   "2026-09-28": { type: "rest" },
   "2026-09-29": { type: "legs-hamstrings", variation: "B" },
   "2026-09-30": { type: "back", variation: "B" },
   "2026-10-01": { type: "arms-triceps", variation: "B" },
   "2026-10-02": { type: "shoulders", variation: "B" },
   "2026-10-03": { type: "running" },
-  "2026-10-04": { type: "running" },
+  "2026-10-04": { type: "recovery" },
+  // Week of Oct 05 — Front Week · Var A
   "2026-10-05": { type: "rest" },
   "2026-10-06": { type: "legs-quads", variation: "A" },
   "2026-10-07": { type: "chest", variation: "A" },
   "2026-10-08": { type: "arms-biceps", variation: "A" },
   "2026-10-09": { type: "shoulders", variation: "A" },
   "2026-10-10": { type: "running" },
-  "2026-10-11": { type: "running" },
+  "2026-10-11": { type: "recovery" },
+  // Week of Oct 12 — Back Week · Var A
   "2026-10-12": { type: "rest" },
   "2026-10-13": { type: "legs-hamstrings", variation: "A" },
   "2026-10-14": { type: "back", variation: "A" },
   "2026-10-15": { type: "arms-triceps", variation: "A" },
   "2026-10-16": { type: "shoulders", variation: "A" },
   "2026-10-17": { type: "running" },
-  "2026-10-18": { type: "running" },
+  "2026-10-18": { type: "recovery" },
+  // Week of Oct 19 — Front Week · Var B
   "2026-10-19": { type: "rest" },
   "2026-10-20": { type: "legs-quads", variation: "B" },
   "2026-10-21": { type: "chest", variation: "B" },
   "2026-10-22": { type: "arms-biceps", variation: "B" },
   "2026-10-23": { type: "shoulders", variation: "B" },
   "2026-10-24": { type: "running" },
-  "2026-10-25": { type: "running" },
+  "2026-10-25": { type: "recovery" },
+  // Week of Oct 26 — Back Week · Var B
   "2026-10-26": { type: "rest" },
   "2026-10-27": { type: "legs-hamstrings", variation: "B" },
   "2026-10-28": { type: "back", variation: "B" },
   "2026-10-29": { type: "arms-triceps", variation: "B" },
   "2026-10-30": { type: "shoulders", variation: "B" },
   "2026-10-31": { type: "running" },
-  "2026-11-01": { type: "running" },
+  "2026-11-01": { type: "recovery" },
+  // Week of Nov 02 — Front Week · Var A
   "2026-11-02": { type: "rest" },
   "2026-11-03": { type: "legs-quads", variation: "A" },
   "2026-11-04": { type: "chest", variation: "A" },
   "2026-11-05": { type: "arms-biceps", variation: "A" },
   "2026-11-06": { type: "shoulders", variation: "A" },
   "2026-11-07": { type: "running" },
-  "2026-11-08": { type: "running" },
+  "2026-11-08": { type: "recovery" },
+  // Week of Nov 09 — Back Week · Var A
   "2026-11-09": { type: "rest" },
   "2026-11-10": { type: "legs-hamstrings", variation: "A" },
   "2026-11-11": { type: "back", variation: "A" },
   "2026-11-12": { type: "arms-triceps", variation: "A" },
   "2026-11-13": { type: "shoulders", variation: "A" },
   "2026-11-14": { type: "running" },
-  "2026-11-15": { type: "running" },
+  "2026-11-15": { type: "recovery" },
+  // Week of Nov 16 — Front Week · Var B
   "2026-11-16": { type: "rest" },
   "2026-11-17": { type: "legs-quads", variation: "B" },
   "2026-11-18": { type: "chest", variation: "B" },
   "2026-11-19": { type: "arms-biceps", variation: "B" },
   "2026-11-20": { type: "shoulders", variation: "B" },
   "2026-11-21": { type: "running" },
-  "2026-11-22": { type: "running" },
+  "2026-11-22": { type: "recovery" },
 };
 
 // ─── Exercise Database ──────────────────────────────────────────────────────
@@ -513,6 +613,7 @@ const WORKOUTS = {
     A: {
       title: "Legs — Quads",
       hasStairmaster: true,
+      legConditioning: true,
       exercises: [
         { name: "Squats", sets: 3, reps: 10, weight: "15kg/side", cap: "60kg total (bar + plates)", warn: "Beyond this thickens spinal erectors" },
         { name: "Hack squat", sets: 3, reps: 12, cap: "80kg total" },
@@ -523,6 +624,7 @@ const WORKOUTS = {
     B: {
       title: "Legs — Quads",
       hasStairmaster: true,
+      legConditioning: true,
       exercises: [
         { name: "Goblet squat", sets: 3, reps: 12 },
         { name: "Walking lunges", sets: 3, reps: "10 each leg", note: "With dumbbells", cap: "10kg per dumbbell", warn: "Heavy lunges bulk glutes and widen hips" },
@@ -534,6 +636,7 @@ const WORKOUTS = {
     A: {
       title: "Legs — Hamstrings",
       hasStairmaster: true,
+      legConditioning: true,
       exercises: [
         { name: "Squats", sets: 3, reps: 10, weight: "15kg/side", cap: "60kg total (bar + plates)", warn: "Beyond this thickens spinal erectors" },
         { name: "Romanian deadlift", sets: 3, reps: 10, cap: "20kg/side (40kg total)" },
@@ -544,6 +647,7 @@ const WORKOUTS = {
     B: {
       title: "Legs — Hamstrings",
       hasStairmaster: true,
+      legConditioning: true,
       exercises: [
         { name: "Romanian deadlift", sets: 3, reps: 10, cap: "20kg/side (40kg total)" },
         { name: "Walking lunges", sets: 3, reps: "10 each leg", note: "With dumbbells", cap: "10kg per dumbbell", warn: "Heavy lunges bulk glutes and widen hips" },
@@ -555,6 +659,7 @@ const WORKOUTS = {
     A: {
       title: "Chest + Core",
       hasCore: true,
+      coreType: "anti-rotation",
       exercises: [
         { name: "Push-ups", sets: 3, reps: 12 },
         { name: "Incline dumbbell press", sets: 3, reps: 10, weight: "10kg", cap: "14kg", warn: "Chest size is not your V-shape lever" },
@@ -566,6 +671,7 @@ const WORKOUTS = {
     B: {
       title: "Chest + Core",
       hasCore: true,
+      coreType: "anti-rotation",
       exercises: [
         { name: "Push-ups", sets: 3, reps: 15 },
         { name: "Flat dumbbell press", sets: 3, reps: 10, cap: "14kg" },
@@ -579,6 +685,7 @@ const WORKOUTS = {
     A: {
       title: "Back + Core",
       hasCore: true,
+      coreType: "anti-rotation",
       exercises: [
         { name: "Pull-ups", sets: 3, reps: "7→10", note: "No cap — add weight progressively. Primary lat width builder." },
         { name: "Straight-arm pulldown", sets: 3, reps: 12 },
@@ -590,6 +697,7 @@ const WORKOUTS = {
     B: {
       title: "Back + Core",
       hasCore: true,
+      coreType: "anti-rotation",
       exercises: [
         { name: "Lat pulldown (wide grip)", sets: 3, reps: 10, note: "No cap — progress freely. Builds lat width." },
         { name: "Single arm dumbbell row", sets: 3, reps: "10 each side" },
@@ -603,6 +711,7 @@ const WORKOUTS = {
     A: {
       title: "Arms — Biceps",
       hasStairmaster: true,
+      armConditioning: true,
       exercises: [
         { name: "Pull-ups", sets: 3, reps: "max" },
         { name: "Cable curl", sets: 3, reps: 12, weight: "15kg" },
@@ -613,6 +722,7 @@ const WORKOUTS = {
     B: {
       title: "Arms — Biceps",
       hasStairmaster: true,
+      armConditioning: true,
       exercises: [
         { name: "Hammer curl", sets: 3, reps: 12, weight: "8–10kg" },
         { name: "Preacher curl", sets: 3, reps: 12 },
@@ -625,6 +735,7 @@ const WORKOUTS = {
     A: {
       title: "Arms — Triceps",
       hasStairmaster: true,
+      armConditioning: true,
       exercises: [
         { name: "Cable pushdown", sets: 3, reps: 12 },
         { name: "Single-hand pushdown", sets: 3, reps: 12 },
@@ -634,6 +745,7 @@ const WORKOUTS = {
     B: {
       title: "Arms — Triceps",
       hasStairmaster: true,
+      armConditioning: true,
       exercises: [
         { name: "Skull crushers (EZ bar)", sets: 3, reps: 12 },
         { name: "Close grip push-ups", sets: 3, reps: 15 },
@@ -645,6 +757,7 @@ const WORKOUTS = {
     A: {
       title: "Shoulders + Core",
       hasCore: true,
+      coreType: "anti-extension",
       exercises: [
         { name: "Side lateral raises ⭐ FIRST", sets: 4, reps: 15, weight: "5kg", note: "Strict form — do NOT increase weight" },
         { name: "Dumbbell shoulder press", sets: 3, reps: 10, weight: "8–10kg", cap: "12kg", warn: "Heavier shifts load to front delts and traps" },
@@ -655,6 +768,7 @@ const WORKOUTS = {
     B: {
       title: "Shoulders + Core",
       hasCore: true,
+      coreType: "anti-extension",
       exercises: [
         { name: "Side lateral raises ⭐ FIRST", sets: 4, reps: 15, weight: "5kg", note: "Strict form — do NOT increase weight" },
         { name: "Seated dumbbell lateral raise", sets: 3, reps: 12, cap: "6kg", note: "Strict isolation, zero trap involvement" },
@@ -682,9 +796,20 @@ function formatDate(key) {
   });
 }
 
-function getWeekType(type) {
+function getWeekType(type, key) {
   if (['chest', 'legs-quads', 'arms-biceps'].includes(type)) return 'Front Week';
-  if (['back', 'legs-hamstrings', 'arms-triceps', 'shoulders'].includes(type)) return 'Back Week';
+  if (['back', 'legs-hamstrings', 'arms-triceps'].includes(type)) return 'Back Week';
+  if (type === 'shoulders' && key) {
+    // Anchor: week starting Mon May 25, 2026 = Back Week = week 0
+    const [y, m, d] = key.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const dow = date.getDay();
+    const toMon = dow === 0 ? -6 : 1 - dow;
+    const weekMon = new Date(y, m - 1, d + toMon);
+    const anchor = new Date(2026, 4, 25);
+    const weekNum = Math.round((weekMon - anchor) / 604800000);
+    return weekNum % 2 === 0 ? 'Back Week' : 'Front Week';
+  }
   return '';
 }
 
@@ -699,10 +824,48 @@ function exCard(ex) {
     </div>`;
 }
 
-function coreHTML() {
+function coreHTML(coreType) {
+  const extra = coreType === 'anti-rotation'
+    ? `<div class="conditioning-item" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">Pallof press · 3×12 each side</div>
+       <div class="conditioning-note">Anti-rotation — stability for cutting</div>`
+    : coreType === 'anti-extension'
+    ? `<div class="conditioning-item" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">Dead bug · 3×10 each side</div>
+       <div class="conditioning-item">Forearm side plank · 3×25 sec each</div>
+       <div class="conditioning-note">Anti-extension — spinal stability</div>`
+    : '';
   return `<div class="core-card">
     <div class="core-title">Core (every session)</div>
     ${CORE.map(ex => `<div class="core-item">${ex.name} ${ex.sets}×${ex.reps}${ex.note ? `<div class="exercise-note" style="margin-top:2px">${ex.note}</div>` : ''}</div>`).join('')}
+    ${extra}
+  </div>`;
+}
+
+function legWarmupHTML() {
+  return `<div class="conditioning-block">
+    <div class="conditioning-title">Warm-up</div>
+    <div class="conditioning-item">Leg swings front-back + side-side · 10 each</div>
+    <div class="conditioning-item">Ankle circles both directions</div>
+    <div class="conditioning-item">Reverse lunges · 3×10 each leg</div>
+    <div class="conditioning-note">Squat cue: knees track over toes — do not let them cave inward</div>
+  </div>`;
+}
+
+function legFinisherHTML() {
+  return `<div class="conditioning-block">
+    <div class="conditioning-title">Finisher</div>
+    <div class="conditioning-item">Wall sit · 3×45 sec</div>
+    <div class="conditioning-item">Single-leg RDL (bodyweight) · 3×10 each leg</div>
+    <div class="conditioning-note">Especially valuable on quad days where hamstrings get little direct work</div>
+  </div>`;
+}
+
+function armConditioningHTML() {
+  return `<div class="conditioning-block">
+    <div class="conditioning-title">Ankle Stability · ~10 min</div>
+    <div class="conditioning-item">Single-leg balance hold · 3×30 sec each (progress: eyes closed)</div>
+    <div class="conditioning-item">Single-leg calf raises · 3×15 each</div>
+    <div class="conditioning-item">Lateral band walks · 3×15 steps each direction</div>
+    <div class="conditioning-note">Slot between arm sets or during Stairmaster</div>
   </div>`;
 }
 
@@ -756,19 +919,45 @@ function render() {
     return;
   }
 
+  if (entry.type === 'recovery') {
+    app.innerHTML = `
+      <header>
+        <div class="app-name">Dashboard</div>
+        <div class="date-label">${dateStr}</div>
+        <div class="workout-title">Recovery Day 🌿</div>
+      </header>
+      <div class="content">
+        <div class="rest-card" style="margin-top:16px">
+          <div class="rest-emoji">🌿</div>
+          <div class="rest-title">Active Recovery</div>
+          <div class="rest-subtitle">Easy movement · mobility · stretching</div>
+          <div class="recovery-list">
+            <div class="recovery-item">🏃 Easy jog · 20 min at light pace</div>
+            <div class="recovery-item">🦵 Static stretches: calves, hamstrings, hip flexors, quads, chest, lats</div>
+            <div class="recovery-item">🔄 Mobility: hip openers, ankle mobility, thoracic rotations</div>
+            <div class="recovery-item">🛁 Optional foam rolling</div>
+            <div class="recovery-item">🦶 Light single-leg balance — proprioception, low intensity</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
   if (entry.type === 'running') {
     app.innerHTML = `
       <header>
         <div class="app-name">Dashboard</div>
         <div class="date-label">${dateStr}</div>
-        <div class="workout-title">Running 🏃</div>
+        <div class="workout-title">Running + Rugby 🏃</div>
         <div class="badge-row">
           <span class="badge accent">4.8 km</span>
           <span class="badge">400m track · Lane 3</span>
+          <span class="badge">Touch Rugby</span>
         </div>
       </header>
       <div class="content">
-        <div class="run-card" style="margin-top:16px">
+        <div class="section-label">Run</div>
+        <div class="run-card">
           <div class="run-stats">
             <div class="run-stat">
               <div class="run-stat-label">Distance</div>
@@ -788,6 +977,14 @@ function render() {
             </div>
           </div>
         </div>
+        <div class="section-label">Touch Rugby</div>
+        <div class="rugby-card">
+          <div class="rugby-emoji">🏉</div>
+          <div>
+            <div class="rugby-title">Touch Rugby</div>
+            <div class="rugby-sub">Dynamic warm-up BEFORE game: leg swings · high knees · butt kicks · walking lunges with torso rotation</div>
+          </div>
+        </div>
       </div>`;
     return;
   }
@@ -802,19 +999,23 @@ function render() {
       <div class="workout-title">${workout.title}</div>
       <div class="badge-row">
         <span class="badge accent">Variation ${entry.variation}</span>
-        <span class="badge">${getWeekType(entry.type)}</span>
+        <span class="badge">${getWeekType(entry.type, key)}</span>
       </div>
     </header>
     <div class="content">
+      ${workout.legConditioning ? `<div class="section-label">Warm-up</div>${legWarmupHTML()}` : ''}
       <div class="section-label">Exercises</div>
       ${workout.exercises.map(exCard).join('')}
-      ${workout.hasCore ? coreHTML() : ''}
+      ${workout.hasCore ? coreHTML(workout.coreType) : ''}
+      ${workout.legConditioning ? `<div class="section-label">Finisher</div>${legFinisherHTML()}` : ''}
+      ${workout.armConditioning ? `<div class="section-label">Ankle Stability</div>${armConditioningHTML()}` : ''}
       ${workout.hasStairmaster ? `<div class="section-label">Cardio</div>${stairmasterHTML()}` : ''}
       <div class="section-label">Principles</div>
       <div class="principles-card">
-        <div class="principle">Add weight before reps — +2.5kg when 12 reps feels easy</div>
+        <div class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</div>
         <div class="principle">Rest 60–90s isolation · 2 min compounds</div>
         ${workout.hasCore ? '<div class="principle">Side lateral raises non-negotiable — form over weight, always</div>' : ''}
+        <div class="principle">Hanging raises: no twisting variants — oblique growth widens waist</div>
         <div class="principle">No shrugs · no weighted side bends · no heavy deadlifts</div>
       </div>
       <div style="height:40px"></div>

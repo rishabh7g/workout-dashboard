@@ -377,6 +377,110 @@
     padding: 60px 20px;
     text-align: center;
   }
+
+  /* ── Interactive item cards ── */
+  .item-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    transition: opacity 0.2s, border-color 0.15s, background-color 0.15s;
+  }
+  .item-card:active { transform: scale(0.985); }
+
+  .item-card.upcoming { opacity: 0.45; }
+
+  .item-card.active {
+    border-color: var(--accent);
+    background: rgba(232, 255, 60, 0.07);
+    opacity: 1;
+  }
+
+  .item-card.done { opacity: 0.32; }
+  .item-card.done .item-name {
+    text-decoration: line-through;
+    color: var(--text2);
+  }
+  .item-card.done .item-meta { color: var(--text2); }
+
+  .item-indicator {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .item-card.active .item-indicator {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #0f0f0f;
+  }
+  .item-card.active .item-indicator::after { content: '▶'; margin-left: 1px; }
+  .item-card.done .item-indicator {
+    border-color: var(--green);
+    background: var(--green);
+    color: #0f0f0f;
+  }
+  .item-card.done .item-indicator::after { content: '✓'; font-size: 12px; }
+
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--text); }
+  .item-meta { font-size: 13px; color: var(--accent); font-weight: 500; margin-top: 2px; }
+
+  /* ── Progress bar ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.35s ease;
+  }
+  .progress-text {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Section done tick ── */
+  .sec-check { color: var(--green); margin-left: 5px; font-size: 10px; font-weight: 700; }
+
+  /* ── Completion banner ── */
+  .done-banner {
+    background: rgba(52, 199, 89, 0.1);
+    border: 1px solid rgba(52, 199, 89, 0.35);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
 </style>
 </head>
 <body>
@@ -386,6 +490,202 @@
 </div>
 
 <script>
+// ─── Interactive state ──────────────────────────────────────────────────────
+let completedItems = new Set();
+let allItems = [];
+let cachedKey = null;
+
+function saveState(key) {
+  try { localStorage.setItem('ws-' + key, JSON.stringify([...completedItems])); } catch(e) {}
+}
+function loadState(key) {
+  try {
+    const s = localStorage.getItem('ws-' + key);
+    if (s) return new Set(JSON.parse(s));
+  } catch(e) {}
+  return new Set();
+}
+
+const SECTION_NAMES = {
+  warmup: 'Warm-up', ex: 'Exercises', core: 'Core',
+  finisher: 'Finisher', ankle: 'Ankle Stability', cardio: 'Cardio',
+};
+
+function buildItemList(workout) {
+  const items = [];
+  const counts = {};
+  const add = (sec, label, meta, extra = {}) => {
+    counts[sec] = (counts[sec] || 0) + 1;
+    items.push({ id: `${sec}-${counts[sec]}`, section: sec, label, meta, ...extra });
+  };
+
+  if (workout.legConditioning) {
+    add('warmup', 'Leg swings', 'Front-back + side-side · 10 each');
+    add('warmup', 'Ankle circles', 'Both directions');
+    add('warmup', 'Reverse lunges', '3×10 each leg');
+  }
+
+  for (const ex of workout.exercises) {
+    add('ex', ex.name, `${ex.sets}×${ex.reps}${ex.weight ? ' · ' + ex.weight : ''}`,
+      { note: ex.note, cap: ex.cap, warn: ex.warn });
+  }
+
+  if (workout.hasCore) {
+    for (const ex of CORE) {
+      add('core', ex.name, `${ex.sets}×${ex.reps}`, { note: ex.note });
+    }
+    if (workout.coreType === 'anti-rotation')
+      add('core', 'Pallof press', '3×12 each side', { note: 'Anti-rotation — stability for cutting' });
+    else if (workout.coreType === 'anti-extension') {
+      add('core', 'Dead bug', '3×10 each side');
+      add('core', 'Forearm side plank', '3×25 sec each', { note: 'Weight on forearm, not hand' });
+    }
+  }
+
+  if (workout.legConditioning) {
+    add('finisher', 'Wall sit', '3×45 sec');
+    add('finisher', 'Single-leg RDL', 'Bodyweight · 3×10 each leg',
+      { note: 'Especially valuable on quad days' });
+  }
+
+  if (workout.armConditioning) {
+    add('ankle', 'Single-leg balance hold', '3×30 sec each', { note: 'Progress: eyes closed' });
+    add('ankle', 'Single-leg calf raises', '3×15 each');
+    add('ankle', 'Lateral band walks', '3×15 steps each direction');
+  }
+
+  if (workout.hasStairmaster) {
+    add('cardio', 'Stairmaster', '15 min · 30lb vest');
+  }
+
+  return items;
+}
+
+function toggleItem(id) {
+  completedItems.has(id) ? completedItems.delete(id) : completedItems.add(id);
+  saveState(cachedKey);
+
+  // Recompute which item is active
+  const activeId = allItems.find(i => !completedItems.has(i.id))?.id;
+
+  for (const item of allItems) {
+    const el = document.querySelector(`[data-id="${item.id}"]`);
+    if (!el) continue;
+    if (completedItems.has(item.id))       el.className = 'item-card done';
+    else if (item.id === activeId)         el.className = 'item-card active';
+    else                                   el.className = 'item-card upcoming';
+  }
+
+  updateProgress(activeId);
+
+  // Scroll new active into view if off-screen
+  setTimeout(() => {
+    const el = document.querySelector('.item-card.active');
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom > window.innerHeight - 20 || r.top < 70)
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, 80);
+}
+
+function updateProgress(activeId) {
+  const done = allItems.filter(i => completedItems.has(i.id)).length;
+  const total = allItems.length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+  const fill = document.getElementById('pbar-fill');
+  const txt  = document.getElementById('pbar-txt');
+  if (fill) fill.style.width = pct + '%';
+  if (txt)  txt.textContent = `${done} / ${total}`;
+
+  // Section completion ticks
+  const groups = {};
+  for (const item of allItems) {
+    (groups[item.section] = groups[item.section] || []).push(item);
+  }
+  for (const [sec, items] of Object.entries(groups)) {
+    const chk = document.querySelector(`[data-sec="${sec}"] .sec-check`);
+    if (chk) chk.style.display = items.every(i => completedItems.has(i.id)) ? '' : 'none';
+  }
+
+  // Completion banner
+  if (done === total && total > 0 && !document.getElementById('done-banner')) {
+    const el = document.createElement('div');
+    el.id = 'done-banner';
+    el.className = 'done-banner';
+    el.innerHTML = `<div style="font-size:48px">🎉</div>
+      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--green)">Workout Complete!</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:5px">Great session. Hydrate and rest well.</div>`;
+    const content = document.getElementById('wcontent');
+    if (content) content.insertBefore(el, content.firstChild);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function resetProgress() {
+  completedItems = new Set();
+  saveState(cachedKey);
+  const banner = document.getElementById('done-banner');
+  if (banner) banner.remove();
+  const activeId = allItems[0]?.id;
+  for (const item of allItems) {
+    const el = document.querySelector(`[data-id="${item.id}"]`);
+    if (el) el.className = 'item-card ' + (item.id === activeId ? 'active' : 'upcoming');
+  }
+  updateProgress(activeId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function itemCardHTML(item, activeId) {
+  const isDone = completedItems.has(item.id);
+  const isActive = !isDone && item.id === activeId;
+  const cls = isDone ? 'done' : isActive ? 'active' : 'upcoming';
+  return `<div class="item-card ${cls}" data-id="${item.id}" onclick="toggleItem('${item.id}')">
+    <div class="item-indicator"></div>
+    <div class="item-body">
+      <div class="item-name">${item.label}</div>
+      <div class="item-meta">${item.meta}</div>
+      ${item.note ? `<div class="exercise-note">${item.note}</div>` : ''}
+      ${item.cap  ? `<div class="exercise-cap">Cap: <span class="cap-value">${item.cap}</span></div>` : ''}
+      ${item.warn ? `<div class="exercise-warn">⚠️ ${item.warn}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function workoutContentHTML(workout) {
+  const activeId = allItems.find(i => !completedItems.has(i.id))?.id;
+
+  // Group into sections while preserving order
+  const sections = [];
+  let cur = null;
+  for (const item of allItems) {
+    if (!cur || cur.key !== item.section) { cur = { key: item.section, items: [] }; sections.push(cur); }
+    cur.items.push(item);
+  }
+
+  let html = '';
+  for (const sec of sections) {
+    const allDone = sec.items.every(i => completedItems.has(i.id));
+    html += `<div class="section-label" data-sec="${sec.key}">${SECTION_NAMES[sec.key] || sec.key}<span class="sec-check" style="${allDone ? '' : 'display:none'}"> ✓</span></div>`;
+    html += sec.items.map(item => itemCardHTML(item, activeId)).join('');
+  }
+
+  html += `<div class="section-label">Principles</div>
+    <div class="principles-card">
+      <div class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</div>
+      <div class="principle">Rest 60–90s isolation · 2 min compounds</div>
+      ${workout.hasCore ? '<div class="principle">Side lateral raises non-negotiable — form over weight, always</div>' : ''}
+      <div class="principle">Hanging raises: no twisting variants — oblique growth widens waist</div>
+      <div class="principle">No shrugs · no weighted side bends · no heavy deadlifts</div>
+    </div>
+    <div style="text-align:center;padding:24px 0 40px">
+      <button onclick="resetProgress()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;padding:8px 20px;opacity:0.55">Reset progress</button>
+    </div>`;
+
+  return html;
+}
+
 // ─── Schedule ──────────────────────────────────────────────────────────────
 const SCHEDULE = {
   // Week of May 18 (partial)
@@ -813,71 +1113,6 @@ function getWeekType(type, key) {
   return '';
 }
 
-function exCard(ex) {
-  return `
-    <div class="exercise-card">
-      <div class="exercise-name">${ex.name}</div>
-      <div class="exercise-meta">${ex.sets} × ${ex.reps}${ex.weight ? ' · ' + ex.weight : ''}</div>
-      ${ex.note  ? `<div class="exercise-note">${ex.note}</div>` : ''}
-      ${ex.cap   ? `<div class="exercise-cap">Cap: <span class="cap-value">${ex.cap}</span></div>` : ''}
-      ${ex.warn  ? `<div class="exercise-warn">⚠️ ${ex.warn}</div>` : ''}
-    </div>`;
-}
-
-function coreHTML(coreType) {
-  const extra = coreType === 'anti-rotation'
-    ? `<div class="conditioning-item" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">Pallof press · 3×12 each side</div>
-       <div class="conditioning-note">Anti-rotation — stability for cutting</div>`
-    : coreType === 'anti-extension'
-    ? `<div class="conditioning-item" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)">Dead bug · 3×10 each side</div>
-       <div class="conditioning-item">Forearm side plank · 3×25 sec each</div>
-       <div class="conditioning-note">Anti-extension — spinal stability</div>`
-    : '';
-  return `<div class="core-card">
-    <div class="core-title">Core (every session)</div>
-    ${CORE.map(ex => `<div class="core-item">${ex.name} ${ex.sets}×${ex.reps}${ex.note ? `<div class="exercise-note" style="margin-top:2px">${ex.note}</div>` : ''}</div>`).join('')}
-    ${extra}
-  </div>`;
-}
-
-function legWarmupHTML() {
-  return `<div class="conditioning-block">
-    <div class="conditioning-title">Warm-up</div>
-    <div class="conditioning-item">Leg swings front-back + side-side · 10 each</div>
-    <div class="conditioning-item">Ankle circles both directions</div>
-    <div class="conditioning-item">Reverse lunges · 3×10 each leg</div>
-    <div class="conditioning-note">Squat cue: knees track over toes — do not let them cave inward</div>
-  </div>`;
-}
-
-function legFinisherHTML() {
-  return `<div class="conditioning-block">
-    <div class="conditioning-title">Finisher</div>
-    <div class="conditioning-item">Wall sit · 3×45 sec</div>
-    <div class="conditioning-item">Single-leg RDL (bodyweight) · 3×10 each leg</div>
-    <div class="conditioning-note">Especially valuable on quad days where hamstrings get little direct work</div>
-  </div>`;
-}
-
-function armConditioningHTML() {
-  return `<div class="conditioning-block">
-    <div class="conditioning-title">Ankle Stability · ~10 min</div>
-    <div class="conditioning-item">Single-leg balance hold · 3×30 sec each (progress: eyes closed)</div>
-    <div class="conditioning-item">Single-leg calf raises · 3×15 each</div>
-    <div class="conditioning-item">Lateral band walks · 3×15 steps each direction</div>
-    <div class="conditioning-note">Slot between arm sets or during Stairmaster</div>
-  </div>`;
-}
-
-function stairmasterHTML() {
-  return `<div class="stairmaster-card">
-    <div class="stairmaster-icon">🪜</div>
-    <div>
-      <div class="stairmaster-text">Stairmaster · 15 min</div>
-      <div class="stairmaster-sub">30lb vest</div>
-    </div>
-  </div>`;
-}
 
 // ─── Render ─────────────────────────────────────────────────────────────────
 function render() {
@@ -992,6 +1227,15 @@ function render() {
   const workout = WORKOUTS[entry.type]?.[entry.variation];
   if (!workout) return;
 
+  // Build item list and load persisted state
+  cachedKey = key;
+  allItems = buildItemList(workout);
+  completedItems = loadState(key);
+
+  const done  = allItems.filter(i => completedItems.has(i.id)).length;
+  const total = allItems.length;
+  const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+
   app.innerHTML = `
     <header>
       <div class="app-name">Dashboard</div>
@@ -1001,24 +1245,13 @@ function render() {
         <span class="badge accent">Variation ${entry.variation}</span>
         <span class="badge">${getWeekType(entry.type, key)}</span>
       </div>
-    </header>
-    <div class="content">
-      ${workout.legConditioning ? `<div class="section-label">Warm-up</div>${legWarmupHTML()}` : ''}
-      <div class="section-label">Exercises</div>
-      ${workout.exercises.map(exCard).join('')}
-      ${workout.hasCore ? coreHTML(workout.coreType) : ''}
-      ${workout.legConditioning ? `<div class="section-label">Finisher</div>${legFinisherHTML()}` : ''}
-      ${workout.armConditioning ? `<div class="section-label">Ankle Stability</div>${armConditioningHTML()}` : ''}
-      ${workout.hasStairmaster ? `<div class="section-label">Cardio</div>${stairmasterHTML()}` : ''}
-      <div class="section-label">Principles</div>
-      <div class="principles-card">
-        <div class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</div>
-        <div class="principle">Rest 60–90s isolation · 2 min compounds</div>
-        ${workout.hasCore ? '<div class="principle">Side lateral raises non-negotiable — form over weight, always</div>' : ''}
-        <div class="principle">Hanging raises: no twisting variants — oblique growth widens waist</div>
-        <div class="principle">No shrugs · no weighted side bends · no heavy deadlifts</div>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="pbar-fill" style="width:${pct}%"></div></div>
+        <div class="progress-text" id="pbar-txt">${done} / ${total}</div>
       </div>
-      <div style="height:40px"></div>
+    </header>
+    <div id="wcontent" class="content">
+      ${workoutContentHTML(workout)}
     </div>`;
 }
 

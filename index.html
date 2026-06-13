@@ -500,19 +500,35 @@
   }
 
   /* ── Day swap ── */
-  .swap-btn {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: var(--surface2);
-    color: var(--text2);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: opacity 0.15s;
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-  .swap-btn:active { opacity: 0.65; }
+  .header-action {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+  .header-action:active { background: var(--border); }
+  .workout-meta {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
 
   .swap-banner {
     display: flex;
@@ -1285,12 +1301,14 @@ function render() {
   const swapBannerHTML = borrowedFrom
     ? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow('${key}')">Undo</button></div>`
     : '';
-  const swapBtnHTML = `<button class="swap-btn" onclick="openSwapSheet('${key}')">⇄ Different day</button>`;
+  const swapBtnHTML = `<button class="header-action" onclick="openSwapSheet('${key}')" title="Follow a different day">⇄</button>`;
 
   if (!entry) {
     app.innerHTML = `
       <header>
-        <div class="app-name">Dashboard</div>
+        <div class="header-top">
+          <div class="app-name">Dashboard</div>
+        </div>
         <div class="date-label">${dateStr}</div>
         <div class="workout-title">No workout today</div>
       </header>
@@ -1306,10 +1324,12 @@ function render() {
   if (entry.type === 'rest') {
     app.innerHTML = `
       <header>
-        <div class="app-name">Dashboard</div>
+        <div class="header-top">
+          <div class="app-name">Dashboard</div>
+          ${swapBtnHTML}
+        </div>
         <div class="date-label">${dateStr}</div>
         <div class="workout-title">Rest Day</div>
-        <div class="badge-row">${swapBtnHTML}</div>
         ${swapBannerHTML}
       </header>
       <div class="content">
@@ -1325,14 +1345,13 @@ function render() {
   if (entry.type === 'recovery') {
     app.innerHTML = `
       <header>
-        <div class="app-name">Dashboard</div>
-        <div class="date-label">${dateStr}</div>
-        <div class="workout-title">Running + Recovery 🌿</div>
-        <div class="badge-row">
-          <span class="badge accent">Lanes 9→3</span>
-          <span class="badge">~7–8 laps</span>
+        <div class="header-top">
+          <div class="app-name">Dashboard</div>
           ${swapBtnHTML}
         </div>
+        <div class="date-label">${dateStr}</div>
+        <div class="workout-title">Running + Recovery 🌿</div>
+        <div class="workout-meta">Lanes 9→3 · ~7–8 laps</div>
         ${swapBannerHTML}
       </header>
       <div class="content">
@@ -1370,15 +1389,13 @@ function render() {
   if (entry.type === 'running') {
     app.innerHTML = `
       <header>
-        <div class="app-name">Dashboard</div>
-        <div class="date-label">${dateStr}</div>
-        <div class="workout-title">Running + Drills 🏃</div>
-        <div class="badge-row">
-          <span class="badge accent">Lanes 9→3</span>
-          <span class="badge">~7–8 laps</span>
-          <span class="badge">🏉 Rugby optional</span>
+        <div class="header-top">
+          <div class="app-name">Dashboard</div>
           ${swapBtnHTML}
         </div>
+        <div class="date-label">${dateStr}</div>
+        <div class="workout-title">Running + Drills 🏃</div>
+        <div class="workout-meta">Lanes 9→3 · ~7–8 laps · 🏉 optional</div>
         ${swapBannerHTML}
       </header>
       <div class="content">
@@ -1429,14 +1446,13 @@ function render() {
 
   app.innerHTML = `
     <header>
-      <div class="app-name">Dashboard</div>
-      <div class="date-label">${dateStr}</div>
-      <div class="workout-title">${workout.title}</div>
-      <div class="badge-row">
-        <span class="badge accent">Variation ${entry.variation}</span>
-        <span class="badge">${getWeekType(entry.type, effectiveKey)}</span>
+      <div class="header-top">
+        <div class="app-name">Dashboard</div>
         ${swapBtnHTML}
       </div>
+      <div class="date-label">${dateStr}</div>
+      <div class="workout-title">${workout.title}</div>
+      <div class="workout-meta">Var ${entry.variation} · ${getWeekType(entry.type, effectiveKey)}</div>
       ${swapBannerHTML}
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="pbar-fill" style="width:${pct}%"></div></div>

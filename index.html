@@ -570,7 +570,7 @@ function buildItemList(workout) {
   }
 
   if (workout.hasStairmaster) {
-    add('cardio', 'Stairmaster', '15 min · 30lb vest');
+    add('cardio', 'Stairmaster', '10 min · 30lb vest');
   }
 
   return items;
@@ -1174,20 +1174,39 @@ function render() {
       <header>
         <div class="app-name">Dashboard</div>
         <div class="date-label">${dateStr}</div>
-        <div class="workout-title">Recovery Day 🌿</div>
+        <div class="workout-title">Running + Recovery 🌿</div>
+        <div class="badge-row">
+          <span class="badge accent">Lanes 9→3</span>
+          <span class="badge">~7–8 laps</span>
+        </div>
       </header>
       <div class="content">
-        <div class="rest-card" style="margin-top:16px">
-          <div class="rest-emoji">🌿</div>
-          <div class="rest-title">Active Recovery</div>
-          <div class="rest-subtitle">Easy movement · mobility · stretching</div>
-          <div class="recovery-list">
-            <div class="recovery-item">🏃 Easy jog · 20 min at light pace</div>
-            <div class="recovery-item">🦵 Static stretches: calves, hamstrings, hip flexors, quads, chest, lats</div>
-            <div class="recovery-item">🔄 Mobility: hip openers, ankle mobility, thoracic rotations</div>
-            <div class="recovery-item">🛁 Optional foam rolling</div>
-            <div class="recovery-item">🦶 Light single-leg balance — proprioception, low intensity</div>
+        <div class="section-label">Run</div>
+        <div class="run-card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5">Start lane 9 (outer), work inward to lane 3. Each lap shorter as you move in.</div>
+          <div class="run-stats">
+            <div class="run-stat">
+              <div class="run-stat-label">Laps</div>
+              <div class="run-stat-value">7–8<span class="run-stat-unit"> laps</span></div>
+            </div>
+            <div class="run-stat">
+              <div class="run-stat-label">Pre-run</div>
+              <div class="run-stat-value" style="font-size:28px">🍌</div>
+            </div>
           </div>
+        </div>
+        <div class="section-label">Drills (after run)</div>
+        <div class="principles-card">
+          <div class="principle">🏃 Running drills</div>
+          <div class="principle">💪 Core drills</div>
+          <div class="principle">↔️ Movement change — acceleration, deceleration, direction change</div>
+          <div class="principle" style="color:var(--text2)">🏉 Touch-specific drills without ball <em>(optional)</em></div>
+        </div>
+        <div class="section-label">Gym — Stretching & Mobility</div>
+        <div class="principles-card">
+          <div class="principle">🦵 Static stretches: calves, hamstrings, hip flexors, quads, chest, lats</div>
+          <div class="principle">🔄 Mobility: hip openers, ankle mobility, thoracic rotations</div>
+          <div class="principle">🛁 Optional foam rolling</div>
         </div>
       </div>`;
     return;
@@ -1198,28 +1217,21 @@ function render() {
       <header>
         <div class="app-name">Dashboard</div>
         <div class="date-label">${dateStr}</div>
-        <div class="workout-title">Running + Rugby 🏃</div>
+        <div class="workout-title">Running + Drills 🏃</div>
         <div class="badge-row">
-          <span class="badge accent">4.8 km</span>
-          <span class="badge">400m track · Lane 3</span>
-          <span class="badge">Touch Rugby</span>
+          <span class="badge accent">Lanes 9→3</span>
+          <span class="badge">~7–8 laps</span>
+          <span class="badge">🏉 Rugby optional</span>
         </div>
       </header>
       <div class="content">
         <div class="section-label">Run</div>
         <div class="run-card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5">Start lane 9 (outer), work inward to lane 3. Each lap shorter as you move in.</div>
           <div class="run-stats">
             <div class="run-stat">
-              <div class="run-stat-label">Distance</div>
-              <div class="run-stat-value">4.8<span class="run-stat-unit"> km</span></div>
-            </div>
-            <div class="run-stat">
               <div class="run-stat-label">Laps</div>
-              <div class="run-stat-value">~12<span class="run-stat-unit"> laps</span></div>
-            </div>
-            <div class="run-stat">
-              <div class="run-stat-label">Target</div>
-              <div class="run-stat-value" style="font-size:16px">28–30<span class="run-stat-unit"> min</span></div>
+              <div class="run-stat-value">7–8<span class="run-stat-unit"> laps</span></div>
             </div>
             <div class="run-stat">
               <div class="run-stat-label">Pre-run</div>
@@ -1227,12 +1239,19 @@ function render() {
             </div>
           </div>
         </div>
-        <div class="section-label">Touch Rugby</div>
+        <div class="section-label">Drills (after run)</div>
+        <div class="principles-card">
+          <div class="principle">🏃 Running drills</div>
+          <div class="principle">💪 Core drills</div>
+          <div class="principle">↔️ Movement change — acceleration, deceleration, direction change</div>
+          <div class="principle" style="color:var(--text2)">🏉 Touch-specific drills without ball <em>(optional)</em></div>
+        </div>
+        <div class="section-label">Gym</div>
         <div class="rugby-card">
-          <div class="rugby-emoji">🏉</div>
+          <div class="rugby-emoji">🏋️</div>
           <div>
-            <div class="rugby-title">Touch Rugby</div>
-            <div class="rugby-sub">Dynamic warm-up BEFORE game: leg swings · high knees · butt kicks · walking lunges with torso rotation</div>
+            <div class="rugby-title">Stretching + Sports Conditioning</div>
+            <div class="rugby-sub">Block 2B conditioning · Touch rugby after (optional)</div>
           </div>
         </div>
       </div>`;

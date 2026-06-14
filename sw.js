@@ -1,5 +1,14 @@
-const CACHE = 'dashboard-v1';
-const ASSETS = ['./'];
+const CACHE = 'dashboard-v2';
+const ASSETS = [
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/data.js',
+  './js/storage.js',
+  './js/workout.js',
+  './js/ui.js',
+  './js/main.js',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

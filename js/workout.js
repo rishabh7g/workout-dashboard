@@ -158,13 +158,12 @@ function getWeekType(type, key) {
 	if (['back', 'legs-hamstrings', 'arms-triceps'].includes(type))
 		return 'Back Week';
 	if (type === 'shoulders' && key) {
-		// Anchor: week starting Mon May 25, 2026 = Back Week = week 0
 		const [y, m, d] = key.split('-').map(Number);
 		const date = new Date(y, m - 1, d);
 		const dow = date.getDay();
 		const toMon = dow === 0 ? -6 : 1 - dow;
 		const weekMon = new Date(y, m - 1, d + toMon);
-		const anchor = new Date(2026, 4, 25);
+		const anchor = CYCLE_ANCHOR;
 		const weekNum = Math.round((weekMon - anchor) / 604800000);
 		return weekNum % 2 === 0 ? 'Back Week' : 'Front Week';
 	}

@@ -232,7 +232,7 @@ function render() {
       <div class="content">
         <div class="no-schedule" style="color:var(--text2)">
           <div style="font-size:48px">📅</div>
-          <div style="margin-top:12px">This date is outside the current program (May 23 – Nov 22, 2026).</div>
+          <div style="margin-top:12px">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </div>`;
 		return;

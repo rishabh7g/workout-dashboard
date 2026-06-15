@@ -12,6 +12,12 @@
  * DRILLS     — the shared running-day drill list
  */
 
+// ─── Program constants ──────────────────────────────────────────────────────
+const PROGRAM_START  = '2026-05-23';
+const PROGRAM_END    = '2026-11-22';
+const PROGRAM_LABEL  = 'May 23 – Nov 22, 2026';
+const CYCLE_ANCHOR   = new Date(2026, 4, 25); // Mon May 25 = Back Week, week 0
+
 // ─── Schedule ──────────────────────────────────────────────────────────────
 const SCHEDULE = {
 	// Week of May 18 (partial) — Cycle 1 · Var A

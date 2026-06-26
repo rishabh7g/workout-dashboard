@@ -363,6 +363,7 @@ const WORKOUTS = {
 			title: 'Chest + Core',
 			hasCore: true,
 			coreType: 'anti-rotation',
+			hasInclineTreadmill: true,
 			exercises: [
 				{ name: 'Push-ups', sets: 3, reps: 12 },
 				{
@@ -387,6 +388,7 @@ const WORKOUTS = {
 			title: 'Chest + Core',
 			hasCore: true,
 			coreType: 'anti-rotation',
+			hasInclineTreadmill: true,
 			exercises: [
 				{ name: 'Push-ups', sets: 3, reps: 15 },
 				{ name: 'Flat dumbbell press', sets: 3, reps: 10, cap: '14kg' },
@@ -411,6 +413,7 @@ const WORKOUTS = {
 			title: 'Back + Core',
 			hasCore: true,
 			coreType: 'anti-rotation',
+			hasInclineTreadmill: true,
 			exercises: [
 				{
 					name: 'Pull-ups',
@@ -440,6 +443,7 @@ const WORKOUTS = {
 			title: 'Back + Core',
 			hasCore: true,
 			coreType: 'anti-rotation',
+			hasInclineTreadmill: true,
 			exercises: [
 				{
 					name: 'Lat pulldown (wide grip)',
@@ -540,7 +544,7 @@ const WORKOUTS = {
 		A: {
 			title: 'Shoulders + Core',
 			hasCore: true,
-			coreType: 'anti-extension',
+			hasInclineTreadmill: true,
 			exercises: [
 				{
 					name: 'Side lateral raises ⭐ FIRST',
@@ -574,7 +578,7 @@ const WORKOUTS = {
 		B: {
 			title: 'Shoulders + Core',
 			hasCore: true,
-			coreType: 'anti-extension',
+			hasInclineTreadmill: true,
 			exercises: [
 				{
 					name: 'Side lateral raises ⭐ FIRST',

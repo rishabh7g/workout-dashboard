@@ -89,6 +89,12 @@ function buildItemList(workout) {
 		add('cardio', 'Stairmaster', '10 min · 30lb vest');
 	}
 
+	if (workout.hasInclineTreadmill) {
+		add('cardio', 'Incline treadmill', '10 min · speed 4 · level 15 · 30lb vest', {
+			note: 'Brace core · no holding rails',
+		});
+	}
+
 	if (workout.stretching) {
 		for (const ex of workout.stretching) {
 			add('stretch', ex.name, ex.reps, { note: ex.note });

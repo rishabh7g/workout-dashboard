@@ -154,6 +154,21 @@ function shortDayLabel(key) {
 	});
 }
 
+// A heads-up as the program winds down, so the end isn't a surprise the day
+// the schedule simply runs out. Returns a short message for the final week, or
+// null on any other day. Dates are ISO YYYY-MM-DD, so string ops are safe.
+function programNotice(key) {
+	if (key > PROGRAM_END) return null; // past the end — the "no workout" screen covers it
+	const [ey, em, ed] = PROGRAM_END.split('-').map(Number);
+	const [ky, km, kd] = key.split('-').map(Number);
+	const daysLeft = Math.round(
+		(new Date(ey, em - 1, ed) - new Date(ky, km - 1, kd)) / 86400000,
+	);
+	if (daysLeft < 0 || daysLeft > 6) return null;
+	if (daysLeft === 0) return '🎉 Final day of the program — great work.';
+	return `Program ends ${shortDayLabel(PROGRAM_END)} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`;
+}
+
 // Front Week / Back Week label. Shoulders alternate weekly, so they're
 // computed from a known anchor date rather than hard-coded per type.
 function getWeekType(type, key) {

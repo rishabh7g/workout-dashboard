@@ -124,9 +124,16 @@ function updateProgress(activeId) {
 		const el = document.createElement('div');
 		el.id = 'done-banner';
 		el.className = 'done-banner';
+		const isProgramEnd = cachedDayKey === PROGRAM_END;
+		const title = isProgramEnd
+			? 'Program Complete!'
+			: 'Workout Complete!';
+		const sub = isProgramEnd
+			? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
+			: 'Great session. Hydrate and rest well.';
 		el.innerHTML = `<div style="font-size:48px">🎉</div>
-      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--green)">Workout Complete!</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:5px">Great session. Hydrate and rest well.</div>`;
+      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--green)">${title}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:5px">${sub}</div>`;
 		const content = document.getElementById('wcontent');
 		if (content) content.insertBefore(el, content.firstChild);
 		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -209,6 +216,7 @@ function workoutContentHTML(workout) {
 // Called once on load (main.js) and again after any state change (toggle/borrow).
 function render() {
 	const key = todayKey();
+	cachedDayKey = key; // track the plain date on every path for the midnight check
 	const borrows = loadBorrows();
 	const effectiveKey = borrows[key] || key;
 	const entry = SCHEDULE[effectiveKey];
@@ -219,6 +227,10 @@ function render() {
 		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow('${key}')">Undo</button></div>`
 		: '';
 	const swapBtnHTML = `<button class="header-action" onclick="openSwapSheet('${key}')" title="Follow a different day">⇄</button>`;
+	const notice = programNotice(key);
+	const noticeHTML = notice
+		? `<div class="program-notice">${notice}</div>`
+		: '';
 
 	if (!entry) {
 		app.innerHTML = `
@@ -248,6 +260,7 @@ function render() {
         <div class="date-label">${dateStr}</div>
         <div class="workout-title">Rest Day</div>
         ${swapBannerHTML}
+        ${noticeHTML}
       </header>
       <div class="content">
         <div class="rest-card" style="margin-top:16px">
@@ -265,10 +278,11 @@ function render() {
 	];
 	if (!workout) return;
 
-	// Build item list and load persisted state
-	cachedKey = key;
+	// Build item list and load persisted state. The key encodes the workout
+	// identity (via the effective entry) so a borrowed day's ticks stay separate.
+	cachedKey = stateKey(key, entry);
 	allItems = buildItemList(workout);
-	completedItems = loadState(key);
+	completedItems = loadState(cachedKey);
 
 	const done = allItems.filter((i) => completedItems.has(i.id)).length;
 	const total = allItems.length;
@@ -284,6 +298,7 @@ function render() {
       <div class="workout-title">${workout.title}</div>
       <div class="workout-meta">Var ${entry.variation} · ${getWeekType(entry.type, effectiveKey)}</div>
       ${swapBannerHTML}
+      ${noticeHTML}
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="pbar-fill" style="width:${pct}%"></div></div>
         <div class="progress-text" id="pbar-txt">${done} / ${total}</div>

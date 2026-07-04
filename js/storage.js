@@ -16,7 +16,17 @@
 // shared binding every other script can read and write.
 let completedItems = new Set(); // ids of items ticked done today
 let allItems = []; // the full ordered item list for today
-let cachedKey = null; // today's date key, so saveState knows where to write
+// The localStorage key for today's ticks. It encodes the *workout* being shown
+// (date + type + variation) — not just the date — so that "follow a different
+// day" keeps each workout's progress separate instead of one set of positional
+// ids (stretch-1, ex-2, …) bleeding onto an unrelated workout.
+let cachedKey = null;
+let cachedDayKey = null; // plain YYYY-MM-DD, so we can detect a midnight rollover
+
+// Build the storage key for a given date + schedule entry.
+function stateKey(dayKey, entry) {
+	return entry ? `${dayKey}-${entry.type}-${entry.variation || 'x'}` : dayKey;
+}
 
 // ─── Per-day completion ─────────────────────────────────────────────────────
 function saveState(key) {
@@ -30,6 +40,23 @@ function loadState(key) {
 		if (s) return new Set(JSON.parse(s));
 	} catch (e) {}
 	return new Set();
+}
+
+// Drop per-day completion keys older than two weeks so localStorage doesn't
+// grow for the whole life of the program. Each key is `ws-YYYY-MM-DD-...`, so
+// the date to compare is the 10 chars right after the `ws-` prefix.
+function pruneOldState() {
+	try {
+		const d = new Date();
+		d.setDate(d.getDate() - 14);
+		const cutoff = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		for (let i = localStorage.length - 1; i >= 0; i--) {
+			const k = localStorage.key(i);
+			if (k && k.startsWith('ws-') && k.slice(3, 13) < cutoff) {
+				localStorage.removeItem(k);
+			}
+		}
+	} catch (e) {}
 }
 
 // ─── Day borrow ("follow a different day") ──────────────────────────────────

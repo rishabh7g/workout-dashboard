@@ -1,7 +1,8 @@
-const CACHE = 'dashboard-v2';
+const CACHE = 'dashboard-v3';
 const ASSETS = [
 	'./',
 	'./index.html',
+	'./manifest.json',
 	'./css/styles.css',
 	'./js/data.js',
 	'./js/storage.js',
@@ -31,19 +32,28 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-	// Cache-first for same-origin requests
-	if (e.request.url.startsWith(self.location.origin)) {
+	// Network-first for same-origin GETs: always try the network so a fresh
+	// deploy shows up on the very next load, and fall back to cache only when
+	// offline. This avoids the old cache-first behaviour where new code took an
+	// extra reload to appear, and the unhandled rejection when offline.
+	if (
+		e.request.method === 'GET' &&
+		e.request.url.startsWith(self.location.origin)
+	) {
 		e.respondWith(
-			caches.match(e.request).then((cached) => {
-				const network = fetch(e.request).then((res) => {
+			fetch(e.request)
+				.then((res) => {
 					if (res.ok) {
 						const clone = res.clone();
 						caches.open(CACHE).then((c) => c.put(e.request, clone));
 					}
 					return res;
-				});
-				return cached || network;
-			}),
+				})
+				.catch(() =>
+					caches
+						.match(e.request)
+						.then((cached) => cached || caches.match('./index.html')),
+				),
 		);
 	}
 });

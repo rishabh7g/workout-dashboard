@@ -1,3 +1,12 @@
+/* Self-hosted display face — bundled, never fetched from a CDN (offline PWA). */
+@font-face {
+	font-family: 'Barlow Condensed';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('../fonts/barlow-condensed-latin-700.woff2') format('woff2');
+}
+
 :root {
 	color-scheme: dark;
 	--bg: #101216;
@@ -11,6 +20,7 @@
 	--blue: #0a84ff;
 	--teal: #5ac8fa;
 	--radius: 16px;
+	--display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
 
 	/* Day hues — one per day-type group ("the day has a color"). */
 	--h-rest: #8e8ac0;

@@ -1,9 +1,10 @@
-const CACHE = 'workout-dashboard-v3';
+const CACHE = 'workout-dashboard-v4';
 const ASSETS = [
 	'./',
 	'./index.html',
 	'./manifest.json',
 	'./css/styles.css',
+	'./fonts/barlow-condensed-latin-700.woff2',
 	'./js/data.js',
 	'./js/storage.js',
 	'./js/workout.js',

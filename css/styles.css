@@ -240,24 +240,16 @@ header {
 	margin-top: 3px;
 }
 
-.exercise-note {
+/* Single note line under the name: meta remainder · note · cap · warn */
+.item-note {
 	font-size: 13px;
 	color: var(--text2);
-	margin-top: 5px;
-	line-height: 1.4;
-}
-
-.exercise-warn {
-	font-size: 12px;
-	color: var(--warn);
-	margin-top: 5px;
-	line-height: 1.4;
-}
-
-.exercise-cap {
-	font-size: 12px;
-	color: var(--text2);
 	margin-top: 4px;
+	line-height: 1.4;
+}
+
+.item-warn {
+	color: var(--warn);
 }
 
 .cap-value {
@@ -505,7 +497,7 @@ header {
 }
 
 .item-card.upcoming {
-	opacity: 0.45;
+	opacity: 0.5;
 }
 
 .item-card.active {
@@ -527,21 +519,16 @@ header {
 	height: 34px;
 	margin-top: 3px;
 }
-.item-card.active .exercise-note {
+.item-card.active .item-note {
 	font-size: 14px;
 	margin-top: 7px;
 }
-.item-card.active .exercise-cap {
-	font-size: 13px;
-	margin-top: 7px;
-}
-.item-card.active .exercise-warn {
-	font-size: 13px;
-	margin-top: 7px;
+.item-card.active .scheme {
+	font-size: 24px;
 }
 
 .item-card.done {
-	opacity: 0.32;
+	opacity: 0.34;
 }
 .item-card.done .item-name {
 	text-decoration: line-through;
@@ -599,6 +586,39 @@ header {
 	color: var(--day);
 	font-weight: 500;
 	margin-top: 2px;
+}
+
+/* Right-aligned set-scheme numeral block — the glance-at-mid-set numbers */
+.scheme {
+	font-family: var(--display);
+	font-size: 21px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	color: var(--text);
+	text-align: right;
+	white-space: nowrap;
+	flex-shrink: 0;
+	align-self: center;
+}
+.scheme-x {
+	opacity: 0.45;
+	font-weight: 400;
+	margin: 0 3px;
+}
+.scheme-timed .scheme-n {
+	font-size: 21px;
+}
+.scheme-unit {
+	font-size: 10px;
+	font-weight: 600;
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--text2);
+	margin-top: 3px;
+	text-align: center;
 }
 
 /* ── Progress bar ── */

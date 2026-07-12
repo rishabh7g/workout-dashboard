@@ -179,7 +179,7 @@ function itemCardHTML(item, activeId) {
 	const schemeHTML = item.scheme
 		? item.scheme.unit
 			? `<div class="scheme scheme-timed"><div class="scheme-n">${item.scheme.n}</div><div class="scheme-unit">${item.scheme.unit}</div></div>`
-			: `<div class="scheme">${item.scheme.n}<span class="scheme-x">×</span>${item.scheme.x}</div>`
+			: `<div class="scheme">${item.scheme.n}<span class="scheme-x">×</span>${item.scheme.x}<div class="scheme-label">sets × reps</div></div>`
 		: '';
 
 	return `<div class="item-card ${cls}" data-id="${item.id}" onclick="toggleItem('${item.id}')">

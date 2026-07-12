@@ -500,15 +500,22 @@ header {
 	opacity: 0.5;
 }
 
+/* Scoreboard treatment: the one card you're acting on */
 .item-card.active {
 	border-color: var(--day);
-	background: var(--day-soft);
+	background:
+		linear-gradient(160deg, var(--day-soft), transparent 70%),
+		var(--surface);
 	opacity: 1;
 	padding: 18px 18px;
 }
 .item-card.active .item-name {
-	font-size: 21px;
+	font-family: var(--display);
+	font-size: 24px;
 	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+	line-height: 1.1;
 }
 .item-card.active .item-meta {
 	font-size: 15px;
@@ -520,11 +527,17 @@ header {
 	margin-top: 3px;
 }
 .item-card.active .item-note {
-	font-size: 14px;
 	margin-top: 7px;
 }
 .item-card.active .scheme {
-	font-size: 24px;
+	font-size: 44px;
+	color: var(--day);
+}
+.item-card.active .scheme-timed .scheme-n {
+	font-size: 44px;
+}
+.item-card.active .scheme-label {
+	display: block;
 }
 
 .item-card.done {
@@ -610,6 +623,19 @@ header {
 	font-size: 21px;
 }
 .scheme-unit {
+	font-size: 10px;
+	font-weight: 600;
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--text2);
+	margin-top: 3px;
+	text-align: center;
+}
+/* SETS × REPS microlabel — only shown under the active card's scheme */
+.scheme-label {
+	display: none;
 	font-size: 10px;
 	font-weight: 600;
 	font-family:

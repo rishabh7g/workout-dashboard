@@ -132,9 +132,9 @@ function updateProgress(activeId) {
 		const sub = isProgramEnd
 			? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
 			: 'Great session. Hydrate and rest well.';
-		el.innerHTML = `<div style="font-size:48px">🎉</div>
-      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--good)">${title}</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:5px">${sub}</div>`;
+		el.innerHTML = `<div class="done-emoji">🎉</div>
+      <div class="done-title">${title}</div>
+      <div class="done-sub">${sub}</div>`;
 		const content = document.getElementById('wcontent');
 		if (content) content.insertBefore(el, content.firstChild);
 		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -319,7 +319,7 @@ function render() {
         ${weekStripHTML(key)}
       </header>
       <div class="content">
-        <div class="no-schedule" style="color:var(--text2)">
+        <div class="no-schedule">
           <div style="font-size:48px">📅</div>
           <div style="margin-top:12px">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>

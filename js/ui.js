@@ -223,6 +223,33 @@ function dayGroup(entry) {
 	return t; // back, chest, shoulders, recovery, rest
 }
 
+// Program-position eyebrow text, e.g. "Week 9 / 26 · Back Week · Var A".
+// CSS uppercases it. Running/recovery show the weekday instead of the week
+// type; rest days omit the Var part; outside-schedule dates show week only.
+function eyebrowLabel(entry, key) {
+	const wk = `Week ${weekNumber(key)} / ${TOTAL_WEEKS}`;
+	if (!entry) return wk;
+	if (entry.type === 'rest') return `${wk} · Rest Day`;
+	const mid =
+		entry.type === 'running'
+			? 'Saturday'
+			: entry.type === 'recovery'
+				? 'Sunday'
+				: getWeekType(entry.type, key);
+	return `${wk} · ${mid} · Var ${entry.variation}`;
+}
+
+// Shared header eyebrow row: program position left, short date + swap right.
+function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
+	return `<div class="eyebrow-row">
+        <div class="eyebrow">${eyebrowLabel(entry, effectiveKey)}</div>
+        <div class="eyebrow-right">
+          <span class="eyebrow-date">${shortDayLabel(key)}</span>
+          ${swapBtnHTML}
+        </div>
+      </div>`;
+}
+
 // Called once on load (main.js) and again after any state change (toggle/borrow).
 function render() {
 	const key = todayKey();
@@ -233,7 +260,6 @@ function render() {
 	// Tint the whole UI with the effective (borrowed) day's hue.
 	document.documentElement.dataset.day = dayGroup(entry);
 	const borrowedFrom = borrows[key] || null;
-	const dateStr = formatDate(key);
 	const app = document.getElementById('app');
 	const swapBannerHTML = borrowedFrom
 		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow('${key}')">Undo</button></div>`
@@ -247,10 +273,7 @@ function render() {
 	if (!entry) {
 		app.innerHTML = `
       <header>
-        <div class="header-top">
-          <div class="app-name">workout-dashboard</div>
-        </div>
-        <div class="date-label">${dateStr}</div>
+        ${eyebrowRowHTML(entry, effectiveKey, key, '')}
         <div class="workout-title">No workout today</div>
       </header>
       <div class="content">
@@ -265,11 +288,7 @@ function render() {
 	if (entry.type === 'rest') {
 		app.innerHTML = `
       <header>
-        <div class="header-top">
-          <div class="app-name">workout-dashboard</div>
-          ${swapBtnHTML}
-        </div>
-        <div class="date-label">${dateStr}</div>
+        ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
         <div class="workout-title">Rest Day</div>
         ${swapBannerHTML}
         ${noticeHTML}
@@ -302,13 +321,8 @@ function render() {
 
 	app.innerHTML = `
     <header>
-      <div class="header-top">
-        <div class="app-name">workout-dashboard</div>
-        ${swapBtnHTML}
-      </div>
-      <div class="date-label">${dateStr}</div>
+      ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
       <div class="workout-title">${workout.title}</div>
-      <div class="workout-meta">Var ${entry.variation} · ${getWeekType(entry.type, effectiveKey)}</div>
       ${swapBannerHTML}
       ${noticeHTML}
       <div class="progress-row">

@@ -87,35 +87,54 @@ body {
 
 header {
 	padding: calc(env(safe-area-inset-top, 20px) + 16px) 20px 16px;
-	background: var(--bg);
+	background:
+		linear-gradient(180deg, var(--day-soft) 0%, transparent 78%),
+		var(--bg);
 	position: sticky;
 	top: 0;
 	z-index: 10;
 	border-bottom: 1px solid var(--border);
 }
 
-.app-name {
+/* Program-position row: "WEEK 9 / 26 · BACK WEEK · VAR A" + short date. */
+.eyebrow-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.eyebrow {
 	font-size: 12px;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
-	color: var(--text2);
+	color: var(--day);
 }
 
-.date-label {
-	font-size: 13px;
-	color: var(--text2);
-	margin-top: 10px;
+.eyebrow-right {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.eyebrow-date {
+	font-size: 12px;
+	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
-	font-weight: 500;
+	color: var(--text2);
 }
 
 .workout-title {
-	font-size: 26px;
+	font-family: var(--display);
+	font-size: 46px;
 	font-weight: 700;
-	line-height: 1.2;
-	margin-top: 4px;
+	line-height: 0.98;
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+	margin-top: 8px;
 }
 
 .badge-row {
@@ -582,11 +601,6 @@ header {
 }
 
 /* ── Day swap ── */
-.header-top {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
 .header-action {
 	width: 34px;
 	height: 34px;
@@ -606,14 +620,6 @@ header {
 .header-action:active {
 	background: var(--border);
 }
-.workout-meta {
-	font-size: 13px;
-	color: var(--text2);
-	margin-top: 4px;
-	font-weight: 500;
-	letter-spacing: 0.01em;
-}
-
 .swap-banner {
 	display: flex;
 	align-items: center;

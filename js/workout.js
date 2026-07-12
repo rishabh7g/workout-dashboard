@@ -23,8 +23,21 @@ const SECTION_NAMES = {
 	cooldown: 'Cooldown',
 };
 
+// Split a reps value into the numeral part for the scheme block and any
+// leftover qualifier text: 12 → {x:'12'}, '7→10' → {x:'7→10'},
+// '10 each leg' → {x:'10', rest:'each leg'}, '25 sec each' → {x:'25 sec',
+// rest:'each'}. Free-text reps ('1 length') return x:null — no scheme.
+function splitReps(reps) {
+	const m = String(reps).match(/^(\d+(?:\s*[–—→-]\s*\d+)?(?:\s*sec)?)(?:\s+(.*))?$/);
+	if (!m) return { x: null, rest: String(reps) };
+	return { x: m[1], rest: m[2] || '' };
+}
+
 // Flatten a declarative workout object into an ordered list of items.
 // Each item gets a stable id like "ex-3" so the UI and localStorage agree.
+// Items with a natural sets×reps shape carry a structured `scheme`
+// ({n, x} or {n, unit} for timed cardio) that the UI renders as a
+// right-aligned numeral block; scheme-less items keep their `meta` text.
 function buildItemList(workout) {
 	const items = [];
 	const counts = {};
@@ -38,60 +51,73 @@ function buildItemList(workout) {
 			...extra,
 		});
 	};
+	// Build a sets×reps item: numerals go to the scheme, any reps qualifier
+	// ('each leg') joins the weight in the meta line.
+	const addSetsReps = (sec, name, sets, reps, weight, extra = {}) => {
+		const { x, rest } = splitReps(reps);
+		const meta = [rest, weight].filter(Boolean).join(' · ');
+		add(sec, name, x ? meta : `${sets}×${reps}${weight ? ' · ' + weight : ''}`, {
+			...extra,
+			scheme: x ? { n: sets, x } : null,
+		});
+	};
 
 	if (workout.legConditioning) {
 		add('warmup', 'Leg swings', 'Front-back + side-side · 10 each');
 		add('warmup', 'Ankle circles', 'Both directions');
-		add('warmup', 'Reverse lunges', '3×10 each leg');
+		addSetsReps('warmup', 'Reverse lunges', 3, '10 each leg');
 	}
 
 	for (const ex of workout.exercises || []) {
-		add(
-			'ex',
-			ex.name,
-			`${ex.sets}×${ex.reps}${ex.weight ? ' · ' + ex.weight : ''}`,
-			{ note: ex.note, cap: ex.cap, warn: ex.warn },
-		);
+		addSetsReps('ex', ex.name, ex.sets, ex.reps, ex.weight, {
+			note: ex.note,
+			cap: ex.cap,
+			warn: ex.warn,
+		});
 	}
 
 	if (workout.hasCore) {
 		for (const ex of CORE) {
-			add('core', ex.name, `${ex.sets}×${ex.reps}`, { note: ex.note });
+			addSetsReps('core', ex.name, ex.sets, ex.reps, null, { note: ex.note });
 		}
 		if (workout.coreType === 'anti-rotation')
-			add('core', 'Pallof press', '3×12 each side', {
+			addSetsReps('core', 'Pallof press', 3, '12 each side', null, {
 				note: 'Anti-rotation — stability for cutting',
 			});
 		else if (workout.coreType === 'anti-extension') {
-			add('core', 'Dead bug', '3×10 each side');
-			add('core', 'Forearm side plank', '3×25 sec each', {
+			addSetsReps('core', 'Dead bug', 3, '10 each side');
+			addSetsReps('core', 'Forearm side plank', 3, '25 sec each', null, {
 				note: 'Weight on forearm, not hand',
 			});
 		}
 	}
 
 	if (workout.legConditioning) {
-		add('finisher', 'Wall sit', '3×45 sec');
-		add('finisher', 'Single-leg RDL', 'Bodyweight · 3×10 each leg', {
+		addSetsReps('finisher', 'Wall sit', 3, '45 sec');
+		addSetsReps('finisher', 'Single-leg RDL', 3, '10 each leg', 'Bodyweight', {
 			note: 'Especially valuable on quad days',
 		});
 	}
 
 	if (workout.armConditioning) {
-		add('ankle', 'Single-leg balance hold', '3×30 sec each', {
+		addSetsReps('ankle', 'Single-leg balance hold', 3, '30 sec each', null, {
 			note: 'Progress: eyes closed',
 		});
-		add('ankle', 'Single-leg calf raises', '3×15 each');
-		add('ankle', 'Lateral band walks', '3×15 steps each direction');
+		addSetsReps('ankle', 'Single-leg calf raises', 3, '15 each');
+		addSetsReps('ankle', 'Lateral band walks', 3, '15 steps each direction');
 	}
 
 	if (workout.hasStairmaster) {
-		add('cardio', 'Stairmaster', '10 min · 30lb vest');
+		add('cardio', 'Stairmaster', '', {
+			note: '30lb vest',
+			scheme: { n: 10, unit: 'min' },
+		});
 	}
 
 	if (workout.hasInclineTreadmill) {
-		add('cardio', 'Incline treadmill', '10 min · speed 4 · level 15 · 30lb vest', {
+		add('cardio', 'Incline treadmill', 'speed 4 · level 15 · 30lb vest', {
 			note: 'Brace core · no holding rails',
+			scheme: { n: 10, unit: 'min' },
 		});
 	}
 

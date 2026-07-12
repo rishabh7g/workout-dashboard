@@ -162,15 +162,34 @@ function itemCardHTML(item, activeId) {
 	const isDone = completedItems.has(item.id);
 	const isActive = !isDone && item.id === activeId;
 	const cls = isDone ? 'done' : isActive ? 'active' : 'upcoming';
+
+	// With a scheme the numerals live in the right-aligned block, so the meta
+	// remainder (weight, qualifiers) folds into the note line. Without one the
+	// meta text keeps its own colored line, as before.
+	const noteBits = [];
+	if (item.scheme && item.meta) noteBits.push(item.meta);
+	if (item.note) noteBits.push(item.note);
+	if (item.cap) noteBits.push(`Cap <span class="cap-value">${item.cap}</span>`);
+	if (item.warn) noteBits.push(`<span class="item-warn">⚠ ${item.warn}</span>`);
+	const metaHTML =
+		!item.scheme && item.meta ? `<div class="item-meta">${item.meta}</div>` : '';
+	const noteHTML = noteBits.length
+		? `<div class="item-note">${noteBits.join(' · ')}</div>`
+		: '';
+	const schemeHTML = item.scheme
+		? item.scheme.unit
+			? `<div class="scheme scheme-timed"><div class="scheme-n">${item.scheme.n}</div><div class="scheme-unit">${item.scheme.unit}</div></div>`
+			: `<div class="scheme">${item.scheme.n}<span class="scheme-x">×</span>${item.scheme.x}</div>`
+		: '';
+
 	return `<div class="item-card ${cls}" data-id="${item.id}" onclick="toggleItem('${item.id}')">
     <div class="item-indicator"></div>
     <div class="item-body">
       <div class="item-name">${item.label}</div>
-      <div class="item-meta">${item.meta}</div>
-      ${item.note ? `<div class="exercise-note">${item.note}</div>` : ''}
-      ${item.cap ? `<div class="exercise-cap">Cap: <span class="cap-value">${item.cap}</span></div>` : ''}
-      ${item.warn ? `<div class="exercise-warn">⚠️ ${item.warn}</div>` : ''}
+      ${metaHTML}
+      ${noteHTML}
     </div>
+    ${schemeHTML}
   </div>`;
 }
 

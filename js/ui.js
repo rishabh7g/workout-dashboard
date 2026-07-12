@@ -239,6 +239,27 @@ function eyebrowLabel(entry, key) {
 	return `${wk} · ${mid} · Var ${entry.variation}`;
 }
 
+// Week strip: Mon–Sun of the current calendar week as colored bars — the
+// schedule's rotation made visible. Each day's bar takes its day-group hue;
+// dates outside the program fall back to var(--border). Monday is computed
+// the same local-time way weekNumber() does.
+function weekStripHTML(key) {
+	const [y, m, d] = key.split('-').map(Number);
+	const dow = new Date(y, m - 1, d).getDay();
+	const toMon = dow === 0 ? -6 : 1 - dow;
+	const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+	let html = '<div class="week-strip">';
+	for (let i = 0; i < 7; i++) {
+		const dt = new Date(y, m - 1, d + toMon + i);
+		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+		const entry = SCHEDULE[k];
+		const hue = entry ? `var(--h-${dayGroup(entry)})` : 'var(--border)';
+		const when = k === key ? 'today' : k < key ? 'past' : 'future';
+		html += `<div class="ws-day ${when}"><div class="ws-bar" style="background:${hue}"></div><div class="ws-letter">${letters[i]}</div></div>`;
+	}
+	return html + '</div>';
+}
+
 // Shared header eyebrow row: program position left, short date + swap right.
 function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
 	return `<div class="eyebrow-row">
@@ -275,6 +296,7 @@ function render() {
       <header>
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
         <div class="workout-title">No workout today</div>
+        ${weekStripHTML(key)}
       </header>
       <div class="content">
         <div class="no-schedule" style="color:var(--text2)">
@@ -290,6 +312,7 @@ function render() {
       <header>
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
         <div class="workout-title">Rest Day</div>
+        ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
       </header>
@@ -323,6 +346,7 @@ function render() {
     <header>
       ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
       <div class="workout-title">${workout.title}</div>
+      ${weekStripHTML(key)}
       ${swapBannerHTML}
       ${noticeHTML}
       <div class="progress-row">

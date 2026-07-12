@@ -137,6 +137,52 @@ header {
 	margin-top: 8px;
 }
 
+/* Week strip: Mon–Sun day-type bars under the title. Bars carry the day-group
+   hue inline; past days fade to 0.22, today is full-strength with a taller bar. */
+.week-strip {
+	display: flex;
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.ws-day {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	opacity: 0.55;
+}
+
+.ws-day.past {
+	opacity: 0.22;
+}
+
+.ws-day.today {
+	opacity: 1;
+}
+
+.ws-bar {
+	width: 100%;
+	height: 4px;
+	border-radius: 2px;
+}
+
+.ws-day.today .ws-bar {
+	height: 6px;
+}
+
+.ws-letter {
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: var(--text2);
+}
+
+.ws-day.today .ws-letter {
+	color: var(--text);
+}
+
 .badge-row {
 	display: flex;
 	gap: 8px;

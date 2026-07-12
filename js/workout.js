@@ -135,16 +135,6 @@ function todayKey() {
 	return `${y}-${m}-${day}`;
 }
 
-function formatDate(key) {
-	const [y, m, d] = key.split('-').map(Number);
-	return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-		year: 'numeric',
-	});
-}
-
 function shortDayLabel(key) {
 	const [y, m, d] = key.split('-').map(Number);
 	return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
@@ -167,6 +157,21 @@ function programNotice(key) {
 	if (daysLeft < 0 || daysLeft > 6) return null;
 	if (daysLeft === 0) return '🎉 Final day of the program — great work.';
 	return `Program ends ${shortDayLabel(PROGRAM_END)} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`;
+}
+
+// Program length in weeks, shown as "Week n / 26" in the header eyebrow.
+const TOTAL_WEEKS = 26;
+
+// Program-position week number for a date key. Week 1 starts Monday
+// 2026-05-25 (CYCLE_ANCHOR); the opening weekend (May 23–24) is week 0.
+function weekNumber(key) {
+	const [y, m, d] = key.split('-').map(Number);
+	const date = new Date(y, m - 1, d);
+	const dow = date.getDay();
+	const toMon = dow === 0 ? -6 : 1 - dow;
+	const monday = new Date(y, m - 1, d + toMon);
+	const days = Math.round((monday - CYCLE_ANCHOR) / 86400000);
+	return Math.floor(days / 7) + 1;
 }
 
 // Front Week / Back Week label. Shoulders alternate weekly, so they're

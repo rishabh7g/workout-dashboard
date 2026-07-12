@@ -236,7 +236,7 @@ function render() {
 		app.innerHTML = `
       <header>
         <div class="header-top">
-          <div class="app-name">Dashboard</div>
+          <div class="app-name">workout-dashboard</div>
         </div>
         <div class="date-label">${dateStr}</div>
         <div class="workout-title">No workout today</div>
@@ -254,7 +254,7 @@ function render() {
 		app.innerHTML = `
       <header>
         <div class="header-top">
-          <div class="app-name">Dashboard</div>
+          <div class="app-name">workout-dashboard</div>
           ${swapBtnHTML}
         </div>
         <div class="date-label">${dateStr}</div>
@@ -291,7 +291,7 @@ function render() {
 	app.innerHTML = `
     <header>
       <div class="header-top">
-        <div class="app-name">Dashboard</div>
+        <div class="app-name">workout-dashboard</div>
         ${swapBtnHTML}
       </div>
       <div class="date-label">${dateStr}</div>

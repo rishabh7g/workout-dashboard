@@ -608,24 +608,27 @@ header {
 	gap: 8px;
 	margin-top: 10px;
 }
-.progress-bar {
+.segs {
 	flex: 1;
-	height: 3px;
-	background: var(--surface2);
-	border-radius: 2px;
-	overflow: hidden;
+	display: flex;
+	gap: 3px;
 }
-.progress-fill {
-	height: 100%;
+.seg {
+	flex: 1;
+	height: 5px;
+	border-radius: 2.5px;
+	background: var(--surface2);
+	transition: background 0.25s ease;
+}
+.seg.on {
 	background: var(--day);
-	border-radius: 2px;
-	transition: width 0.35s ease;
 }
 .progress-text {
 	font-size: 12px;
 	color: var(--text2);
 	font-weight: 600;
 	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
 }
 
 /* ── Section done tick ── */

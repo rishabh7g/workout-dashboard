@@ -95,11 +95,12 @@ function toggleItem(id) {
 function updateProgress(activeId) {
 	const done = allItems.filter((i) => completedItems.has(i.id)).length;
 	const total = allItems.length;
-	const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-	const fill = document.getElementById('pbar-fill');
+	const segs = document.querySelectorAll('#pbar-segs .seg');
+	allItems.forEach((item, i) => {
+		if (segs[i]) segs[i].classList.toggle('on', completedItems.has(item.id));
+	});
 	const txt = document.getElementById('pbar-txt');
-	if (fill) fill.style.width = pct + '%';
 	if (txt) txt.textContent = `${done} / ${total}`;
 
 	// Section completion ticks
@@ -340,7 +341,9 @@ function render() {
 
 	const done = allItems.filter((i) => completedItems.has(i.id)).length;
 	const total = allItems.length;
-	const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+	const segsHTML = allItems
+		.map((i) => `<div class="seg${completedItems.has(i.id) ? ' on' : ''}"></div>`)
+		.join('');
 
 	app.innerHTML = `
     <header>
@@ -350,7 +353,7 @@ function render() {
       ${swapBannerHTML}
       ${noticeHTML}
       <div class="progress-row">
-        <div class="progress-bar"><div class="progress-fill" id="pbar-fill" style="width:${pct}%"></div></div>
+        <div class="segs" id="pbar-segs">${segsHTML}</div>
         <div class="progress-text" id="pbar-txt">${done} / ${total}</div>
       </div>
     </header>

@@ -132,7 +132,7 @@ function updateProgress(activeId) {
 			? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
 			: 'Great session. Hydrate and rest well.';
 		el.innerHTML = `<div style="font-size:48px">🎉</div>
-      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--green)">${title}</div>
+      <div style="font-size:20px;font-weight:700;margin-top:10px;color:var(--good)">${title}</div>
       <div style="font-size:13px;color:var(--text2);margin-top:5px">${sub}</div>`;
 		const content = document.getElementById('wcontent');
 		if (content) content.insertBefore(el, content.firstChild);
@@ -213,6 +213,16 @@ function workoutContentHTML(workout) {
 
 // ─── Render ─────────────────────────────────────────────────────────────────
 // The single entry point that paints the whole screen for "today".
+// Map a schedule entry's type to its day-hue group (html[data-day="…"] in CSS).
+function dayGroup(entry) {
+	if (!entry) return 'rest'; // outside-schedule dates fall back to rest
+	const t = entry.type;
+	if (t === 'legs-quads' || t === 'legs-hamstrings') return 'legs';
+	if (t === 'arms-biceps' || t === 'arms-triceps') return 'arms';
+	if (t === 'running') return 'run';
+	return t; // back, chest, shoulders, recovery, rest
+}
+
 // Called once on load (main.js) and again after any state change (toggle/borrow).
 function render() {
 	const key = todayKey();
@@ -220,6 +230,8 @@ function render() {
 	const borrows = loadBorrows();
 	const effectiveKey = borrows[key] || key;
 	const entry = SCHEDULE[effectiveKey];
+	// Tint the whole UI with the effective (borrowed) day's hue.
+	document.documentElement.dataset.day = dayGroup(entry);
 	const borrowedFrom = borrows[key] || null;
 	const dateStr = formatDate(key);
 	const app = document.getElementById('app');

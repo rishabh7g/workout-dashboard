@@ -1,17 +1,63 @@
 :root {
 	color-scheme: dark;
-	--bg: #0f0f0f;
-	--surface: #1a1a1a;
-	--surface2: #242424;
-	--border: #2e2e2e;
-	--text: #f0f0f0;
-	--text2: #999;
-	--accent: #e8ff3c;
-	--warn: #ff9500;
-	--green: #34c759;
+	--bg: #101216;
+	--surface: #181b21;
+	--surface2: #20242c;
+	--border: #2a2f38;
+	--text: #edeef0;
+	--text2: #8a919c;
+	--good: #57c785;
+	--warn: #e2a13d;
 	--blue: #0a84ff;
 	--teal: #5ac8fa;
-	--radius: 14px;
+	--radius: 16px;
+
+	/* Day hues — one per day-type group ("the day has a color"). */
+	--h-rest: #8e8ac0;
+	--h-legs: #e8a33c;
+	--h-back: #5b8def;
+	--h-chest: #f0654a;
+	--h-arms: #d76bc0;
+	--h-shoulders: #3fc1c9;
+	--h-run: #4fc978;
+	--h-recovery: #7fd6b8;
+
+	/* Active-day tokens: overridden per day via html[data-day="…"]. */
+	--day: var(--h-rest);
+	--day-soft: rgba(142, 138, 192, 0.13);
+}
+
+html[data-day='rest'] {
+	--day: var(--h-rest);
+	--day-soft: rgba(142, 138, 192, 0.13);
+}
+html[data-day='legs'] {
+	--day: var(--h-legs);
+	--day-soft: rgba(232, 163, 60, 0.13);
+}
+html[data-day='back'] {
+	--day: var(--h-back);
+	--day-soft: rgba(91, 141, 239, 0.13);
+}
+html[data-day='chest'] {
+	--day: var(--h-chest);
+	--day-soft: rgba(240, 101, 74, 0.13);
+}
+html[data-day='arms'] {
+	--day: var(--h-arms);
+	--day-soft: rgba(215, 107, 192, 0.13);
+}
+html[data-day='shoulders'] {
+	--day: var(--h-shoulders);
+	--day-soft: rgba(63, 193, 201, 0.13);
+}
+html[data-day='run'] {
+	--day: var(--h-run);
+	--day-soft: rgba(79, 201, 120, 0.13);
+}
+html[data-day='recovery'] {
+	--day: var(--h-recovery);
+	--day-soft: rgba(127, 214, 184, 0.13);
 }
 
 * {
@@ -79,7 +125,7 @@ header {
 }
 
 .badge.accent {
-	background: var(--accent);
+	background: var(--day);
 	color: #0f0f0f;
 }
 
@@ -114,7 +160,7 @@ header {
 
 .exercise-meta {
 	font-size: 14px;
-	color: var(--accent);
+	color: var(--day);
 	font-weight: 500;
 	margin-top: 3px;
 }
@@ -140,7 +186,7 @@ header {
 }
 
 .cap-value {
-	color: var(--green);
+	color: var(--good);
 	font-weight: 600;
 }
 
@@ -219,7 +265,7 @@ header {
 	font-size: 20px;
 	font-weight: 700;
 	margin-top: 3px;
-	color: var(--accent);
+	color: var(--day);
 }
 
 .run-stat-unit {
@@ -388,8 +434,8 @@ header {
 }
 
 .item-card.active {
-	border-color: var(--accent);
-	background: rgba(232, 255, 60, 0.07);
+	border-color: var(--day);
+	background: var(--day-soft);
 	opacity: 1;
 	padding: 18px 18px;
 }
@@ -445,8 +491,8 @@ header {
 	font-weight: 800;
 }
 .item-card.active .item-indicator {
-	border-color: var(--accent);
-	background: var(--accent);
+	border-color: var(--day);
+	background: var(--day);
 	color: #0f0f0f;
 }
 .item-card.active .item-indicator::after {
@@ -454,8 +500,8 @@ header {
 	margin-left: 1px;
 }
 .item-card.done .item-indicator {
-	border-color: var(--green);
-	background: var(--green);
+	border-color: var(--good);
+	background: var(--good);
 	color: #0f0f0f;
 }
 .item-card.done .item-indicator::after {
@@ -475,7 +521,7 @@ header {
 }
 .item-meta {
 	font-size: 13px;
-	color: var(--accent);
+	color: var(--day);
 	font-weight: 500;
 	margin-top: 2px;
 }
@@ -496,7 +542,7 @@ header {
 }
 .progress-fill {
 	height: 100%;
-	background: var(--accent);
+	background: var(--day);
 	border-radius: 2px;
 	transition: width 0.35s ease;
 }
@@ -509,7 +555,7 @@ header {
 
 /* ── Section done tick ── */
 .sec-check {
-	color: var(--green);
+	color: var(--good);
 	margin-left: 5px;
 	font-size: 10px;
 	font-weight: 700;
@@ -588,12 +634,12 @@ header {
 	align-items: center;
 	gap: 8px;
 	padding: 7px 12px;
-	background: rgba(232, 255, 60, 0.1);
-	border: 1px solid rgba(232, 255, 60, 0.25);
+	background: var(--day-soft);
+	border: 1px solid var(--day-soft);
 	border-radius: 8px;
 	margin-top: 8px;
 	font-size: 12px;
-	color: var(--accent);
+	color: var(--day);
 	font-weight: 500;
 }
 

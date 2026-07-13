@@ -282,16 +282,27 @@ function dayGroup(entry) {
 // Program-position eyebrow text, e.g. "Week 9 / 26 · Back Week · Var A".
 // CSS uppercases it. Running/recovery show the weekday instead of the week
 // type; rest days omit the Var part; outside-schedule dates show week only.
-function eyebrowLabel(entry, key) {
-	const wk = `Week ${weekNumber(key)} / ${TOTAL_WEEKS}`;
+function eyebrowLabel(entry, realKey, effectiveKey) {
+	// Week fragment reflects the REAL calendar position (realKey) so the header
+	// never disagrees with the week strip below it, never grows past the program
+	// (Outside program), and never reads week zero on day one (Opening Weekend).
+	const n = weekNumber(realKey);
+	const wk =
+		!entry || n > TOTAL_WEEKS || n < 0
+			? 'Outside program'
+			: n === 0
+				? 'Opening Weekend'
+				: `Week ${n} / ${TOTAL_WEEKS}`;
 	if (!entry) return wk;
 	if (entry.type === 'rest') return `${wk} · Rest Day`;
+	// Front/Back parity describes the borrowed workout's home week, so it keeps
+	// using effectiveKey — that segment is already correct.
 	const mid =
 		entry.type === 'running'
 			? 'Saturday'
 			: entry.type === 'recovery'
 				? 'Sunday'
-				: getWeekType(entry.type, key);
+				: getWeekType(entry.type, effectiveKey);
 	return `${wk} · ${mid} · Var ${entry.variation}`;
 }
 
@@ -319,7 +330,7 @@ function weekStripHTML(key) {
 // Shared header eyebrow row: program position left, short date + swap right.
 function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
 	return `<div class="eyebrow-row">
-        <div class="eyebrow">${eyebrowLabel(entry, effectiveKey)}</div>
+        <div class="eyebrow">${eyebrowLabel(entry, key, effectiveKey)}</div>
         <div class="eyebrow-right">
           <span class="eyebrow-date">${shortDayLabel(key)}</span>
           ${swapBtnHTML}

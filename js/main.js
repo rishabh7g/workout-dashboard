@@ -12,7 +12,10 @@
  */
 
 // ─── First paint ────────────────────────────────────────────────────────────
-pruneOldState();
+// In-program history is kept in full (~60 KB worst case) — deleting it buys
+// nothing and would destroy the only record of the program. Only clean up
+// once the whole program is over. See pruneOldState in storage.js.
+if (todayKey() > PROGRAM_END) pruneOldState();
 render();
 
 // ─── Keep "today" fresh ──────────────────────────────────────────────────────

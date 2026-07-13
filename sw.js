@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v6';
+const CACHE = 'workout-dashboard-v7';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -24,7 +24,7 @@ self.addEventListener('activate', (e) => {
 			.then((keys) =>
 				Promise.all(
 					keys
-						.filter((k) => k !== CACHE)
+						.filter((k) => k.startsWith('workout-dashboard-') && k !== CACHE)
 						.map((k) => caches.delete(k)),
 				),
 			),
@@ -32,29 +32,37 @@ self.addEventListener('activate', (e) => {
 	self.clients.claim();
 });
 
+const NETWORK_TIMEOUT_MS = 3000;
+
 self.addEventListener('fetch', (e) => {
-	// Network-first for same-origin GETs: always try the network so a fresh
-	// deploy shows up on the very next load, and fall back to cache only when
-	// offline. This avoids the old cache-first behaviour where new code took an
-	// extra reload to appear, and the unhandled rejection when offline.
-	if (
-		e.request.method === 'GET' &&
-		e.request.url.startsWith(self.location.origin)
-	) {
-		e.respondWith(
-			fetch(e.request)
-				.then((res) => {
-					if (res.ok) {
-						const clone = res.clone();
-						caches.open(CACHE).then((c) => c.put(e.request, clone));
-					}
-					return res;
-				})
-				.catch(() =>
-					caches
-						.match(e.request)
-						.then((cached) => cached || caches.match('./index.html')),
-				),
-		);
-	}
+	// Network-first with a short race: healthy network wins inside 3s so a
+	// fresh deploy still shows up on the very next load (issue #5 invariant).
+	// On a stalling network the cache answers in ≤3s and the background fetch
+	// still updates the cache, so the deploy lands one load later.
+	if (e.request.method !== 'GET') return;
+	if (new URL(e.request.url).origin !== self.location.origin) return;
+	e.respondWith((async () => {
+		const network = fetch(e.request).then((res) => {
+			if (res.ok && res.status !== 206) {
+				const clone = res.clone();
+				e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {}));
+			}
+			return res;
+		});
+		const winner = await Promise.race([
+			network.catch(() => undefined),
+			new Promise((r) => setTimeout(r, NETWORK_TIMEOUT_MS)),
+		]);
+		if (winner) return winner;                 // healthy network: deploy visible THIS load
+		const cached = await caches.match(e.request);
+		if (cached) return cached;                 // slow/offline: instant from cache
+		try { return await network; }              // uncached asset: wait the network out
+		catch {
+			if (e.request.mode === 'navigate') {
+				const shell = (await caches.match('./')) || (await caches.match('./index.html'));
+				if (shell) return shell;
+			}
+			return Response.error();               // explicit, spec-clean network error
+		}
+	})());
 });

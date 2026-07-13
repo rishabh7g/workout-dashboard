@@ -754,6 +754,18 @@ header {
 	font-weight: 500;
 }
 
+.storage-warning {
+	padding: 8px 12px;
+	background: rgba(226, 161, 61, 0.14);
+	border: 1px solid var(--warn);
+	border-radius: 8px;
+	margin-bottom: 8px;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--warn);
+	font-weight: 600;
+}
+
 .swap-sheet-overlay {
 	position: fixed;
 	inset: 0;

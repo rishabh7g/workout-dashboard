@@ -74,17 +74,31 @@ function loadState(key) {
 	return new Set();
 }
 
-// Drop per-day completion keys older than two weeks so localStorage doesn't
-// grow for the whole life of the program. Each key is `ws-YYYY-MM-DD-...`, so
-// the date to compare is the 10 chars right after the `ws-` prefix.
+// Retention decision: in-program history is kept in full (~60 KB worst case,
+// 184 program days × ~150–300 B against a ~5 MB quota) — the prune buys nothing
+// in-program and would permanently destroy the only record of the program (a
+// workout variation recurs every 28 days, so a 14-day prune wipes the very
+// last-session data the "add 2.5 kg when 12 reps feels easy" rule needs). So
+// this only runs after PROGRAM_END (gated at the call site in main.js).
+//
+// Milestone-06 constraint: future stores must AVOID the `ws-` key prefix. Old
+// clients may still run old code that prunes eagerly by that prefix, and this
+// filter keys off it too — the planned `exlog`/`hist` stores sidestep it by
+// using a different prefix.
+//
+// This only touches real day records (`ws-YYYY-MM-DD-...`), NOT the boot probe
+// (`ws-probe`) or quarantined corrupt records (`ws-corrupt-*`) — their
+// slice(3,13) is not a valid date and must never be pruned.
 function pruneOldState() {
 	try {
 		const d = new Date();
 		d.setDate(d.getDate() - 14);
 		const cutoff = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		// Real day keys look like ws-YYYY-MM-DD optionally followed by -type-var.
+		const dayKeyRe = /^ws-\d{4}-\d{2}-\d{2}(-|$)/;
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
-			if (k && k.startsWith('ws-') && k.slice(3, 13) < cutoff) {
+			if (k && dayKeyRe.test(k) && k.slice(3, 13) < cutoff) {
 				localStorage.removeItem(k);
 			}
 		}

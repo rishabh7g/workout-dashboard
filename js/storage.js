@@ -165,3 +165,26 @@ function saveBorrows(b) {
 		localStorage.setItem('day-borrow', JSON.stringify(b));
 	} catch (e) {}
 }
+
+// The day-borrow map grows monotonically: every borrow ever made is keyed by
+// its (then-current) date via doBorrow, but resolution only ever reads
+// borrows[todayKey()] (ui.js render). A key strictly before today is therefore
+// unreachable by construction — pure dead weight, including the orphans the
+// pre-fix two-clock swap-sheet bug wrote. Unlike ws- history (kept in-program,
+// pruned only post-PROGRAM_END — main.js call site), these entries can never
+// be read again, so this runs at boot unconditionally regardless of the ws-
+// retention policy. Today's and any future-dated key survive.
+function pruneOldBorrows() {
+	try {
+		const b = loadBorrows();
+		const today = todayKey();
+		let changed = false;
+		for (const k of Object.keys(b)) {
+			if (k < today) {
+				delete b[k];
+				changed = true;
+			}
+		}
+		if (changed) saveBorrows(b);
+	} catch (e) {}
+}

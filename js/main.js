@@ -16,6 +16,10 @@
 // nothing and would destroy the only record of the program. Only clean up
 // once the whole program is over. See pruneOldState in storage.js.
 if (todayKey() > PROGRAM_END) pruneOldState();
+// Dead borrows (keys before today) are unreachable by construction, so this
+// runs every boot regardless of the post-program ws- gate above. See
+// pruneOldBorrows in storage.js.
+pruneOldBorrows();
 render();
 
 // ─── Keep "today" fresh ──────────────────────────────────────────────────────

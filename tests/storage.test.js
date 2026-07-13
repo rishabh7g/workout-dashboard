@@ -20,12 +20,14 @@ function makeStore(seed = {}) {
 }
 
 // Load storage.js in a fresh context and expose its top-level functions/lets.
-function load(store) {
-	const ctx = { localStorage: store, console };
+function load(store, today = '2026-07-14') {
+	// todayKey lives in workout.js at runtime (loaded before main.js calls
+	// pruneOldBorrows); inject a stub so storage.js can resolve it here.
+	const ctx = { localStorage: store, console, todayKey: () => today };
 	vm.createContext(ctx);
 	vm.runInContext(
 		src +
-			'\nthis.__api = { saveState, loadState, get definitionChanged(){return definitionChanged;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;} };',
+			'\nthis.__api = { saveState, loadState, loadBorrows, saveBorrows, pruneOldBorrows, get definitionChanged(){return definitionChanged;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;} };',
 		ctx
 	);
 	return ctx.__api;
@@ -101,6 +103,44 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	assert.strictEqual(set.size, 0);
 	assert.strictEqual(store.getItem('ws-corrupt-2026-07-14-legs-A'), '{not json');
 	console.log('PASS 4: corrupt record quarantined (regression guard for #51)');
+}
+
+// 5. pruneOldBorrows (#59): past-dated borrow keys removed at boot; today's and
+//    future-dated keys survive; ws- records untouched; round-trip still works.
+{
+	const store = makeStore({
+		'day-borrow': JSON.stringify({
+			'2026-07-12': '2026-07-15', // past — orphan from the two-clock bug
+			'2026-07-13': '2026-07-16', // past
+			'2026-07-14': '2026-07-18', // today — must survive
+			'2026-07-20': '2026-07-22', // future — must survive
+		}),
+		'ws-2026-07-10-legs-A': JSON.stringify({ v: 1, n: 3, done: ['ex-1'] }),
+	});
+	const api = load(store, '2026-07-14');
+	api.pruneOldBorrows();
+	const b = api.loadBorrows();
+	assert.deepStrictEqual(
+		Object.keys(b).sort(),
+		['2026-07-14', '2026-07-20'],
+		'only today+future borrows survive'
+	);
+	assert.strictEqual(b['2026-07-14'], '2026-07-18', 'today borrow still resolves');
+	assert.strictEqual(b['2026-07-20'], '2026-07-22', 'future borrow preserved');
+	// ws- record untouched by borrow pruning.
+	assert.ok(store.getItem('ws-2026-07-10-legs-A'), 'ws- record untouched');
+	console.log('PASS 5: pruneOldBorrows drops past-dated keys only (#59)');
+}
+
+// 5b. No-op safety: empty/absent map and an all-future map must not throw and
+//     must not rewrite storage needlessly.
+{
+	const store = makeStore(); // no day-borrow at all
+	const api = load(store, '2026-07-14');
+	api.pruneOldBorrows();
+	assert.strictEqual(Object.keys(api.loadBorrows()).length, 0, 'absent map stays empty');
+	assert.strictEqual(store.getItem('day-borrow'), null, 'no needless write when nothing to prune');
+	console.log('PASS 5b: pruneOldBorrows is a safe no-op with no dead entries (#59)');
 }
 
 console.log('\nALL TESTS PASSED');

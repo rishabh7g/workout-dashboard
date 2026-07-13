@@ -130,36 +130,27 @@ function updateProgress(activeId) {
 				: 'none';
 	}
 
-	// Completion banner
-	if (
-		done === total &&
-		total > 0 &&
-		!document.getElementById('done-banner')
-	) {
-		const el = document.createElement('div');
-		el.id = 'done-banner';
-		el.className = 'done-banner';
-		const isProgramEnd = cachedDayKey === PROGRAM_END;
-		const title = isProgramEnd
-			? 'Program Complete!'
-			: 'Workout Complete!';
-		const sub = isProgramEnd
-			? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
-			: 'Great session. Hydrate and rest well.';
-		el.innerHTML = `<div class="done-emoji">🎉</div>
-      <div class="done-title">${title}</div>
-      <div class="done-sub">${sub}</div>`;
-		const content = document.getElementById('wcontent');
-		if (content) content.insertBefore(el, content.firstChild);
-		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	// Completion banner — derived from state, synced in both directions so a
+	// corrected mis-tap (untick after completing) removes it on the same tap.
+	if (done === total && total > 0) {
+		if (!document.getElementById('done-banner')) {
+			const content = document.getElementById('wcontent');
+			if (content) {
+				content.insertAdjacentHTML('afterbegin', doneBannerHTML());
+				// Only a live completion scrolls the fresh banner into view.
+				document
+					.getElementById('done-banner')
+					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		}
+	} else {
+		document.getElementById('done-banner')?.remove();
 	}
 }
 
 function resetProgress() {
 	completedItems = new Set();
 	saveState(cachedKey);
-	const banner = document.getElementById('done-banner');
-	if (banner) banner.remove();
 	const activeId = allItems[0]?.id;
 	for (const item of allItems) {
 		const el = document.querySelector(`[data-id="${item.id}"]`);
@@ -174,6 +165,19 @@ function resetProgress() {
 }
 
 // ─── HTML builders ───────────────────────────────────────────────────────────
+function doneBannerHTML() {
+	const isProgramEnd = cachedDayKey === PROGRAM_END;
+	const title = isProgramEnd ? 'Program Complete!' : 'Workout Complete!';
+	const sub = isProgramEnd
+		? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
+		: 'Great session. Hydrate and rest well.';
+	return `<div id="done-banner" class="done-banner">
+      <div class="done-emoji">🎉</div>
+      <div class="done-title">${title}</div>
+      <div class="done-sub">${sub}</div>
+    </div>`;
+}
+
 function itemCardHTML(item, activeId) {
 	const isDone = completedItems.has(item.id);
 	const isActive = !isDone && item.id === activeId;
@@ -395,4 +399,12 @@ function render() {
     <div id="wcontent" class="content">
       ${workoutContentHTML(workout)}
     </div>`;
+
+	// Derive the completion banner from state on this paint. A reloaded/finished
+	// day (reload, borrow/undo, midnight-refresh) shows it with no scroll jump.
+	if (done === total && total > 0) {
+		document
+			.getElementById('wcontent')
+			?.insertAdjacentHTML('afterbegin', doneBannerHTML());
+	}
 }

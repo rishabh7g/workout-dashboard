@@ -339,6 +339,19 @@ function insertStorageWarning() {
 		);
 }
 
+// The stored item count no longer matched the current workout definition (an
+// exercise was added/removed in data.js). loadState has already dropped any
+// now-unknown ids and set `definitionChanged`; this surfaces a one-line notice
+// via the same header plumbing as the storage warning.
+function insertDefinitionNotice() {
+	document
+		.querySelector('header')
+		?.insertAdjacentHTML(
+			'afterbegin',
+			`<div class="storage-warning">⚠ Workout definition changed — progress re-checked.</div>`
+		);
+}
+
 // Called once on load (main.js) and again after any state change (toggle/borrow).
 function render() {
 	const key = todayKey();
@@ -471,6 +484,9 @@ function render() {
 	}
 
 	if (!storageOK) insertStorageWarning();
+	// loadState (line above) sets definitionChanged when the stored item count no
+	// longer matches this workout — tell the user their progress was re-checked.
+	if (definitionChanged) insertDefinitionNotice();
 
 	// Expose the (possibly banner-inflated) sticky-header height so cards and the
 	// done-banner can offset scrollIntoView by it via `scroll-margin-top` and not

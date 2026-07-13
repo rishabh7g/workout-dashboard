@@ -36,15 +36,42 @@ try {
 	storageOK = false;
 }
 
+// Set by loadState when a v1 record's stored item count no longer matches the
+// current workout definition (an exercise was inserted/removed in data.js). The
+// UI reads this after each load to surface an honest "progress re-checked"
+// notice via the same header plumbing as the storage warning.
+let definitionChanged = false;
+
 // Build the storage key for a given date + schedule entry.
 function stateKey(dayKey, entry) {
 	return entry ? `${dayKey}-${entry.type}-${entry.variation || 'x'}` : dayKey;
 }
 
 // ─── Per-day completion ─────────────────────────────────────────────────────
+//
+// Records are stored as a v1 schema envelope: { v, n, done }. `v` is the schema
+// version, `n` is the item count at save time (allItems.length), and `done` is
+// the array of ticked ids. The count lets loadState detect a workout-definition
+// change: item ids are positional (`${sec}-${counts[sec]}`, js/workout.js), so
+// inserting/removing an exercise in data.js would otherwise silently re-bind a
+// stored tick to a *different* exercise. The envelope turns that into an
+// explicit, honest "progress re-checked" state.
+//
+// The key is still `ws-<key>` (unchanged), so versioned records keep matching
+// pruneOldState's `^ws-\d{4}-\d{2}-\d{2}` day-key regex.
+//
+// Residual limitation: a reorder that keeps the count identical is still
+// undetectable with positional ids — n only catches count changes. The
+// mitigation is the schedule-validator suite (milestone 01) catching accidental
+// data edits, plus the deliberate decision NOT to change the id scheme here
+// (milestone 04's redesign must keep ids byte-stable; a slug-id migration was
+// considered and deferred as not worth the migration risk mid-program).
 function saveState(key) {
 	try {
-		localStorage.setItem('ws-' + key, JSON.stringify([...completedItems]));
+		localStorage.setItem(
+			'ws-' + key,
+			JSON.stringify({ v: 1, n: allItems.length, done: [...completedItems] })
+		);
 	} catch (e) {
 		// Never throw — but record that this write did NOT persist so the UI can
 		// warn the user instead of pretending the tick was saved.
@@ -52,6 +79,7 @@ function saveState(key) {
 	}
 }
 function loadState(key) {
+	definitionChanged = false;
 	let s = null;
 	try {
 		s = localStorage.getItem('ws-' + key);
@@ -61,7 +89,26 @@ function loadState(key) {
 	}
 	if (s) {
 		try {
-			return new Set(JSON.parse(s));
+			const parsed = JSON.parse(s);
+			// Legacy v0: a bare id array, written before the schema envelope. Accept
+			// as-is so an upgrade never drops a user's ticks on the first read.
+			if (Array.isArray(parsed)) {
+				return new Set(parsed);
+			}
+			// v1 envelope. If the stored item count no longer matches today's list,
+			// the workout definition changed — keep only ids that still exist in the
+			// current list (drop unknown ids). Worst case a tick is dropped, never
+			// re-shown on a different exercise, and we flag the UI to explain why.
+			if (parsed && Array.isArray(parsed.done)) {
+				if (parsed.n !== allItems.length) {
+					definitionChanged = true;
+					const current = new Set(allItems.map((i) => i.id));
+					return new Set(parsed.done.filter((id) => current.has(id)));
+				}
+				return new Set(parsed.done);
+			}
+			// Parsed cleanly but is an unrecognized shape — fall through to empty
+			// state rather than quarantining valid JSON.
 		} catch (e) {
 			// Corrupt record. Preserve the raw value under a quarantine key FIRST
 			// (in its own try — quarantining must never throw) so the next tap

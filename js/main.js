@@ -27,6 +27,19 @@ function refreshIfDayChanged() {
 document.addEventListener('visibilitychange', refreshIfDayChanged);
 window.addEventListener('focus', refreshIfDayChanged);
 
+// Rollover safety net for the always-visible case (visibilitychange/focus
+// never fire if the app stays on screen across midnight).
+function scheduleMidnightRefresh() {
+	const now = new Date();
+	const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+	setTimeout(() => {
+		refreshIfDayChanged();
+		scheduleMidnightRefresh();
+	}, next - now + 1000);
+}
+scheduleMidnightRefresh();
+setInterval(refreshIfDayChanged, 60000); // belt-and-braces; no-ops when day unchanged
+
 // ─── Service Worker (offline support) ────────────────────────────────────────
 if ('serviceWorker' in navigator) {
 	navigator.serviceWorker.register('./sw.js').catch(() => {});

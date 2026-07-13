@@ -66,6 +66,16 @@ function closeSwapSheet() {
 // Record that "today" should follow targetKey's workout, then re-render.
 function doBorrow(targetKey) {
 	const tk = todayKey();
+	// Skip a provable no-op: if the target's workout is identical to today's
+	// own (same type + variation), it collapses onto today's own storage key,
+	// so a borrow entry would only make the banner assert a distinction the
+	// storage layer doesn't have. Close the sheet and change nothing.
+	const own = SCHEDULE[tk];
+	const target = SCHEDULE[targetKey];
+	if (own && target && stateKey(tk, own) === stateKey(tk, target)) {
+		closeSwapSheet();
+		return;
+	}
 	const b = loadBorrows();
 	b[tk] = targetKey;
 	saveBorrows(b);

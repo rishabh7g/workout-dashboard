@@ -83,8 +83,19 @@ function undoBorrow() {
 // Tick or untick an item, then recompute which item is "active" (the first
 // not-yet-done one) and repaint just the card classes — no full re-render.
 function toggleItem(id) {
+	const wasOK = storageOK;
 	completedItems.has(id) ? completedItems.delete(id) : completedItems.add(id);
 	saveState(cachedKey);
+
+	// If this tap is the one that revealed storage is failing, re-render so the
+	// warning banner appears mid-session. render() reloads completedItems from
+	// the (now stale) stored copy, so keep the live in-memory set and restore it
+	// afterward — the tick stays ticked; only its persistence is lost.
+	if (wasOK && !storageOK) {
+		const live = completedItems;
+		render();
+		completedItems = live;
+	}
 
 	// Recompute which item is active
 	const activeId = allItems.find((i) => !completedItems.has(i.id))?.id;
@@ -316,6 +327,18 @@ function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
       </div>`;
 }
 
+// When storage isn't persisting, prepend a persistent warning to the (sticky)
+// header so it stays visible. Injected via the DOM only when storage is failing,
+// so the normal-path markup is untouched when storage works.
+function insertStorageWarning() {
+	document
+		.querySelector('header')
+		?.insertAdjacentHTML(
+			'afterbegin',
+			`<div class="storage-warning">⚠ Progress can't be saved on this device — ticks will be lost when you close the app.</div>`
+		);
+}
+
 // Called once on load (main.js) and again after any state change (toggle/borrow).
 function render() {
 	const key = todayKey();
@@ -349,6 +372,7 @@ function render() {
           <div style="margin-top:12px">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </div>`;
+		if (!storageOK) insertStorageWarning();
 		return;
 	}
 
@@ -368,6 +392,7 @@ function render() {
           <div class="rest-subtitle">Sleep well. Let the muscles rebuild.</div>
         </div>
       </div>`;
+		if (!storageOK) insertStorageWarning();
 		return;
 	}
 
@@ -395,6 +420,7 @@ function render() {
           <div style="margin-top:12px">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
         </div>
       </div>`;
+		if (!storageOK) insertStorageWarning();
 		return;
 	}
 
@@ -433,6 +459,8 @@ function render() {
 			.getElementById('wcontent')
 			?.insertAdjacentHTML('afterbegin', doneBannerHTML());
 	}
+
+	if (!storageOK) insertStorageWarning();
 
 	// Expose the (possibly banner-inflated) sticky-header height so cards and the
 	// done-banner can offset scrollIntoView by it via `scroll-margin-top` and not

@@ -23,6 +23,19 @@ let allItems = []; // the full ordered item list for today
 let cachedKey = null;
 let cachedDayKey = null; // plain YYYY-MM-DD, so we can detect a midnight rollover
 
+// Whether localStorage actually persists. An app whose whole value is a
+// trustworthy record must never *look* saved while silently dropping ticks, so
+// we track this and let the UI surface a warning when it goes false.
+// Boot probe: prove a round-trip write works right now (private mode, disabled
+// site storage, or a full quota all throw here).
+let storageOK = true;
+try {
+	localStorage.setItem('ws-probe', '1');
+	localStorage.removeItem('ws-probe');
+} catch (e) {
+	storageOK = false;
+}
+
 // Build the storage key for a given date + schedule entry.
 function stateKey(dayKey, entry) {
 	return entry ? `${dayKey}-${entry.type}-${entry.variation || 'x'}` : dayKey;
@@ -32,13 +45,32 @@ function stateKey(dayKey, entry) {
 function saveState(key) {
 	try {
 		localStorage.setItem('ws-' + key, JSON.stringify([...completedItems]));
-	} catch (e) {}
+	} catch (e) {
+		// Never throw — but record that this write did NOT persist so the UI can
+		// warn the user instead of pretending the tick was saved.
+		storageOK = false;
+	}
 }
 function loadState(key) {
+	let s = null;
 	try {
-		const s = localStorage.getItem('ws-' + key);
-		if (s) return new Set(JSON.parse(s));
-	} catch (e) {}
+		s = localStorage.getItem('ws-' + key);
+	} catch (e) {
+		storageOK = false;
+		return new Set();
+	}
+	if (s) {
+		try {
+			return new Set(JSON.parse(s));
+		} catch (e) {
+			// Corrupt record. Preserve the raw value under a quarantine key FIRST
+			// (in its own try — quarantining must never throw) so the next tap
+			// can't overwrite unreadable data with a fresh one-item array.
+			try {
+				localStorage.setItem('ws-corrupt-' + key, s);
+			} catch (e2) {}
+		}
+	}
 	return new Set();
 }
 

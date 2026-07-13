@@ -102,6 +102,7 @@ function buildItemList(workout) {
 		});
 	}
 
+	// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
 	if (workout.armConditioning) {
 		addSetsReps('ankle', 'Single-leg balance hold', 3, '30 sec each', null, {
 			note: 'Progress: eyes closed',

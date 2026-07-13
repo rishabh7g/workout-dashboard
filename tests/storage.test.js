@@ -27,7 +27,7 @@ function load(store, today = '2026-07-14') {
 	vm.createContext(ctx);
 	vm.runInContext(
 		src +
-			'\nthis.__api = { saveState, loadState, loadBorrows, saveBorrows, pruneOldBorrows, get definitionChanged(){return definitionChanged;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;} };',
+			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, get definitionChanged(){return definitionChanged;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
 		ctx
 	);
 	return ctx.__api;
@@ -141,6 +141,63 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	assert.strictEqual(Object.keys(api.loadBorrows()).length, 0, 'absent map stays empty');
 	assert.strictEqual(store.getItem('day-borrow'), null, 'no needless write when nothing to prune');
 	console.log('PASS 5b: pruneOldBorrows is a safe no-op with no dead entries (#59)');
+}
+
+// 6. Concurrent-tab merge (#61): a context that loaded empty ticks one item and
+//    must NOT clobber the ticks another context already persisted. The final
+//    stored set is the UNION of both sessions' completions.
+{
+	// Context A already persisted ex-1..ex-3 for this workout.
+	const store = makeStore({
+		'ws-2026-07-14-legs-A': JSON.stringify({ v: 1, n: 3, done: ['ex-1', 'ex-2', 'ex-3'] }),
+	});
+	// Context B rendered before A saved, so its in-memory set is empty.
+	const api = load(store);
+	api.allItems = items3;
+	api.completedItems = new Set(); // stale empty view
+	// B ticks ex-3 (already done in storage) — an untick from B's stale view is
+	// still authoritative for that one id; every other id comes from storage.
+	// Simpler additive case: B ticks a fresh id and A's ticks must survive.
+	api.allItems = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }, { id: 'ex-4' }];
+	// Re-seed with matching n so no definition-change drop interferes.
+	store.setItem('ws-2026-07-14-legs-A', JSON.stringify({ v: 1, n: 4, done: ['ex-1', 'ex-2', 'ex-3'] }));
+	api.toggleAndSave('2026-07-14-legs-A', 'ex-4');
+	const raw = JSON.parse(store.getItem('ws-2026-07-14-legs-A'));
+	assert.deepStrictEqual(raw.done.sort(), ['ex-1', 'ex-2', 'ex-3', 'ex-4'], 'union of both sessions survives');
+	assert.deepStrictEqual([...api.completedItems].sort(), ['ex-1', 'ex-2', 'ex-3', 'ex-4']);
+	console.log('PASS 6: concurrent tick merges (union), no clobber (#61)');
+}
+
+// 6b. Per-item authority: an UNtick from one context removes only that id and
+//     leaves the other context's ticks intact.
+{
+	const store = makeStore({
+		'ws-2026-07-14-legs-A': JSON.stringify({ v: 1, n: 3, done: ['ex-1', 'ex-2', 'ex-3'] }),
+	});
+	const api = load(store);
+	api.allItems = items3;
+	api.completedItems = new Set(['ex-1', 'ex-2', 'ex-3']); // this context sees all done
+	api.toggleAndSave('2026-07-14-legs-A', 'ex-2'); // untick ex-2
+	const raw = JSON.parse(store.getItem('ws-2026-07-14-legs-A'));
+	assert.deepStrictEqual(raw.done.sort(), ['ex-1', 'ex-3'], 'only the toggled id removed');
+	console.log('PASS 6b: untick is per-item, spares other ticks (#61)');
+}
+
+// 6c. Storage-failure path (#51): when storageOK is false the re-read is skipped
+//     so in-memory ticks are NOT dropped, and the write still records failure.
+{
+	const store = makeStore();
+	const api = load(store);
+	api.allItems = items3;
+	api.storageOK = false; // pretend the boot probe failed
+	api.completedItems = new Set(['ex-1', 'ex-2']); // ticks held only in memory
+	api.toggleAndSave('2026-07-14-legs-A', 'ex-3'); // tick a third, in memory
+	assert.deepStrictEqual(
+		[...api.completedItems].sort(),
+		['ex-1', 'ex-2', 'ex-3'],
+		'broken store must keep all in-memory ticks (no re-read wipe)'
+	);
+	console.log('PASS 6c: storage-failure path keeps in-memory ticks (#51 x #61)');
 }
 
 console.log('\nALL TESTS PASSED');

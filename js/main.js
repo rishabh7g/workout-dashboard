@@ -34,6 +34,16 @@ function refreshIfDayChanged() {
 document.addEventListener('visibilitychange', refreshIfDayChanged);
 window.addEventListener('focus', refreshIfDayChanged);
 
+// ─── Cross-tab sync ───────────────────────────────────────────────────────────
+// The `storage` event fires only in OTHER same-profile contexts (never the one
+// that made the write), so when a background tab hears today's ticks or the
+// day-borrow map change under it, repaint from storage instead of holding a
+// stale screen. Paired with the read-modify-write merge in toggleItem, two open
+// contexts stay converged instead of silently clobbering each other's ticks.
+window.addEventListener('storage', (e) => {
+	if (e.key === 'ws-' + cachedKey || e.key === 'day-borrow') render();
+});
+
 // Rollover safety net for the always-visible case (visibilitychange/focus
 // never fire if the app stays on screen across midnight).
 function scheduleMidnightRefresh() {

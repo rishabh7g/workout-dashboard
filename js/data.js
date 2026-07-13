@@ -16,7 +16,7 @@
 const PROGRAM_START  = '2026-05-23';
 const PROGRAM_END    = '2026-11-22';
 const PROGRAM_LABEL  = 'May 23 – Nov 22, 2026';
-const CYCLE_ANCHOR   = new Date(2026, 4, 25); // Mon May 25 = Back Week, week 0
+const CYCLE_ANCHOR   = new Date(2026, 4, 25); // Mon May 25 — cycle anchor. Displayed as Week 1/26 by weekNumber(); getWeekType's internal parity index 0 = Back Week.
 
 // ─── Schedule ──────────────────────────────────────────────────────────────
 const SCHEDULE = {
@@ -479,6 +479,7 @@ const WORKOUTS = {
 		A: {
 			title: 'Arms — Biceps',
 			hasStairmaster: true,
+			// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
 			armConditioning: true,
 			exercises: [
 				{ name: 'Pull-ups', sets: 3, reps: 'max' },

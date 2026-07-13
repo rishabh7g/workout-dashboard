@@ -507,11 +507,14 @@ header {
 	margin-top: 7px;
 }
 .item-card.active .scheme {
-	font-size: 44px;
+	font-size: clamp(26px, 10vw, 44px);
 	color: var(--day);
 }
 .item-card.active .scheme-timed .scheme-n {
-	font-size: 44px;
+	font-size: clamp(26px, 10vw, 44px);
+}
+.item-card.active .item-body {
+	min-width: 55%;
 }
 .item-card.active .scheme-label {
 	display: block;

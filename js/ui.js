@@ -94,8 +94,10 @@ function undoBorrow() {
 // not-yet-done one) and repaint just the card classes — no full re-render.
 function toggleItem(id) {
 	const wasOK = storageOK;
-	completedItems.has(id) ? completedItems.delete(id) : completedItems.add(id);
-	saveState(cachedKey);
+	// Read-modify-write (storage.js): merge with what's currently in storage so a
+	// concurrent tab's ticks are not clobbered by our in-memory set. Falls back
+	// to a plain in-memory toggle when storage is broken.
+	toggleAndSave(cachedKey, id);
 
 	// If this tap is the one that revealed storage is failing, re-render so the
 	// warning banner appears mid-session. render() reloads completedItems from

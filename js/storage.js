@@ -78,6 +78,33 @@ function saveState(key) {
 		storageOK = false;
 	}
 }
+// Read-modify-write a single tick so two same-profile contexts (an installed
+// PWA + a stray browser tab sharing the profile's storage) CONVERGE per-item
+// instead of clobbering the whole array. Without this, a context that loaded
+// empty and ticks one item would save just `[thatItem]`, erasing every tick the
+// other context had persisted. So: capture the user's intent (add vs remove)
+// from what they currently see, then — when storage is healthy — re-load the
+// freshly-stored done-set (it may already carry ticks another tab made since
+// our last render) and apply only this one toggle to it before saving. The
+// union of both sessions' completions survives; only the single toggled id is
+// authoritative from this action.
+//
+// Storage-failure interaction (milestone-01 ticket): when storage is broken we
+// must NOT re-read — loadState returns an empty Set on a failed store, and
+// replacing the in-memory set with it would silently drop the ticks we are
+// deliberately keeping visible while warning the user. The re-check after
+// loadState covers the case where storage breaks DURING this read.
+function toggleAndSave(key, id) {
+	const adding = !completedItems.has(id);
+	if (storageOK) {
+		const merged = loadState(key);
+		if (storageOK) completedItems = merged;
+	}
+	if (adding) completedItems.add(id);
+	else completedItems.delete(id);
+	saveState(key);
+	return adding;
+}
 function loadState(key) {
 	definitionChanged = false;
 	let s = null;

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="../_ds/modernist-86c43557-9db6-4330-a863-9ea3a48fad23/styles.css">
+  <script src="../_ds/modernist-86c43557-9db6-4330-a863-9ea3a48fad23/_ds_bundle.js"></script>
+  <script src="workout-data.js"></script>
+  <style>
+    body { margin: 0; background: #dddbd9; }
+    a { color: var(--color-accent); } a:hover { color: var(--color-accent-600); }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px 20px;background:#dddbd9">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+
+    <div style="height:100%;position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)" data-screen-label="Modernist workout app">
+
+      <div style="flex:1;overflow-y:auto;padding:64px 0 40px">
+
+        <!-- ── Header ── -->
+        <div style="padding:10px 18px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-accent-700);font-family:var(--font-heading)">{{ kicker }}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:var(--color-neutral-600);font-family:var(--font-heading);white-space:nowrap">{{ dateLabel }}</div>
+              <div onClick="{{ openSheet }}" title="Follow a different day" style="width:30px;height:30px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--color-text);background:transparent" style-hover="background:var(--color-accent-100)" style-active="background:var(--color-accent-200)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"><path d="M8 3 4 7l4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg>
+              </div>
+            </div>
+          </div>
+
+          <div style="{{ titleStyle }}">{{ title }}</div>
+
+          <!-- week strip -->
+          <div style="display:flex;gap:4px;margin-top:14px">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+              <div style="flex:1;min-width:0">
+                <div style="{{ d.barStyle }}"></div>
+                <div style="{{ d.letterStyle }}">{{ d.letter }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ hasBanner }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;background:var(--color-accent-100);padding:8px 10px;margin-top:12px">
+              <span style="font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-800);font-family:var(--font-heading)">{{ bannerText }}</span>
+              <span onClick="{{ undoBorrow }}" style="margin-left:auto;font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:var(--font-heading)">Undo</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+              <div style="display:flex;gap:2px;flex:1">
+                <sc-for list="{{ segs }}" as="s" hint-placeholder-count="10">
+                  <div style="{{ s.style }}"></div>
+                </sc-for>
+              </div>
+              <div style="font-size:12px;font-weight:800;font-family:var(--font-heading);white-space:nowrap">{{ progressText }}</div>
+            </div>
+          </sc-if>
+
+          <div style="height:2px;background:var(--color-divider);margin-top:14px"></div>
+        </div>
+
+        <!-- ── Rest day poster ── -->
+        <sc-if value="{{ isRest }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:16px 18px 0;background:var(--color-accent);color:var(--color-bg);padding:24px 20px;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+            <div style="font-family:var(--font-heading);font-weight:800;font-size:44px;line-height:0.98;letter-spacing:-0.01em;text-transform:uppercase;text-wrap:balance">Rest &amp; Recover</div>
+            <div style="font-size:13px;opacity:0.9">Sleep well. Let the muscles rebuild.</div>
+          </div>
+        </sc-if>
+
+        <!-- ── Completion ── -->
+        <sc-if value="{{ allDone }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:16px 18px 0;background:var(--color-neutral-900);color:var(--color-bg);padding:20px 18px;display:flex;flex-direction:column;gap:6px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 6 9 17l-5-5"></path></svg>
+            <div style="font-family:var(--font-heading);font-weight:800;font-size:24px;line-height:1;letter-spacing:-0.01em;text-transform:uppercase">Workout complete</div>
+            <div style="font-size:12px;opacity:0.75">Great session. Hydrate and rest well.</div>
+          </div>
+        </sc-if>
+
+        <!-- ── Checklist ── -->
+        <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 18px">
+            <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:22px;padding-bottom:6px;border-bottom:2px solid var(--color-divider)">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-heading)">{{ sec.name }}</div>
+                  <sc-if value="{{ sec.done }}" hint-placeholder-val="{{ false }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="square"><path d="M20 6 9 17l-5-5"></path></svg>
+                  </sc-if>
+                  <div style="margin-left:auto;font-size:10px;font-weight:800;color:var(--color-neutral-500);font-family:var(--font-heading)">{{ sec.count }}</div>
+                </div>
+
+                <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3">
+                  <div onClick="{{ it.toggle }}" style="{{ it.rowStyle }}" style-active="background:var(--color-neutral-200)">
+                    <div style="{{ it.indStyle }}">
+                      <sc-if value="{{ it.isActive }}" hint-placeholder-val="{{ false }}">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+                      </sc-if>
+                      <sc-if value="{{ it.isDone }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M20 6 9 17l-5-5"></path></svg>
+                      </sc-if>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+                        <span style="{{ it.nameStyle }}">{{ it.label }}</span>
+                        <sc-if value="{{ it.first }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:9px;font-weight:800;letter-spacing:0.08em;border:1px solid var(--color-accent);color:var(--color-accent-700);padding:1px 6px;font-family:var(--font-heading)">FIRST</span>
+                        </sc-if>
+                      </div>
+                      <sc-if value="{{ it.sub }}" hint-placeholder-val="{{ false }}"><div style="{{ it.subStyle }}">{{ it.sub }}</div></sc-if>
+                      <sc-if value="{{ it.note }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:var(--color-neutral-600);line-height:1.45;margin-top:3px">{{ it.note }}</div></sc-if>
+                      <sc-if value="{{ it.cap }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--color-accent-700);margin-top:4px;font-family:var(--font-heading)">Cap · {{ it.cap }}</div></sc-if>
+                      <sc-if value="{{ it.warn }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;align-items:flex-start;gap:5px;font-size:11.5px;color:var(--color-accent-700);line-height:1.4;margin-top:4px">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0;margin-top:2px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                          <span>{{ it.warn }}</span>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <sc-if value="{{ it.sets }}" hint-placeholder-val="{{ false }}">
+                      <div style="text-align:right;flex-shrink:0">
+                        <div style="{{ it.numStyle }}">{{ it.sets }}<span style="font-size:0.6em;opacity:0.5;margin:0 2px">×</span>{{ it.reps }}</div>
+                        <sc-if value="{{ it.isActive }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:8px;font-weight:800;letter-spacing:0.12em;color:var(--color-neutral-600);margin-top:4px;font-family:var(--font-heading)">SETS × REPS</div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+
+            <sc-if value="{{ showPrinciples }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="display:flex;align-items:center;margin-top:22px;padding-bottom:6px;border-bottom:2px solid var(--color-divider)">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-heading)">Principles</div>
+                </div>
+                <sc-for list="{{ principles }}" as="p" hint-placeholder-count="4">
+                  <div style="font-size:11.5px;color:var(--color-neutral-700);line-height:1.5;padding:9px 0;border-bottom:1px solid var(--color-divider)">{{ p }}</div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div onClick="{{ resetProgress }}" style="display:inline-flex;align-items:center;gap:6px;margin:20px 0 8px;font-size:10px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);cursor:pointer;font-family:var(--font-heading)" style-hover="color:var(--color-accent-600)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              Reset progress
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ── Swap sheet ── -->
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:30;background:color-mix(in srgb, var(--color-neutral-900) 55%, transparent);display:flex;align-items:flex-end" data-screen-label="Swap sheet (Modernist)">
+          <div onClick="{{ swallow }}" style="background:var(--color-bg);border-top:2px solid var(--color-text);width:100%;max-height:72%;overflow-y:auto;padding:0 0 44px">
+            <div style="padding:16px 18px 12px;border-bottom:2px solid var(--color-divider)">
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;line-height:1.1;letter-spacing:-0.01em;text-transform:uppercase">Follow a different day's workout</div>
+              <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:4px">Today's schedule is unchanged — you're just following this one instead</div>
+            </div>
+            <sc-for list="{{ sheetRows }}" as="row" hint-placeholder-count="7">
+              <div onClick="{{ row.pick }}" style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--color-divider);cursor:pointer" style-hover="background:var(--color-accent-100)" style-active="background:var(--color-accent-200)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:var(--font-heading);font-weight:800;font-size:14px">{{ row.day }}</div>
+                  <div style="font-size:11.5px;color:var(--color-neutral-600);margin-top:2px">{{ row.label }}</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.2" stroke-linecap="square"><path d="m9 18 6-6-6-6"></path></svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 520, &quot;height&quot;: 980 },
+  &quot;day&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Gym — Tue, Legs Quads&quot;, &quot;options&quot;: [&quot;Rest — Mon 13 Jul&quot;, &quot;Gym — Tue, Legs Quads&quot;, &quot;Running — Sat 18 Jul&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot; },
+  &quot;density&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Comfortable&quot;, &quot;options&quot;: [&quot;Comfortable&quot;, &quot;Compact&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Layout&quot; }
+}">
+class Component extends DCLogic {
+  state = { sheetOpen: false, tick: 0 };
+
+  dayKey() {
+    const map = {
+      'Rest — Mon 13 Jul': '2026-07-13',
+      'Gym — Tue, Legs Quads': '2026-07-14',
+      'Running — Sat 18 Jul': '2026-07-18',
+    };
+    return map[this.props.day] || '2026-07-14';
+  }
+  compact() { return this.props.density === 'Compact'; }
+
+  loadBorrows() {
+    try { return JSON.parse(localStorage.getItem('mwBorrow') || '{}'); } catch (e) { return {}; }
+  }
+  saveBorrows(b) { try { localStorage.setItem('mwBorrow', JSON.stringify(b)); } catch (e) {} }
+  loadDone(key) {
+    try { const s = localStorage.getItem('mws-' + key); if (s) return new Set(JSON.parse(s)); } catch (e) {}
+    return new Set();
+  }
+  saveDone(key, set) { try { localStorage.setItem('mws-' + key, JSON.stringify([...set])); } catch (e) {} }
+
+  clean(t) { return t ? t.replace('🍌 ', '').replace('⭐ FIRST', '').trim() : t; }
+
+  renderVals() {
+    const WD = window.WD;
+    if (!WD) return { isWorkout: false, isRest: false, sheetOpen: false, days: [], segs: [], sections: [], sheetRows: [], principles: [] };
+
+    const today = this.dayKey();
+    const dense = this.compact();
+    const borrows = this.loadBorrows();
+    const effectiveKey = borrows[today] || today;
+    const entry = WD.SCHEDULE[effectiveKey];
+    const borrowed = borrows[today] || null;
+    const isRest = !entry || entry.type === 'rest';
+    const workout = WD.getWorkout(entry);
+    const isWorkout = !isRest && !!workout;
+
+    const stateKey = WD.stateKey(today, entry);
+    const done = this.loadDone(stateKey);
+    const items = isWorkout ? WD.buildItemList(workout) : [];
+    const activeId = items.find((i) => !done.has(i.id))?.id;
+    const doneCount = items.filter((i) => done.has(i.id)).length;
+
+    const ink = 'var(--color-text)';
+
+    const titleStyle = {
+      fontFamily: 'var(--font-heading)', fontWeight: 800,
+      fontSize: dense ? 26 : 31, lineHeight: 1.0, letterSpacing: '-0.015em',
+      textTransform: 'uppercase', marginTop: 8, textWrap: 'balance',
+    };
+
+    // week strip — today accent, past ink, future neutral
+    const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const todayIdx = WD.dowIndex(today);
+    const days = letters.map((letter, i) => ({
+      letter,
+      barStyle: {
+        height: 4,
+        background: i === todayIdx ? 'var(--color-accent)' : i < todayIdx ? 'var(--color-neutral-800)' : 'var(--color-neutral-300)',
+      },
+      letterStyle: {
+        fontSize: 9, fontWeight: 800, marginTop: 4, fontFamily: 'var(--font-heading)',
+        color: i === todayIdx ? 'var(--color-accent-700)' : 'var(--color-neutral-500)',
+      },
+    }));
+
+    const segs = items.map((i) => ({
+      style: { flex: 1, height: 6, background: done.has(i.id) ? 'var(--color-accent)' : 'var(--color-neutral-300)' },
+    }));
+
+    const rowPad = dense ? '8px 0' : '11px 0';
+    const sections = [];
+    let cur = null;
+    for (const item of items) {
+      if (!cur || cur.key !== item.section) {
+        cur = { key: item.section, name: WD.SECTION_NAMES[item.section] || item.section, items: [], done: false, total: 0 };
+        sections.push(cur);
+      }
+      const isDone = done.has(item.id);
+      const isActive = !isDone && item.id === activeId;
+      const first = (item.label || '').includes('⭐ FIRST');
+      cur.items.push({
+        ...item,
+        label: this.clean(item.label),
+        note: this.clean(item.note),
+        reps: item.reps ? String(item.reps) : null,
+        first, isActive, isDone,
+        toggle: () => this.toggleItem(stateKey, item.id),
+        rowStyle: isActive
+          ? { display: 'flex', alignItems: 'flex-start', gap: 12, padding: dense ? '12px 10px' : '14px 12px', margin: '10px 0', border: '2px solid var(--color-accent)', background: 'var(--color-surface)', cursor: 'pointer', userSelect: 'none' }
+          : { display: 'flex', alignItems: 'flex-start', gap: 12, padding: rowPad, borderBottom: '1px solid var(--color-divider)', cursor: 'pointer', userSelect: 'none', opacity: isDone ? 0.55 : 1, transition: 'opacity 0.15s' },
+        indStyle: {
+          width: dense ? 20 : 24, height: dense ? 20 : 24, flexShrink: 0, marginTop: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: isDone ? 'none' : isActive ? 'none' : '1.5px solid var(--color-neutral-400)',
+          background: isDone ? 'var(--color-neutral-900)' : isActive ? 'var(--color-accent)' : 'transparent',
+          color: 'var(--color-bg)',
+        },
+        nameStyle: isActive
+          ? { fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: dense ? 16 : 19, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.005em' }
+          : { fontSize: dense ? 13 : 14.5, fontWeight: 600, lineHeight: 1.3, color: isDone ? 'var(--color-neutral-500)' : ink, textDecoration: isDone ? 'line-through' : 'none' },
+        subStyle: { fontSize: dense ? 11 : 12, color: 'var(--color-neutral-600)', marginTop: 2 },
+        numStyle: {
+          fontFamily: 'var(--font-heading)', fontWeight: 800, lineHeight: 1,
+          fontSize: isActive ? (dense ? 22 : 26) : (dense ? 14 : 16),
+          color: isActive ? 'var(--color-accent)' : isDone ? 'var(--color-neutral-400)' : ink,
+        },
+      });
+    }
+    for (const sec of sections) {
+      sec.done = sec.items.every((i) => done.has(i.id));
+      const d = sec.items.filter((i) => done.has(i.id)).length;
+      sec.count = d + '/' + sec.items.length;
+    }
+
+    const pTexts = [];
+    if (workout && workout.exercises) {
+      pTexts.push('Increase weight before reps — add 2.5kg when 12 reps feels easy');
+      pTexts.push('Rest 60–90s isolation · 2 min compounds');
+      if (workout.hasCore) pTexts.push('Side lateral raises non-negotiable — form over weight, always');
+      pTexts.push('Hanging raises: no twisting variants — oblique growth widens waist');
+      pTexts.push('No shrugs · no weighted side bends · no heavy deadlifts');
+    }
+
+    const sheetRows = WD.nextDays(today, 7).map((r) => ({ ...r, pick: () => this.borrow(r.key) }));
+
+    return {
+      kicker: WD.kicker(entry, effectiveKey),
+      dateLabel: WD.headerDate(today),
+      title: isRest ? 'Rest Day' : workout.title,
+      titleStyle, days, segs,
+      progressText: doneCount + ' / ' + items.length,
+      hasBanner: !!borrowed,
+      bannerText: borrowed ? 'Following ' + WD.shortDayLabel(borrowed) + "'s workout" : '',
+      isRest, isWorkout,
+      allDone: isWorkout && items.length > 0 && doneCount === items.length,
+      sections,
+      principles: pTexts,
+      showPrinciples: !!(workout && workout.exercises),
+      sheetOpen: this.state.sheetOpen,
+      sheetRows,
+      openSheet: () => this.setState({ sheetOpen: true }),
+      closeSheet: () => this.setState({ sheetOpen: false }),
+      swallow: (e) => e.stopPropagation(),
+      undoBorrow: () => {
+        const b = this.loadBorrows();
+        delete b[this.dayKey()];
+        this.saveBorrows(b);
+        this.setState((s) => ({ tick: s.tick + 1 }));
+      },
+      resetProgress: () => {
+        this.saveDone(stateKey, new Set());
+        this.setState((s) => ({ tick: s.tick + 1 }));
+      },
+    };
+  }
+
+  toggleItem(stateKey, id) {
+    const done = this.loadDone(stateKey);
+    done.has(id) ? done.delete(id) : done.add(id);
+    this.saveDone(stateKey, done);
+    this.setState((s) => ({ tick: s.tick + 1 }));
+  }
+
+  borrow(targetKey) {
+    const b = this.loadBorrows();
+    b[this.dayKey()] = targetKey;
+    this.saveBorrows(b);
+    this.setState({ sheetOpen: false });
+  }
+}
+</script>
+</body>
+</html>

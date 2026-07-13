@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #0d0c0f; color: #f2f2f4; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #f0b465; } a:hover { color: #f5c98f; }
+    ::selection { background: rgba(240,163,67,0.3); }
+  </style>
+  <script src="workout-data.js"></script>
+</helmet>
+
+<div style="min-height:100vh;background:#0d0c0f;padding-bottom:40px" data-screen-label="Current app — today">
+
+  <!-- ── Header ── -->
+  <div style="{{ headerStyle }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="{{ kickerStyle }}">{{ kicker }}</div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.12em;color:#b9b9c1">{{ dateLabel }}</div>
+        <div onClick="{{ openSheet }}" title="Follow a different day" style="width:34px;height:34px;border-radius:50%;background:#232329;border:1px solid #333339;color:#a9a9b1;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none" style-hover="background:#2c2c33" style-active="background:#37373f">⇄</div>
+      </div>
+    </div>
+
+    <div style="font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(42px,6.5vw,62px);line-height:1.04;text-transform:uppercase;letter-spacing:0.012em;color:#ffffff;margin-top:10px">{{ title }}</div>
+
+    <!-- week ribbon -->
+    <div style="display:flex;gap:14px;margin-top:18px">
+      <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+        <div style="flex:1;min-width:0">
+          <div style="{{ d.barStyle }}"></div>
+          <div style="{{ d.letterStyle }}">{{ d.letter }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ hasBanner }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(240,163,67,0.10);border:1px solid rgba(240,163,67,0.28);border-radius:8px;margin-top:16px;font-size:13px;color:#d9a561;font-weight:500">
+        <span>{{ bannerText }}</span>
+        <span onClick="{{ undoBorrow }}" style="margin-left:auto;color:#f0b465;font-weight:700;text-decoration:underline;cursor:pointer">Undo</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:16px">
+        <div style="display:flex;gap:8px;flex:1">
+          <sc-for list="{{ segs }}" as="s" hint-placeholder-count="10">
+            <div style="{{ s.style }}"></div>
+          </sc-for>
+        </div>
+        <div style="font-size:13px;color:#9a9aa2;font-weight:700;white-space:nowrap">{{ progressText }}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="height:1px;background:#1f1f24"></div>
+
+  <!-- ── Content ── -->
+  <div style="max-width:660px;margin:0 auto;padding:8px 24px 40px">
+
+    <sc-if value="{{ isRest }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#161519;border:1px solid #232328;border-radius:18px;padding:44px 24px 34px;text-align:center;margin-top:28px">
+        <div style="font-size:54px;line-height:1">😴</div>
+        <div style="font-family:'Anton',sans-serif;font-weight:400;font-size:30px;text-transform:uppercase;letter-spacing:0.02em;margin-top:16px;color:#ffffff">Rest &amp; Recover</div>
+        <div style="font-size:15px;color:#9a9aa2;margin-top:8px">Sleep well. Let the muscles rebuild.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ allDone }}" hint-placeholder-val="{{ false }}">
+      <div style="background:rgba(52,199,89,0.08);border:1px solid rgba(52,199,89,0.35);border-radius:16px;padding:26px 20px;text-align:center;margin-top:24px">
+        <div style="font-size:44px;line-height:1">🎉</div>
+        <div style="font-family:'Anton',sans-serif;font-weight:400;font-size:24px;text-transform:uppercase;letter-spacing:0.02em;color:#3fce6f;margin-top:10px">Workout Complete!</div>
+        <div style="font-size:13px;color:#9a9aa2;margin-top:6px">Great session. Hydrate and rest well.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin:28px 0 12px">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#8f8f97;white-space:nowrap">{{ sec.name }}</div>
+              <sc-if value="{{ sec.done }}" hint-placeholder-val="{{ false }}">
+                <div style="color:#3fce6f;font-size:12px;font-weight:800">✓</div>
+              </sc-if>
+              <div style="flex:1;height:1px;background:#232327"></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3">
+                <div onClick="{{ it.toggle }}" style="{{ it.cardStyle }}" style-active="transform:scale(0.985)">
+                  <div style="{{ it.indStyle }}">{{ it.glyph }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="{{ it.nameStyle }}">{{ it.label }}</div>
+                    <sc-if value="{{ it.sub }}" hint-placeholder-val="{{ false }}"><div style="{{ it.subStyle }}">{{ it.sub }}</div></sc-if>
+                    <sc-if value="{{ it.note }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a92;margin-top:5px;line-height:1.45">{{ it.note }}</div></sc-if>
+                    <sc-if value="{{ it.cap }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#8a8a92;margin-top:5px">Cap <span style="color:#3fce6f;font-weight:700">{{ it.cap }}</span></div></sc-if>
+                    <sc-if value="{{ it.warn }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#d99a3f;margin-top:5px;line-height:1.45">⚠ {{ it.warn }}</div></sc-if>
+                  </div>
+                  <sc-if value="{{ it.sets }}" hint-placeholder-val="{{ false }}">
+                    <div style="text-align:right;flex-shrink:0;margin-left:8px">
+                      <div style="{{ it.numStyle }}">{{ it.sets }}<span style="font-size:0.55em;opacity:0.55;margin:0 4px">×</span>{{ it.reps }}</div>
+                      <sc-if value="{{ it.showCaption }}" hint-placeholder-val="{{ false }}">
+                        <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;color:#8f8f97;margin-top:6px">SETS × REPS</div>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ showPrinciples }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin:28px 0 12px">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#8f8f97">Principles</div>
+              <div style="flex:1;height:1px;background:#232327"></div>
+            </div>
+            <div style="background:#141417;border:1px solid #232328;border-radius:16px;padding:6px 16px">
+              <sc-for list="{{ principles }}" as="p" hint-placeholder-count="4">
+                <div style="{{ p.style }}">{{ p.text }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="text-align:center;padding:26px 0 10px">
+          <span onClick="{{ resetProgress }}" style="color:#6a6a72;font-size:12px;cursor:pointer;padding:8px 20px">Reset progress</span>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- ── Swap sheet ── -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.72);display:flex;align-items:flex-end;justify-content:center" data-screen-label="Swap sheet">
+      <div onClick="{{ swallow }}" style="background:#1b1a1f;border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:80vh;overflow-y:auto;padding-bottom:24px">
+        <div style="display:flex;justify-content:center;padding:12px 0 4px"><div style="width:40px;height:4px;background:#33333a;border-radius:2px"></div></div>
+        <div style="padding:10px 24px 18px;border-bottom:1px solid #26262b">
+          <div style="font-family:'Anton',sans-serif;font-weight:400;font-size:22px;text-transform:uppercase;letter-spacing:0.015em;color:#ffffff">Follow a different day's workout</div>
+          <div style="font-size:14px;color:#9a9aa2;margin-top:5px">Today's schedule is unchanged — you're just following this one instead</div>
+        </div>
+        <sc-for list="{{ sheetRows }}" as="row" hint-placeholder-count="7">
+          <div onClick="{{ row.pick }}" style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #232328;cursor:pointer" style-hover="background:#222127" style-active="background:#28272d">
+            <div>
+              <div style="font-size:17px;font-weight:700;color:#f2f2f4">{{ row.day }}</div>
+              <div style="font-size:13px;color:#9a9aa2;margin-top:3px">{{ row.label }}</div>
+            </div>
+            <div style="font-size:22px;color:#4a4a52">›</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sheetOpen: false, tick: 0 };
+
+  wd() { return window.WD; }
+  today() { return window.WD.DEMO_TODAY; }
+
+  loadBorrows() {
+    try { return JSON.parse(localStorage.getItem('dcCurrentBorrow') || '{}'); } catch (e) { return {}; }
+  }
+  saveBorrows(b) {
+    try { localStorage.setItem('dcCurrentBorrow', JSON.stringify(b)); } catch (e) {}
+  }
+  loadDone(key) {
+    try {
+      const s = localStorage.getItem('dcws-' + key);
+      if (s) return new Set(JSON.parse(s));
+    } catch (e) {}
+    return new Set();
+  }
+  saveDone(key, set) {
+    try { localStorage.setItem('dcws-' + key, JSON.stringify([...set])); } catch (e) {}
+  }
+
+  renderVals() {
+    const WD = this.wd();
+    if (!WD) return { isWorkout: false, isRest: false, sheetOpen: false, days: [], segs: [], sections: [], sheetRows: [], principles: [] };
+
+    const today = this.today();
+    const borrows = this.loadBorrows();
+    const effectiveKey = borrows[today] || today;
+    const entry = WD.SCHEDULE[effectiveKey];
+    const borrowed = borrows[today] || null;
+    const isRest = !entry || entry.type === 'rest';
+    const workout = WD.getWorkout(entry);
+    const isWorkout = !isRest && !!workout;
+
+    const stateKey = WD.stateKey(today, entry);
+    const done = this.loadDone(stateKey);
+    const items = isWorkout ? WD.buildItemList(workout) : [];
+    const activeId = items.find((i) => !done.has(i.id))?.id;
+    const doneCount = items.filter((i) => done.has(i.id)).length;
+
+    // header tint + kicker color follow the day type (amber for workouts, lavender for rest)
+    const accent = '#f0a343';
+    const kickCol = isRest ? '#8b84c9' : '#e8a33d';
+    const headerStyle = {
+      padding: '22px 24px 18px', position: 'sticky', top: 0, zIndex: 10,
+      background: isRest
+        ? 'linear-gradient(180deg, #131118 0%, #0d0c0f 100%)'
+        : 'linear-gradient(180deg, #191309 0%, #0d0c0f 100%)',
+    };
+    const kickerStyle = { fontSize: 13, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: kickCol };
+
+    // week ribbon — one colored bar per weekday, today emphasised
+    const ribbonColors = ['#7c76c4', '#b9973f', '#bf5f36', '#b45fa8', '#3f9d99', '#4f9f5e', '#7fae72'];
+    const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const todayIdx = WD.dowIndex(today);
+    const days = letters.map((letter, i) => ({
+      letter,
+      barStyle: { height: i === todayIdx ? 5 : 4, borderRadius: 3, background: ribbonColors[i], opacity: i === todayIdx ? 1 : 0.5 },
+      letterStyle: { fontSize: 10, textAlign: 'center', marginTop: 7, fontWeight: i === todayIdx ? 800 : 600, color: i === todayIdx ? '#e8e8ec' : '#5f5f67', letterSpacing: '0.08em' },
+    }));
+
+    const segs = items.map((i) => ({
+      style: { flex: 1, height: 5, borderRadius: 3, background: done.has(i.id) ? accent : '#26262b' },
+    }));
+
+    // group items into ordered sections
+    const sections = [];
+    let cur = null;
+    for (const item of items) {
+      if (!cur || cur.key !== item.section) {
+        cur = { key: item.section, name: WD.SECTION_NAMES[item.section] || item.section, items: [], done: false };
+        sections.push(cur);
+      }
+      const isDone = done.has(item.id);
+      const isActive = !isDone && item.id === activeId;
+      const st = isDone ? 'done' : isActive ? 'active' : 'upcoming';
+      cur.items.push({
+        ...item,
+        reps: item.reps ? String(item.reps) : null,
+        glyph: isDone ? '✓' : isActive ? '▶' : '',
+        showCaption: isActive,
+        toggle: () => this.toggleItem(stateKey, item.id),
+        cardStyle: {
+          background: isActive ? 'linear-gradient(135deg, #1e1811 0%, #15140f 100%)' : '#141417',
+          border: '1.5px solid ' + (isActive ? accent : '#232328'),
+          borderRadius: 14,
+          padding: isActive ? '20px 18px' : '13px 16px',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          cursor: 'pointer', userSelect: 'none',
+          opacity: isDone ? 0.38 : st === 'upcoming' ? 0.5 : 1,
+          transition: 'opacity 0.2s, border-color 0.15s, background-color 0.15s',
+        },
+        indStyle: {
+          width: isActive ? 40 : 26, height: isActive ? 40 : 26, borderRadius: '50%',
+          border: '2px solid ' + (isDone ? '#2f9e57' : isActive ? accent : '#2e2e33'),
+          background: isDone ? '#2f9e57' : isActive ? accent : 'transparent',
+          color: isDone ? '#ffffff' : '#14100a',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, marginTop: 2, fontSize: isDone ? 12 : 13, fontWeight: 800,
+          transition: 'all 0.15s',
+        },
+        nameStyle: isActive
+          ? { fontFamily: "'Anton', sans-serif", fontWeight: 400, fontSize: 26, textTransform: 'uppercase', letterSpacing: '0.015em', color: '#ffffff', lineHeight: 1.1 }
+          : { fontSize: 16, fontWeight: 600, lineHeight: 1.3, color: isDone ? '#8a8a92' : '#ececf0', textDecoration: isDone ? 'line-through' : 'none' },
+        subStyle: { fontSize: isActive ? 15 : 13.5, color: isDone ? '#8a8a92' : '#d9a561', fontWeight: 500, marginTop: isActive ? 6 : 3 },
+        numStyle: {
+          fontFamily: "'Anton', sans-serif", fontWeight: 400, lineHeight: 1,
+          fontSize: isActive ? 40 : 24,
+          color: isActive ? accent : isDone ? '#6a6a72' : '#b9b9c1',
+        },
+      });
+    }
+    for (const sec of sections) sec.done = sec.items.every((i) => done.has(i.id));
+
+    // principles (source: ui.js workoutContentHTML)
+    const pTexts = [];
+    if (workout && workout.exercises) {
+      pTexts.push('Increase weight before reps — add 2.5kg when 12 reps feels easy');
+      pTexts.push('Rest 60–90s isolation · 2 min compounds');
+      if (workout.hasCore) pTexts.push('Side lateral raises non-negotiable — form over weight, always');
+      pTexts.push('Hanging raises: no twisting variants — oblique growth widens waist');
+      pTexts.push('No shrugs · no weighted side bends · no heavy deadlifts');
+    }
+    const principles = pTexts.map((text, i) => ({
+      text,
+      style: { fontSize: 13, color: '#8a8a92', lineHeight: 1.5, padding: '10px 0', borderBottom: i === pTexts.length - 1 ? 'none' : '1px solid #1f1f24' },
+    }));
+
+    const sheetRows = WD.nextDays(today, 7).map((r) => ({
+      ...r,
+      pick: () => this.borrow(r.key),
+    }));
+
+    return {
+      kicker: WD.kicker(entry, effectiveKey),
+      dateLabel: WD.headerDate(today),
+      title: isRest ? 'Rest Day' : workout.title,
+      headerStyle, kickerStyle, days, segs,
+      progressText: doneCount + ' / ' + items.length,
+      hasBanner: !!borrowed,
+      bannerText: borrowed ? 'Following ' + WD.shortDayLabel(borrowed) + "'s workout" : '',
+      isRest, isWorkout,
+      allDone: isWorkout && items.length > 0 && doneCount === items.length,
+      sections, principles,
+      showPrinciples: !!(workout && workout.exercises),
+      sheetOpen: this.state.sheetOpen,
+      sheetRows,
+      openSheet: () => this.setState({ sheetOpen: true }),
+      closeSheet: () => this.setState({ sheetOpen: false }),
+      swallow: (e) => e.stopPropagation(),
+      undoBorrow: () => {
+        const b = this.loadBorrows();
+        delete b[this.today()];
+        this.saveBorrows(b);
+        this.setState((s) => ({ tick: s.tick + 1 }));
+      },
+      resetProgress: () => {
+        this.saveDone(stateKey, new Set());
+        this.setState((s) => ({ tick: s.tick + 1 }));
+      },
+    };
+  }
+
+  toggleItem(stateKey, id) {
+    const done = this.loadDone(stateKey);
+    done.has(id) ? done.delete(id) : done.add(id);
+    this.saveDone(stateKey, done);
+    this.setState((s) => ({ tick: s.tick + 1 }));
+  }
+
+  borrow(targetKey) {
+    const b = this.loadBorrows();
+    b[this.today()] = targetKey;
+    this.saveBorrows(b);
+    this.setState({ sheetOpen: false });
+  }
+}
+</script>
+</body>
+</html>

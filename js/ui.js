@@ -36,14 +36,18 @@ function entryLabel(entry) {
 }
 
 // Build and show the bottom sheet listing the next 7 scheduled days.
-function openSwapSheet(todayKey) {
+function openSwapSheet() {
+	// If the day rolled over while the screen was stale, refresh the header
+	// behind the sheet so the whole flow shares one clock.
+	if (cachedDayKey !== todayKey()) render();
 	let rows = '';
+	const base = todayKey();
+	const [y, m, d] = base.split('-').map(Number);
 	for (let i = 1; i <= 7; i++) {
-		const dt = new Date();
-		dt.setDate(dt.getDate() + i);
+		const dt = new Date(y, m - 1, d + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 		if (!SCHEDULE[k]) continue;
-		rows += `<div class="swap-option" onclick="doBorrow('${todayKey}','${k}')">
+		rows += `<div class="swap-option" onclick="doBorrow('${k}')">
       <div>
         <div class="swap-option-day">${shortDayLabel(k)}</div>
         <div class="swap-option-label">${entryLabel(SCHEDULE[k])}</div>
@@ -60,16 +64,17 @@ function closeSwapSheet() {
 	document.getElementById('swap-sheet-overlay').style.display = 'none';
 }
 // Record that "today" should follow targetKey's workout, then re-render.
-function doBorrow(todayKey, targetKey) {
+function doBorrow(targetKey) {
+	const tk = todayKey();
 	const b = loadBorrows();
-	b[todayKey] = targetKey;
+	b[tk] = targetKey;
 	saveBorrows(b);
 	closeSwapSheet();
 	render();
 }
-function undoBorrow(key) {
+function undoBorrow() {
 	const b = loadBorrows();
-	delete b[key];
+	delete b[todayKey()];
 	saveBorrows(b);
 	render();
 }
@@ -323,9 +328,9 @@ function render() {
 	const borrowedFrom = borrows[key] || null;
 	const app = document.getElementById('app');
 	const swapBannerHTML = borrowedFrom
-		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow('${key}')">Undo</button></div>`
+		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow()">Undo</button></div>`
 		: '';
-	const swapBtnHTML = `<button class="header-action" onclick="openSwapSheet('${key}')" title="Follow a different day">⇄</button>`;
+	const swapBtnHTML = `<button class="header-action" onclick="openSwapSheet()" title="Follow a different day">⇄</button>`;
 	const notice = programNotice(key);
 	const noticeHTML = notice
 		? `<div class="program-notice">${notice}</div>`

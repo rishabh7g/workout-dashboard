@@ -344,11 +344,20 @@ function render() {
 	const key = todayKey();
 	cachedDayKey = key; // track the plain date on every path for the midnight check
 	const borrows = loadBorrows();
-	const effectiveKey = borrows[key] || key;
+	// Self-heal a stale borrow: if the stored target is no longer a SCHEDULE
+	// key (a schedule edit removed/renamed the date, or a device-clock jump),
+	// drop the dangling entry and fall back to the real day rather than
+	// rendering the un-undoable outside-program lock-out screen.
+	let borrowedFrom = borrows[key] || null;
+	if (borrowedFrom && !SCHEDULE[borrowedFrom]) {
+		delete borrows[key];
+		saveBorrows(borrows);
+		borrowedFrom = null;
+	}
+	const effectiveKey = borrowedFrom || key;
 	const entry = SCHEDULE[effectiveKey];
 	// Tint the whole UI with the effective (borrowed) day's hue.
 	document.documentElement.dataset.day = dayGroup(entry);
-	const borrowedFrom = borrows[key] || null;
 	const app = document.getElementById('app');
 	const swapBannerHTML = borrowedFrom
 		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow()">Undo</button></div>`
@@ -365,6 +374,7 @@ function render() {
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
         <div class="workout-title">No workout today</div>
         ${weekStripHTML(key)}
+        ${swapBannerHTML}
       </header>
       <div class="content">
         <div class="no-schedule">

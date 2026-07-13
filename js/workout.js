@@ -87,12 +87,6 @@ function buildItemList(workout) {
 			addSetsReps('core', 'Pallof press', 3, '12 each side', null, {
 				note: 'Anti-rotation — stability for cutting',
 			});
-		else if (workout.coreType === 'anti-extension') {
-			addSetsReps('core', 'Dead bug', 3, '10 each side');
-			addSetsReps('core', 'Forearm side plank', 3, '25 sec each', null, {
-				note: 'Weight on forearm, not hand',
-			});
-		}
 	}
 
 	if (workout.legConditioning) {

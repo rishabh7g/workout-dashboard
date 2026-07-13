@@ -26,7 +26,10 @@ const SECTION_NAMES = {
 // Split a reps value into the numeral part for the scheme block and any
 // leftover qualifier text: 12 → {x:'12'}, '7→10' → {x:'7→10'},
 // '10 each leg' → {x:'10', rest:'each leg'}, '25 sec each' → {x:'25 sec',
-// rest:'each'}. Free-text reps ('1 length') return x:null — no scheme.
+// rest:'each'}. Any value with a LEADING number always splits — including
+// '1 length' → {x:'1', rest:'length'}. Only reps that don't begin with a
+// digit-run the regex accepts ('max', 'one pass each foot', '30m → 20m → 10m'
+// where 'm' blocks the match) return x:null — no scheme.
 function splitReps(reps) {
 	const m = String(reps).match(/^(\d+(?:\s*[–—→-]\s*\d+)?(?:\s*sec)?)(?:\s+(.*))?$/);
 	if (!m) return { x: null, rest: String(reps) };

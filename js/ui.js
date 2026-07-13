@@ -428,4 +428,12 @@ function render() {
 			.getElementById('wcontent')
 			?.insertAdjacentHTML('afterbegin', doneBannerHTML());
 	}
+
+	// Expose the (possibly banner-inflated) sticky-header height so cards and the
+	// done-banner can offset scrollIntoView by it via `scroll-margin-top` and not
+	// tuck under the opaque sticky header (issue #46).
+	const headerH = document.querySelector('header')?.offsetHeight;
+	if (headerH) {
+		document.documentElement.style.setProperty('--header-h', headerH + 'px');
+	}
 }

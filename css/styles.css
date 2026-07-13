@@ -446,6 +446,11 @@ header {
 }
 
 /* ── Interactive item cards ── */
+/* Keep scrollIntoView'd cards/banner clear of the opaque sticky header (#46). */
+.item-card,
+.done-banner {
+	scroll-margin-top: calc(var(--header-h, 176px) + 8px);
+}
 .item-card {
 	background: var(--surface);
 	border-radius: var(--radius);

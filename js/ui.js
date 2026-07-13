@@ -370,7 +370,28 @@ function render() {
 	const workout = (WORKOUTS[entry.type] || RUNNING_DAYS[entry.type])?.[
 		entry.variation
 	];
-	if (!workout) return;
+	if (!workout) {
+		// A SCHEDULE entry that doesn't resolve to a workout (e.g. a data.js
+		// typo). Paint a visible error instead of a blank/stale screen, and DON'T
+		// leave cachedDayKey marked as today's key — otherwise refreshIfDayChanged
+		// would treat the failed paint as a successful render and never retry.
+		cachedDayKey = null;
+		app.innerHTML = `
+      <header>
+        ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
+        <div class="workout-title">Couldn't load workout</div>
+        ${weekStripHTML(key)}
+        ${swapBannerHTML}
+        ${noticeHTML}
+      </header>
+      <div class="content">
+        <div class="no-schedule">
+          <div style="font-size:48px">⚠️</div>
+          <div style="margin-top:12px">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
+        </div>
+      </div>`;
+		return;
+	}
 
 	// Build item list and load persisted state. The key encodes the workout
 	// identity (via the effective entry) so a borrowed day's ticks stay separate.

@@ -9,6 +9,19 @@
  * the global scope where the HTML can reach them.
  */
 
+// ─── Keyboard support ─────────────────────────────────────────────────────────
+// Item cards are role="checkbox" divs (see itemCardHTML). One delegated
+// listener toggles the focused card on Space/Enter — delegation survives every
+// innerHTML re-render, and routing through toggleItem keeps keyboard and tap
+// behaviour identical. preventDefault stops Space from scrolling the page.
+document.addEventListener('keydown', (e) => {
+	if (e.key !== ' ' && e.key !== 'Enter') return;
+	const card = e.target.closest('.item-card[data-id]');
+	if (!card) return;
+	e.preventDefault();
+	toggleItem(card.dataset.id);
+});
+
 // ─── Day borrow UI ───────────────────────────────────────────────────────────
 // A short label for a schedule entry, shown in the swap sheet rows.
 function entryLabel(entry) {
@@ -77,6 +90,7 @@ function toggleItem(id) {
 		if (completedItems.has(item.id)) el.className = 'item-card done';
 		else if (item.id === activeId) el.className = 'item-card active';
 		else el.className = 'item-card upcoming';
+		el.setAttribute('aria-checked', completedItems.has(item.id));
 	}
 
 	updateProgress(activeId);
@@ -149,9 +163,11 @@ function resetProgress() {
 	const activeId = allItems[0]?.id;
 	for (const item of allItems) {
 		const el = document.querySelector(`[data-id="${item.id}"]`);
-		if (el)
+		if (el) {
 			el.className =
 				'item-card ' + (item.id === activeId ? 'active' : 'upcoming');
+			el.setAttribute('aria-checked', 'false');
+		}
 	}
 	updateProgress(activeId);
 	window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -182,7 +198,7 @@ function itemCardHTML(item, activeId) {
 			: `<div class="scheme">${item.scheme.n}<span class="scheme-x">×</span>${item.scheme.x}<div class="scheme-label">sets × reps</div></div>`
 		: '';
 
-	return `<div class="item-card ${cls}" data-id="${item.id}" onclick="toggleItem('${item.id}')">
+	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" tabindex="0" onclick="toggleItem('${item.id}')">
     <div class="item-indicator"></div>
     <div class="item-body">
       <div class="item-name">${item.label}</div>

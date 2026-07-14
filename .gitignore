@@ -1,0 +1,11 @@
+# verify.sh artifacts (log, DOM dump, screenshot) — regenerated every run
+out/
+
+# Playwright MCP screenshot drops (see ~/.claude/CLAUDE.md)
+.playwright-mcp/
+
+# orchestrator staging for audit-generated issue drafts — never committed
+audit-backlog/
+
+# defensive: nothing in this repo should ever need npm
+node_modules/

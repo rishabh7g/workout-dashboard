@@ -174,6 +174,7 @@ function announce(msg) {
 // focus returns to the Log chip that opened it (#74 pattern).
 let logReturnFocus = null; // the Log chip to restore focus to on close
 let logName = null; // exlog key for the sheet currently open
+let logPlanned = null; // planned reps of the open item — drives the progression hint (#88)
 let logW = null; // working weight (kg) — null = blank
 let logR = null; // working reps — null = blank
 let logEasy = false; // felt-easy toggle state
@@ -199,7 +200,17 @@ function logBodyHTML() {
 				)
 				.join('')
 		: '<div class="log-hist-empty">No entries logged yet</div>';
+	// Progression hint (#88): the same rule the active row shows, echoed at the
+	// top of the sheet so the "is today the day to add 2.5kg?" answer sits right
+	// where the user dials the weight in. Empty string when there's no suggestion.
+	const sug = itemSuggestion(logName, logPlanned);
+	const hintHTML = !sug
+		? ''
+		: sug.hold
+			? '<div class="log-hint log-hint-hold">At cap — hold</div>'
+			: `<div class="log-hint">Try ${fmtNum(sug.weight)}kg — ${fmtNum(sug.from)}<span class="log-hist-x">×</span>${fmtNum(sug.reps)} felt easy${sug.cap != null ? ` · cap ${fmtNum(sug.cap)}kg` : ''}</div>`;
 	return `<div class="log-body-inner">
+      ${hintHTML}
       <div class="log-field">
         <div class="log-field-label">Weight · kg</div>
         <div class="log-stepper">
@@ -238,6 +249,7 @@ function openLogSheet(id) {
 	// Remember the chip so focus returns to it on close (WCAG 2.4.3).
 	logReturnFocus = document.activeElement;
 	logName = exerciseName(item);
+	logPlanned = item.reps; // planned reps drive the progression hint (#88)
 	// Pre-fill from the last entry for this exercise NAME (any day/variation),
 	// else the parsed plan weight/reps, else blank. Same-as-last is then ≤2 taps.
 	const last = lastExlogEntry(logName);
@@ -260,6 +272,7 @@ function closeLogSheet() {
 	logReturnFocus?.focus?.();
 	logReturnFocus = null;
 	logName = null;
+	logPlanned = null;
 }
 
 // ± a stepper. Weight quantises to 0.5 kg and clamps at 0; reps are integers ≥0.
@@ -557,6 +570,12 @@ function composeItemLabel(item) {
 				`last session ${fmtNum(last.w)} kilograms by ${fmtNum(last.r)}${last.e ? ', felt easy' : ''}`,
 			);
 		}
+		// Announce the progression hint verbalized (#88) — never the raw glyphs.
+		const hint =
+			typeof hintSpoken === 'function'
+				? hintSpoken(exerciseName(item), item.reps)
+				: '';
+		if (hint) parts.push(hint);
 	}
 
 	return parts.join(', ').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -581,6 +600,38 @@ function recallDate(key) {
 		day: 'numeric',
 		month: 'short',
 	});
+}
+
+// The progression suggestion for an ex item (or null): shared by the active row,
+// the log sheet and the aria-label so all three read the same rule. Guarded so
+// the DOM-free aria-label harness (which doesn't load workout.js) degrades to
+// no hint rather than throwing.
+function itemSuggestion(name, planned) {
+	if (typeof suggestNext !== 'function') return null;
+	return suggestNext(name, planned);
+}
+
+// Visible hint line for the recall slot (#88): accent-700 "Try 35kg — 32.5×12
+// felt easy · cap 40kg" for a go, quiet neutral-600 "At cap — hold" when capped.
+// Empty string when there's no suggestion, so it drops out of the stack cleanly.
+function hintLineHTML(item) {
+	const sug = itemSuggestion(exerciseName(item), item.reps);
+	if (!sug) return '';
+	if (sug.hold)
+		return '<div class="item-hint item-hint-hold">At cap — hold</div>';
+	const capPart = sug.cap != null ? ` · cap ${fmtNum(sug.cap)}kg` : '';
+	return `<div class="item-hint">Try ${fmtNum(sug.weight)}kg — ${fmtNum(sug.from)}<span class="item-recall-x">×</span>${fmtNum(sug.reps)} felt easy${capPart}</div>`;
+}
+
+// Spoken form of the hint for the composed aria-label (#75 verbalization): no
+// raw ×/kg glyphs reach the screen reader — "suggestion: try 35 kilograms, cap
+// 40 kilograms" / "at cap, hold weight". Empty when there's no suggestion.
+function hintSpoken(name, planned) {
+	const sug = itemSuggestion(name, planned);
+	if (!sug) return '';
+	if (sug.hold) return 'at cap, hold weight';
+	const capPart = sug.cap != null ? `, cap ${fmtNum(sug.cap)} kilograms` : '';
+	return `suggestion: try ${fmtNum(sug.weight)} kilograms${capPart}`;
 }
 
 // Escape a string for safe use inside an HTML double-quoted attribute value.
@@ -637,6 +688,11 @@ function itemCardHTML(item, activeId) {
 			const easy = last.e ? ' · easy' : '';
 			stack += `<div class="item-recall">Last: ${fmtNum(last.w)}kg<span class="item-recall-x">×</span>${fmtNum(last.r)}${easy} · ${recallDate(last.d)}</div>`;
 		}
+		// Progression hint (#88): the app's own "+2.5kg when the top reps felt
+		// easy" rule, rendered as one line in the recall slot — right below the
+		// history it reasons from, so the fact and the recommendation read
+		// together. Only ex rows, only when there's a suggestion or a cap-hold.
+		stack += hintLineHTML(item);
 	}
 
 	// Split numerals (sets × reps). The SETS × REPS microlabel is always in the

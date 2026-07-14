@@ -313,6 +313,20 @@ header {
 	margin: 0 3px;
 	opacity: 0.55;
 }
+/* Progression hint (#88): the "add 2.5kg" recommendation line, sharing the
+   recall slot right under the history it reasons from. accent-700 for a go
+   (≥4.5:1 on bg); the cap-hold state drops to quiet neutral-600. */
+.item-hint {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--color-accent-700);
+	line-height: 1.4;
+	margin-top: 4px;
+}
+.item-hint-hold {
+	font-weight: 400;
+	color: var(--color-neutral-600);
+}
 .item-warn {
 	display: flex;
 	align-items: flex-start;
@@ -863,6 +877,19 @@ header {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+/* Progression hint (#88) at the top of the capture sheet — the same rule the
+   active row shows, accent-700 for a go and quiet neutral-600 when capped. */
+.log-hint {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-accent-700);
+	line-height: 1.4;
+	margin: -4px 0 0;
+}
+.log-hint-hold {
+	font-weight: 400;
+	color: var(--color-neutral-600);
 }
 .log-field-label {
 	font-family: var(--font-heading);

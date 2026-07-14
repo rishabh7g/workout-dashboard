@@ -83,6 +83,32 @@
 	outline-offset: 2px;
 }
 
+/* Reset affordance — uppercase accent text control with a reset-arrow SVG.
+ * Visually a 10px text line, but padded to an effective ≥44px hit box (F08-08)
+ * with a compensating negative margin so the surrounding layout stays tight.
+ * The .armed state (set by the two-tap arm in ui.js) darkens to accent-600. */
+.reset-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 2px 0 -8px;
+	padding: 17px 12px;
+	background: none;
+	border: 0;
+	cursor: pointer;
+	font-family: var(--font-heading);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--color-accent-700);
+}
+
+.reset-btn:hover,
+.reset-btn.armed {
+	color: var(--color-accent-600);
+}
+
 html[data-day='rest'] {
 	--day: var(--h-rest);
 	--day-soft: rgba(142, 138, 192, 0.13);

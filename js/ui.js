@@ -177,7 +177,43 @@ function updateProgress(activeId) {
 	}
 }
 
+// Two-tap arm for the (destructive, un-undoable) reset. The first activation
+// only arms — swapping the label and starting a 3 s disarm timer — so a single
+// stray sweaty-thumb tap can never wipe a session. The second activation inside
+// the window runs the real wipe. A re-render while armed re-paints the button
+// unarmed, which naturally disarms (state is module-local); the timer clearing
+// on the next arm keeps things tidy.
+let resetArmed = false;
+let resetArmTimer = null;
+
+function disarmReset() {
+	resetArmed = false;
+	if (resetArmTimer) {
+		clearTimeout(resetArmTimer);
+		resetArmTimer = null;
+	}
+	const btn = document.querySelector('.reset-btn');
+	if (btn) {
+		btn.classList.remove('armed');
+		const label = btn.querySelector('.reset-btn-label');
+		if (label) label.textContent = 'Reset progress';
+	}
+}
+
 function resetProgress() {
+	if (!resetArmed) {
+		resetArmed = true;
+		const btn = document.querySelector('.reset-btn');
+		if (btn) {
+			btn.classList.add('armed');
+			const label = btn.querySelector('.reset-btn-label');
+			if (label) label.textContent = 'Tap again to reset';
+		}
+		resetArmTimer = setTimeout(disarmReset, 3000);
+		return;
+	}
+
+	disarmReset();
 	completedItems = new Set();
 	saveState(cachedKey);
 	const activeId = allItems[0]?.id;
@@ -303,7 +339,10 @@ function workoutContentHTML(workout) {
       </div>`;
 	}
 	html += `<div style="text-align:center;padding:24px 0 40px">
-      <button onclick="resetProgress()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;padding:8px 20px;opacity:0.55">Reset progress</button>
+      <button class="reset-btn" onclick="resetProgress()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <span class="reset-btn-label">Reset progress</span>
+      </button>
     </div>`;
 
 	return html;

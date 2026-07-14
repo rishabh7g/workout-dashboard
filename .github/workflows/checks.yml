@@ -37,3 +37,19 @@ jobs:
             [ -f "$f" ] || { echo "::error file=sw.js::precaches '${a:-./}' but '$f' is not in the repo"; missing=1; }
           done < <(scripts/sw-assets.sh)
           exit $missing
+
+      - name: CACHE bumped when precached assets change
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE="origin/${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          if echo "$CHANGED" | grep -qE '^(js/|css/|fonts/|index\.html$|manifest\.json$)'; then
+            if git diff "$BASE"...HEAD -- sw.js | grep -qE '^\+const CACHE = '; then
+              echo "OK: cached assets changed and sw.js CACHE version bumped"
+            else
+              echo "::error file=sw.js,line=1::PR changes precached assets but CACHE is unchanged — bump workout-dashboard-vN to vN+1 so installed PWAs refresh"
+              exit 1
+            fi
+          else
+            echo "OK: no precached assets touched"
+          fi

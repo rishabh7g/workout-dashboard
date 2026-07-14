@@ -23,56 +23,54 @@ const SECTION_NAMES = {
 	cooldown: 'Cooldown',
 };
 
-// Split a reps value into the numeral part for the scheme block and any
-// leftover qualifier text: 12 → {x:'12'}, '7→10' → {x:'7→10'},
-// '10 each leg' → {x:'10', rest:'each leg'}, '25 sec each' → {x:'25 sec',
-// rest:'each'}. Any value with a LEADING number always splits — including
-// '1 length' → {x:'1', rest:'length'}. Only reps that don't begin with a
-// digit-run the regex accepts ('max', 'one pass each foot', '30m → 20m → 10m'
-// where 'm' blocks the match) return x:null — no scheme.
+// Split a reps value into a bare numeral and any trailing "each …" qualifier so
+// the Modernist row can render sets and reps as SEPARATE fields (WD blueprint,
+// design/workout-data.js:352-356): '10 each leg' → {reps:'10', sub:'each leg'},
+// '12 each side' → {reps:'12', sub:'each side'}. Anything else passes through
+// whole as the reps field ('7→10', '12', 'max') with sub:null — so ranges and
+// 'max' still land in the numeral block. Fixed-qualifier conditioning items
+// (e.g. '15 steps each direction', '30 sec each') carry their split reps/sub
+// literally at the call site, matching the blueprint.
 function splitReps(reps) {
-	const m = String(reps).match(/^(\d+(?:\s*[–—→-]\s*\d+)?(?:\s*sec)?)(?:\s+(.*))?$/);
-	if (!m) return { x: null, rest: String(reps) };
-	return { x: m[1], rest: m[2] || '' };
+	const m = /^(\d+)\s+(each .+)$/.exec(String(reps));
+	if (m) return { reps: m[1], sub: m[2] };
+	return { reps: String(reps), sub: null };
 }
 
 // Flatten a declarative workout object into an ordered list of items.
-// Each item gets a stable id like "ex-3" so the UI and localStorage agree.
-// Items with a natural sets×reps shape carry a structured `scheme`
-// ({n, x} or {n, unit} for timed cardio) that the UI renders as a
-// right-aligned numeral block; scheme-less items keep their `meta` text.
+// Each item gets a stable id like "ex-3" so the UI and localStorage agree —
+// the id scheme (`${sec}-${counts[sec]}`) and item ORDER are load-bearing:
+// they are the localStorage tick keys (js/storage.js v1 envelope), so a
+// reorder would silently re-bind saved ticks to different exercises.
+// Items expose `sets` and `reps` SEPARATELY (WD blueprint) so the UI can build
+// the numeral block from them; `sub` carries weight + qualifier joined with
+// ' · '; scheme-less items (stretches, drills, timed cardio) use `sub` alone.
 function buildItemList(workout) {
 	const items = [];
 	const counts = {};
-	const add = (sec, label, meta, extra = {}) => {
+	const add = (sec, label, extra = {}) => {
 		counts[sec] = (counts[sec] || 0) + 1;
 		items.push({
 			id: `${sec}-${counts[sec]}`,
 			section: sec,
 			label,
-			meta,
 			...extra,
-		});
-	};
-	// Build a sets×reps item: numerals go to the scheme, any reps qualifier
-	// ('each leg') joins the weight in the meta line.
-	const addSetsReps = (sec, name, sets, reps, weight, extra = {}) => {
-		const { x, rest } = splitReps(reps);
-		const meta = [rest, weight].filter(Boolean).join(' · ');
-		add(sec, name, x ? meta : `${sets}×${reps}${weight ? ' · ' + weight : ''}`, {
-			...extra,
-			scheme: x ? { n: sets, x } : null,
 		});
 	};
 
 	if (workout.legConditioning) {
-		add('warmup', 'Leg swings', 'Front-back + side-side · 10 each');
-		add('warmup', 'Ankle circles', 'Both directions');
-		addSetsReps('warmup', 'Reverse lunges', 3, '10 each leg');
+		add('warmup', 'Leg swings', { sub: 'Front-back + side-side · 10 each' });
+		add('warmup', 'Ankle circles', { sub: 'Both directions' });
+		add('warmup', 'Reverse lunges', { sets: 3, reps: '10', sub: 'each leg' });
 	}
 
 	for (const ex of workout.exercises || []) {
-		addSetsReps('ex', ex.name, ex.sets, ex.reps, ex.weight, {
+		const r = splitReps(ex.reps);
+		const sub = [ex.weight, r.sub].filter(Boolean).join(' · ') || null;
+		add('ex', ex.name, {
+			sets: ex.sets,
+			reps: r.reps,
+			sub,
 			note: ex.note,
 			cap: ex.cap,
 			warn: ex.warn,
@@ -81,68 +79,82 @@ function buildItemList(workout) {
 
 	if (workout.hasCore) {
 		for (const ex of CORE) {
-			addSetsReps('core', ex.name, ex.sets, ex.reps, null, { note: ex.note });
+			add('core', ex.name, { sets: ex.sets, reps: String(ex.reps), note: ex.note });
 		}
 		if (workout.coreType === 'anti-rotation')
-			addSetsReps('core', 'Pallof press', 3, '12 each side', null, {
+			add('core', 'Pallof press', {
+				sets: 3,
+				reps: '12',
+				sub: 'each side',
 				note: 'Anti-rotation — stability for cutting',
 			});
 	}
 
 	if (workout.legConditioning) {
-		addSetsReps('finisher', 'Wall sit', 3, '45 sec');
-		addSetsReps('finisher', 'Single-leg RDL', 3, '10 each leg', 'Bodyweight', {
+		add('finisher', 'Wall sit', { sets: 3, reps: '45 sec' });
+		add('finisher', 'Single-leg RDL', {
+			sets: 3,
+			reps: '10',
+			sub: 'Bodyweight · each leg',
 			note: 'Especially valuable on quad days',
 		});
 	}
 
 	// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
 	if (workout.armConditioning) {
-		addSetsReps('ankle', 'Single-leg balance hold', 3, '30 sec each', null, {
+		add('ankle', 'Single-leg balance hold', {
+			sets: 3,
+			reps: '30 sec',
+			sub: 'each',
 			note: 'Progress: eyes closed',
 		});
-		addSetsReps('ankle', 'Single-leg calf raises', 3, '15 each');
-		addSetsReps('ankle', 'Lateral band walks', 3, '15 steps each direction');
+		add('ankle', 'Single-leg calf raises', { sets: 3, reps: '15', sub: 'each' });
+		add('ankle', 'Lateral band walks', {
+			sets: 3,
+			reps: '15',
+			sub: 'steps each direction',
+		});
 	}
 
+	// Timed cardio shows its duration in the sub line (no numeral block) — the
+	// blueprint's chosen shape (design/workout-data.js:407-408).
 	if (workout.hasStairmaster) {
-		add('cardio', 'Stairmaster', '', {
-			note: '30lb vest',
-			scheme: { n: 10, unit: 'min' },
-		});
+		add('cardio', 'Stairmaster', { sub: '10 min · 30lb vest' });
 	}
 
 	if (workout.hasInclineTreadmill) {
-		add('cardio', 'Incline treadmill', 'speed 4 · level 15 · 30lb vest', {
+		add('cardio', 'Incline treadmill', {
+			sub: '10 min · speed 4 · level 15 · 30lb vest',
 			note: 'Brace core · no holding rails',
-			scheme: { n: 10, unit: 'min' },
 		});
 	}
 
 	if (workout.stretching) {
 		for (const ex of workout.stretching) {
-			add('stretch', ex.name, ex.reps, { note: ex.note });
+			add('stretch', ex.name, { sub: ex.reps, note: ex.note });
 		}
 	}
 
 	if (workout.hasRun) {
 		if (workout.drills) {
 			for (const d of workout.drills) {
-				add('drills', d.name, d.reps, { note: d.note });
+				add('drills', d.name, { sub: d.reps, note: d.note });
 			}
 		} else {
-			add('drills', 'Drills session', '30 min', {
+			add('drills', 'Drills session', {
+				sub: '30 min',
 				note: 'Content TBD — your picks',
 			});
 		}
-		add('run', 'Run — lanes 9→4', '6 lanes descending', {
-			note: '🍌 Banana before · duration = time taken',
+		add('run', 'Run — lanes 9→4', {
+			sub: '6 lanes descending',
+			note: 'Banana before · duration = time taken',
 		});
 	}
 
 	if (workout.cooldown) {
 		for (const ex of workout.cooldown) {
-			add('cooldown', ex.name, ex.reps, { note: ex.note });
+			add('cooldown', ex.name, { sub: ex.reps, note: ex.note });
 		}
 	}
 

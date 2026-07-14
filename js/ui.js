@@ -211,23 +211,23 @@ function itemCardHTML(item, activeId) {
 	const isActive = !isDone && item.id === activeId;
 	const cls = isDone ? 'done' : isActive ? 'active' : 'upcoming';
 
-	// With a scheme the numerals live in the right-aligned block, so the meta
-	// remainder (weight, qualifiers) folds into the note line. Without one the
-	// meta text keeps its own colored line, as before.
+	// Items now expose sets/reps separately (WD blueprint). With both present
+	// the numerals live in the right-aligned block, so the sub line (weight,
+	// qualifiers) folds into the note line. Without a numeral block the sub
+	// keeps its own colored meta line, as before.
+	const hasScheme = item.sets != null && item.reps != null;
 	const noteBits = [];
-	if (item.scheme && item.meta) noteBits.push(item.meta);
+	if (hasScheme && item.sub) noteBits.push(item.sub);
 	if (item.note) noteBits.push(item.note);
 	if (item.cap) noteBits.push(`Cap <span class="cap-value">${item.cap}</span>`);
 	if (item.warn) noteBits.push(`<span class="item-warn">⚠ ${item.warn}</span>`);
 	const metaHTML =
-		!item.scheme && item.meta ? `<div class="item-meta">${item.meta}</div>` : '';
+		!hasScheme && item.sub ? `<div class="item-meta">${item.sub}</div>` : '';
 	const noteHTML = noteBits.length
 		? `<div class="item-note">${noteBits.join(' · ')}</div>`
 		: '';
-	const schemeHTML = item.scheme
-		? item.scheme.unit
-			? `<div class="scheme scheme-timed"><div class="scheme-n">${item.scheme.n}</div><div class="scheme-unit">${item.scheme.unit}</div></div>`
-			: `<div class="scheme">${item.scheme.n}<span class="scheme-x">×</span>${item.scheme.x}<div class="scheme-label">sets × reps</div></div>`
+	const schemeHTML = hasScheme
+		? `<div class="scheme">${item.sets}<span class="scheme-x">×</span>${item.reps}<div class="scheme-label">sets × reps</div></div>`
 		: '';
 
 	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" tabindex="0" onclick="toggleItem('${item.id}')">

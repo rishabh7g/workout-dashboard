@@ -27,7 +27,8 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8'
 // globals we need onto `this` from inside the context.
 vm.runInContext(
 	'this.__splitReps = splitReps; this.__buildItemList = buildItemList;' +
-		'this.__SCHEDULE = SCHEDULE; this.__WORKOUTS = WORKOUTS; this.__RUNNING_DAYS = RUNNING_DAYS;',
+		'this.__SCHEDULE = SCHEDULE; this.__WORKOUTS = WORKOUTS; this.__RUNNING_DAYS = RUNNING_DAYS;' +
+		'this.__weekNumber = weekNumber; this.__getWeekType = getWeekType; this.__programNotice = programNotice;',
 	ctx,
 );
 const splitReps = ctx.__splitReps;
@@ -35,8 +36,14 @@ const buildItemList = ctx.__buildItemList;
 const SCHEDULE = ctx.__SCHEDULE;
 const WORKOUTS = ctx.__WORKOUTS;
 const RUNNING_DAYS = ctx.__RUNNING_DAYS;
+const weekNumber = ctx.__weekNumber;
+const getWeekType = ctx.__getWeekType;
+const programNotice = ctx.__programNotice;
 assert.strictEqual(typeof splitReps, 'function', 'splitReps must exist in js/workout.js');
 assert.strictEqual(typeof buildItemList, 'function', 'buildItemList must exist in js/workout.js');
+assert.strictEqual(typeof weekNumber, 'function', 'weekNumber must exist in js/workout.js');
+assert.strictEqual(typeof getWeekType, 'function', 'getWeekType must exist in js/workout.js');
+assert.strictEqual(typeof programNotice, 'function', 'programNotice must exist in js/workout.js');
 
 // ─── 1. splitReps contract (#64) ─────────────────────────────────────────────
 // New contract: splitReps only peels a trailing "each …" qualifier off a bare
@@ -175,5 +182,45 @@ assert.strictEqual(resolved, 158, `expected 158 non-rest schedule entries, saw $
 assert.strictEqual(resolved + restDays, 184, 'expected 184 total schedule days');
 assert.strictEqual(seenSigs.size, 18, `expected 18 unique non-rest workout signatures, saw ${seenSigs.size}`);
 console.log(`PASS 3: id sequences byte-identical across all ${resolved} non-rest schedule days (${seenSigs.size} signatures)`);
+
+// ─── 4. weekNumber across the anchor boundary (#32) ──────────────────────────
+// Week 1 starts Monday 2026-05-25 (CYCLE_ANCHOR); the opening weekend is week 0,
+// and the whole Mon–Sun span shares one number. Pins the anchor so a moved
+// CYCLE_ANCHOR (or off-by-one Monday snap) can never silently reindex the header.
+{
+	assert.strictEqual(weekNumber('2026-05-25'), 1, 'anchor Monday is week 1');
+	assert.strictEqual(weekNumber('2026-05-31'), 1, 'Sunday of the anchor week is still week 1');
+	assert.strictEqual(weekNumber('2026-05-23'), 0, 'opening Saturday is week 0');
+	assert.strictEqual(weekNumber('2026-06-01'), 2, 'next Monday rolls over to week 2');
+	console.log('PASS 4: weekNumber pins the anchor and week boundaries');
+}
+
+// ─── 5. programNotice text through the final week (#32) ──────────────────────
+// The wind-down heads-up fires only inside the final 7 days (PROGRAM_END
+// 2026-11-22). Pins the exact copy — "Final day", singular/plural "day(s) left"
+// — and the silence past the end and >6 days out. Locale-safe: match substrings,
+// never the ICU-dependent full date.
+{
+	assert.strictEqual(programNotice('2026-11-23'), null, 'past the end is silent');
+	assert.match(programNotice('2026-11-22'), /Final day/, 'final day copy');
+	assert.match(programNotice('2026-11-19'), /3 days left/, 'plural days-left copy');
+	assert.match(programNotice('2026-11-21'), /1 day left/, 'singular day-left copy');
+	assert.strictEqual(programNotice('2026-11-15'), null, '7 days out is silent');
+	console.log('PASS 5: programNotice text fires only inside the final week');
+}
+
+// ─── 6. getWeekType parity (#32) ─────────────────────────────────────────────
+// Fixed types map to a constant label; shoulders alternate weekly from the
+// anchor (index 0 = Back Week). Pins both the fixed map and the alternation
+// phase so a flipped parity or moved anchor is caught.
+{
+	assert.strictEqual(getWeekType('chest'), 'Front Week', 'chest is a fixed Front Week');
+	assert.strictEqual(getWeekType('back'), 'Back Week', 'back is a fixed Back Week');
+	assert.strictEqual(getWeekType('running'), 'Sat · 9→4', 'running carries its kicker label');
+	assert.strictEqual(getWeekType('shoulders', '2026-05-29'), 'Back Week', 'anchor week shoulders = Back Week');
+	assert.strictEqual(getWeekType('shoulders', '2026-06-05'), 'Front Week', 'next week alternates to Front Week');
+	assert.strictEqual(getWeekType('shoulders', '2026-06-12'), 'Back Week', 'and alternates back to Back Week');
+	console.log('PASS 6: getWeekType fixed map + shoulders weekly parity');
+}
 
 console.log('\nALL WORKOUT TESTS PASSED');

@@ -315,23 +315,39 @@ function eyebrowLabel(entry, realKey, effectiveKey) {
 	return `${wk} · ${mid} · Var ${entry.variation}`;
 }
 
-// Week strip: Mon–Sun of the current calendar week as colored bars — the
-// schedule's rotation made visible. Each day's bar takes its day-group hue;
-// dates outside the program fall back to var(--border). Monday is computed
-// the same local-time way weekNumber() does.
+// Human-readable workout-type names for the week strip's a11y labels. The
+// bars are position-based (today/past/future) and no longer encode type, so
+// this map re-exposes the type in a non-color channel (screen readers).
+const WS_GROUP_NAME = {
+	rest: 'Rest',
+	legs: 'Legs',
+	back: 'Back',
+	chest: 'Chest',
+	arms: 'Arms',
+	shoulders: 'Shoulders',
+	run: 'Run',
+	recovery: 'Recovery',
+};
+const WS_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// Week strip: Mon–Sun of the current calendar week as position-based bars —
+// today = accent, past = ink, future = neutral. Bars no longer encode workout
+// type (the day-hue system is retired); the type survives only in each day's
+// aria-label. Monday is computed the same local-time way weekNumber() does.
 function weekStripHTML(key) {
 	const [y, m, d] = key.split('-').map(Number);
 	const dow = new Date(y, m - 1, d).getDay();
 	const toMon = dow === 0 ? -6 : 1 - dow;
 	const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-	let html = '<div class="week-strip">';
+	let html = '<div class="week-strip" role="group" aria-label="This week">';
 	for (let i = 0; i < 7; i++) {
 		const dt = new Date(y, m - 1, d + toMon + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 		const entry = SCHEDULE[k];
-		const hue = entry ? `var(--h-${dayGroup(entry)})` : 'var(--border)';
 		const when = k === key ? 'today' : k < key ? 'past' : 'future';
-		html += `<div class="ws-day ${when}"><div class="ws-bar" style="background:${hue}"></div><div class="ws-letter">${letters[i]}</div></div>`;
+		const typeName = WS_GROUP_NAME[dayGroup(entry)];
+		const label = `${WS_DAY_NAMES[i]}: ${typeName}${when === 'today' ? ', today' : ''}`;
+		html += `<div class="ws-day ${when}" role="img" aria-label="${label}"><div class="ws-bar"></div><div class="ws-letter" aria-hidden="true">${letters[i]}</div></div>`;
 	}
 	return html + '</div>';
 }

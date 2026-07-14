@@ -43,15 +43,42 @@
 			class="swap-sheet-overlay"
 			onclick="closeSwapSheet()"
 		>
-			<div class="swap-sheet" onclick="event.stopPropagation()">
+			<div
+				class="swap-sheet"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="swap-sheet-title"
+				onclick="event.stopPropagation()"
+			>
 				<div class="swap-sheet-header">
-					<div class="swap-sheet-title">
-						Follow a different day's workout
+					<div class="swap-sheet-heading">
+						<div class="swap-sheet-title" id="swap-sheet-title">
+							Follow a different day's workout
+						</div>
+						<div class="swap-sheet-sub">
+							Today's schedule is unchanged — you're just
+							following this one instead
+						</div>
 					</div>
-					<div class="swap-sheet-sub">
-						Today's schedule is unchanged — you're just following
-						this one instead
-					</div>
+					<button
+						class="sheet-close"
+						type="button"
+						onclick="closeSwapSheet()"
+						aria-label="Close"
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.4"
+							stroke-linecap="square"
+							aria-hidden="true"
+						>
+							<path d="M6 6l12 12M18 6L6 18" />
+						</svg>
+					</button>
 				</div>
 				<div id="swap-options"></div>
 			</div>

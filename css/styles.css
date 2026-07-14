@@ -326,31 +326,54 @@ header {
 	margin-top: 2px;
 }
 
-.rest-card {
-	background: var(--surface);
-	border-radius: var(--radius);
-	padding: 36px 20px 24px;
-	text-align: center;
-	border: 1px solid var(--border);
+/* ── Full-bleed poster blocks (rest / outside-program / error) ──
+   Square-cornered flat colour panel, bottom-anchored title block, SVG mark.
+   .poster-accent paints the rest day the design's boldest moment; .poster-ink
+   carries the outside-program and data-error states. No day-hue tokens. */
+.poster {
+	margin-top: 16px;
+	padding: 24px 20px;
+	min-height: 340px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	gap: 10px;
 }
 
-.rest-emoji {
-	font-size: 52px;
+.poster-accent {
+	/* Contrast resolution (issue #70): accent-600 (#d02a10) instead of the
+	   mockup's brighter #ec3013 so white computes ≈5.2:1 for both the 44px
+	   title and the 13px sub — meeting 4.5:1 for body text, not just 3:1. */
+	background: var(--color-accent-600);
+	color: #ffffff;
 }
 
-.rest-title {
-	font-family: var(--display);
-	font-size: 26px;
-	font-weight: 700;
+.poster-ink {
+	background: var(--color-neutral-900);
+	color: var(--color-bg);
+}
+
+.poster-icon {
+	flex-shrink: 0;
+}
+
+.poster-title {
+	font-family: var(--font-heading);
+	font-weight: 800;
+	font-size: 44px;
+	line-height: 0.98;
+	letter-spacing: -0.01em;
 	text-transform: uppercase;
-	letter-spacing: 0.02em;
-	margin-top: 12px;
+	text-wrap: balance;
 }
 
-.rest-subtitle {
-	font-size: 14px;
-	color: var(--text2);
-	margin-top: 6px;
+.poster-sub {
+	font-size: 13px;
+	opacity: 0.9;
+}
+
+.poster-sub code {
+	font-size: 0.9em;
 }
 
 .recovery-list {
@@ -528,12 +551,6 @@ header {
 	margin-top: 5px;
 	line-height: 1.4;
 	font-style: italic;
-}
-
-.no-schedule {
-	padding: 60px 20px;
-	text-align: center;
-	color: var(--text2);
 }
 
 /* ── Interactive item cards ── */
@@ -725,34 +742,36 @@ header {
 	display: block;
 }
 
-/* ── Completion banner ── */
+/* ── Completion block ── */
+/* Flat ink panel with a square-linecap check, matching the poster pattern.
+   Derived from state on every paint (id kept for scrollIntoView/remove). */
 .done-banner {
-	background: color-mix(in srgb, var(--good) 11%, transparent);
-	border: 1px solid color-mix(in srgb, var(--good) 35%, transparent);
-	border-radius: var(--radius);
-	padding: 24px 20px;
-	text-align: center;
+	background: var(--color-neutral-900);
+	color: var(--color-bg);
+	padding: 20px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	margin-bottom: 16px;
 }
 
-.done-emoji {
-	font-size: 48px;
+.done-check {
+	flex-shrink: 0;
 }
 
 .done-title {
-	font-family: var(--display);
+	font-family: var(--font-heading);
+	font-weight: 800;
 	font-size: 24px;
-	font-weight: 700;
+	line-height: 1;
+	letter-spacing: -0.01em;
 	text-transform: uppercase;
-	letter-spacing: 0.02em;
-	margin-top: 10px;
-	color: var(--good);
 }
 
 .done-sub {
-	font-size: 13px;
-	color: var(--text2);
-	margin-top: 5px;
+	/* bg-on-ink ≈ 12:1 even at 0.75 */
+	font-size: 12px;
+	opacity: 0.75;
 }
 
 /* ── Day swap ── */

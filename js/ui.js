@@ -196,12 +196,12 @@ function resetProgress() {
 // ─── HTML builders ───────────────────────────────────────────────────────────
 function doneBannerHTML() {
 	const isProgramEnd = cachedDayKey === PROGRAM_END;
-	const title = isProgramEnd ? 'Program Complete!' : 'Workout Complete!';
+	const title = isProgramEnd ? 'Program Complete!' : 'Workout complete';
 	const sub = isProgramEnd
 		? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
 		: 'Great session. Hydrate and rest well.';
 	return `<div id="done-banner" class="done-banner">
-      <div class="done-emoji">🎉</div>
+      <svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
       <div class="done-title">${title}</div>
       <div class="done-sub">${sub}</div>
     </div>`;
@@ -462,9 +462,10 @@ function render() {
        </div>
       </header>
       <div class="content">
-        <div class="no-schedule">
-          <div style="font-size:48px">📅</div>
-          <div style="margin-top:12px">This date is outside the current program (${PROGRAM_LABEL}).</div>
+        <div class="poster poster-ink">
+          <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m14 15 4 4"/><path d="m18 15-4 4"/></svg>
+          <div class="poster-title">No workout today</div>
+          <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </div>`;
 		if (!storageOK) insertStorageWarning();
@@ -484,10 +485,10 @@ function render() {
        </div>
       </header>
       <div class="content">
-        <div class="rest-card" style="margin-top:16px">
-          <div class="rest-emoji">😴</div>
-          <div class="rest-title">Rest & Recover</div>
-          <div class="rest-subtitle">Sleep well. Let the muscles rebuild.</div>
+        <div class="poster poster-accent">
+          <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          <div class="poster-title">Rest &amp; Recover</div>
+          <div class="poster-sub">Sleep well. Let the muscles rebuild.</div>
         </div>
       </div>`;
 		if (!storageOK) insertStorageWarning();
@@ -516,9 +517,10 @@ function render() {
        </div>
       </header>
       <div class="content">
-        <div class="no-schedule">
-          <div style="font-size:48px">⚠️</div>
-          <div style="margin-top:12px">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
+        <div class="poster poster-ink">
+          <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <div class="poster-title">Couldn't load workout</div>
+          <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
         </div>
       </div>`;
 		if (!storageOK) insertStorageWarning();

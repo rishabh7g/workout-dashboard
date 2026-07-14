@@ -26,10 +26,6 @@ const scrollBehavior = () =>
 // behaviour identical. preventDefault stops Space from scrolling the page.
 document.addEventListener('keydown', (e) => {
 	if (e.key !== ' ' && e.key !== 'Enter') return;
-	// The active row's Log chip is a real <button> nested in the checkbox row.
-	// Its own Space/Enter activation opens the log sheet — do NOT also toggle the
-	// row's tick, or the chip would tick the exercise as a side effect (#86).
-	if (e.target.closest('.log-chip')) return;
 	const card = e.target.closest('.item-card[data-id]');
 	if (!card) return;
 	e.preventDefault();
@@ -94,8 +90,8 @@ function closeSwapSheet() {
 // ─── Bottom-sheet dialog keyboard handling ─────────────────────────────────────
 // A modal dialog must contain focus while open (WCAG 2.1.1/2.4.3): Escape
 // dismisses it, and Tab/Shift+Tab wrap between the first and last focusable
-// controls inside the sheet so nothing behind the scrim is reachable. Shared by
-// both bottom sheets (swap #74, log #86) — same contract, one implementation.
+// controls inside the sheet so nothing behind the scrim is reachable. Powers the
+// swap-sheet dialog (#74).
 function handleSheetKeydown(overlayId, closeFn, e) {
 	const overlay = document.getElementById(overlayId);
 	if (!overlay || overlay.style.display === 'none') return;
@@ -124,9 +120,6 @@ function handleSheetKeydown(overlayId, closeFn, e) {
 }
 document.addEventListener('keydown', (e) =>
 	handleSheetKeydown('swap-sheet-overlay', closeSwapSheet, e),
-);
-document.addEventListener('keydown', (e) =>
-	handleSheetKeydown('log-sheet-overlay', closeLogSheet, e),
 );
 // Record that "today" should follow targetKey's workout, then re-render.
 function doBorrow(targetKey) {
@@ -164,160 +157,6 @@ function undoBorrow() {
 function announce(msg) {
 	const region = document.getElementById('sr-status');
 	if (region) region.textContent = msg;
-}
-
-// ─── Per-exercise log capture sheet (#86) ──────────────────────────────────────
-// A bottom sheet (the swap-sheet Modernist frame, second overlay in index.html)
-// that captures weight / reps / felt-easy for the active exercise and appends it
-// to the `exlog` store (storage.js), keyed by exercise NAME. It's a real dialog:
-// focus moves in on open, is trapped (handleSheetKeydown), Escape closes, and
-// focus returns to the Log chip that opened it (#74 pattern).
-let logReturnFocus = null; // the Log chip to restore focus to on close
-let logName = null; // exlog key for the sheet currently open
-let logPlanned = null; // planned reps of the open item — drives the progression hint (#88)
-let logW = null; // working weight (kg) — null = blank
-let logR = null; // working reps — null = blank
-let logEasy = false; // felt-easy toggle state
-
-// Render a working numeral: null shows an em-dash placeholder, not "0".
-function fmtNum(v) {
-	return v == null ? '—' : String(v);
-}
-
-// Build the sheet body: two steppers (weight ±2.5/±0.5, reps ±1), a felt-easy
-// toggle, one Save button, and this exercise's last 3 entries. Rebuilt on open
-// (and after a save) so the history always reflects the store.
-function logBodyHTML() {
-	const entries = exlogEntries(logName).slice(-3).reverse(); // newest first
-	const hist = entries.length
-		? entries
-				.map(
-					(e) => `<div class="log-hist-row">
-        <span class="log-hist-date">${shortDayLabel(e.d)}</span>
-        <span class="log-hist-val">${fmtNum(e.w)}<span class="log-hist-x">×</span>${fmtNum(e.r)}</span>
-        ${e.e ? '<span class="log-hist-easy">Easy</span>' : ''}
-      </div>`,
-				)
-				.join('')
-		: '<div class="log-hist-empty">No entries logged yet</div>';
-	// Progression hint (#88): the same rule the active row shows, echoed at the
-	// top of the sheet so the "is today the day to add 2.5kg?" answer sits right
-	// where the user dials the weight in. Empty string when there's no suggestion.
-	const sug = itemSuggestion(logName, logPlanned);
-	const hintHTML = !sug
-		? ''
-		: sug.hold
-			? '<div class="log-hint log-hint-hold">At cap — hold</div>'
-			: `<div class="log-hint">Try ${fmtNum(sug.weight)}kg — ${fmtNum(sug.from)}<span class="log-hist-x">×</span>${fmtNum(sug.reps)} felt easy${sug.cap != null ? ` · cap ${fmtNum(sug.cap)}kg` : ''}</div>`;
-	return `<div class="log-body-inner">
-      ${hintHTML}
-      <div class="log-field">
-        <div class="log-field-label">Weight · kg</div>
-        <div class="log-stepper">
-          <button type="button" class="log-step" onclick="stepLog('w',-2.5)" aria-label="Weight minus 2.5">−2.5</button>
-          <button type="button" class="log-step log-step-fine" onclick="stepLog('w',-0.5)" aria-label="Weight minus 0.5">−0.5</button>
-          <output class="log-value" id="log-w" aria-live="polite">${fmtNum(logW)}</output>
-          <button type="button" class="log-step log-step-fine" onclick="stepLog('w',0.5)" aria-label="Weight plus 0.5">+0.5</button>
-          <button type="button" class="log-step" onclick="stepLog('w',2.5)" aria-label="Weight plus 2.5">+2.5</button>
-        </div>
-      </div>
-      <div class="log-field">
-        <div class="log-field-label">Reps</div>
-        <div class="log-stepper">
-          <button type="button" class="log-step" onclick="stepLog('r',-1)" aria-label="Reps minus 1">−1</button>
-          <output class="log-value" id="log-r" aria-live="polite">${fmtNum(logR)}</output>
-          <button type="button" class="log-step" onclick="stepLog('r',1)" aria-label="Reps plus 1">+1</button>
-        </div>
-      </div>
-      <button type="button" class="log-toggle" id="log-easy" aria-pressed="${logEasy}" onclick="toggleEasy()">
-        <span class="log-toggle-box" aria-hidden="true">${IND_CHECK}</span>
-        <span class="log-toggle-label">Felt easy — ready to add weight</span>
-      </button>
-      <button type="button" class="log-save" onclick="saveLog()">Save</button>
-      <div class="log-error" id="log-error" role="alert"></div>
-      <div class="log-hist">
-        <div class="log-hist-head">Last 3</div>
-        ${hist}
-      </div>
-    </div>`;
-}
-
-// Open the capture sheet for the item with this id (called from its Log chip).
-function openLogSheet(id) {
-	const item = allItems.find((i) => i.id === id);
-	if (!item) return;
-	// Remember the chip so focus returns to it on close (WCAG 2.4.3).
-	logReturnFocus = document.activeElement;
-	logName = exerciseName(item);
-	logPlanned = item.reps; // planned reps drive the progression hint (#88)
-	// Pre-fill from the last entry for this exercise NAME (any day/variation),
-	// else the parsed plan weight/reps, else blank. Same-as-last is then ≤2 taps.
-	const last = lastExlogEntry(logName);
-	logW = last && last.w != null ? last.w : parseLeadNum(item.sub);
-	logR = last && last.r != null ? last.r : parseLeadNum(item.reps);
-	logEasy = false;
-	document.getElementById('log-sheet-title').textContent = logName;
-	document.getElementById('log-sheet-sub').textContent = last
-		? `Last logged ${shortDayLabel(last.d)} · ${fmtNum(last.w)}×${fmtNum(last.r)}`
-		: 'No history yet — log your first set';
-	document.getElementById('log-sheet-body').innerHTML = logBodyHTML();
-	document.getElementById('log-sheet-overlay').style.display = 'flex';
-	// Focus the Save button so "same as last" is two taps (open chip, Save) even
-	// via keyboard; the focus trap keeps Tab inside the sheet.
-	document.querySelector('#log-sheet-body .log-save')?.focus();
-}
-
-function closeLogSheet() {
-	document.getElementById('log-sheet-overlay').style.display = 'none';
-	logReturnFocus?.focus?.();
-	logReturnFocus = null;
-	logName = null;
-	logPlanned = null;
-}
-
-// ± a stepper. Weight quantises to 0.5 kg and clamps at 0; reps are integers ≥0.
-// A blank field (null) starts from 0 on the first tap.
-function stepLog(field, delta) {
-	if (field === 'w') {
-		const base = logW == null ? 0 : logW;
-		logW = Math.max(0, Math.round((base + delta) * 2) / 2);
-	} else {
-		const base = logR == null ? 0 : logR;
-		logR = Math.max(0, Math.round(base + delta));
-	}
-	const el = document.getElementById(field === 'w' ? 'log-w' : 'log-r');
-	if (el) el.textContent = fmtNum(field === 'w' ? logW : logR);
-}
-
-function toggleEasy() {
-	logEasy = !logEasy;
-	const t = document.getElementById('log-easy');
-	if (t) t.setAttribute('aria-pressed', logEasy);
-}
-
-// Append the working values to exlog (respecting the 10-cap in storage.js) and
-// close. On a failed write, surface it honestly (#51): repaint the background so
-// the persistent storage-warning banner shows, and keep the sheet open with an
-// inline error rather than pretending it saved.
-function saveLog() {
-	if (logName == null) return;
-	const wasOK = storageOK;
-	const ok = appendExlog(logName, {
-		d: todayKey(),
-		w: logW,
-		r: logR,
-		e: logEasy,
-	});
-	if (ok) {
-		const name = logName;
-		closeLogSheet();
-		announce(`Logged ${name}`);
-		return;
-	}
-	if (wasOK && !storageOK) render();
-	const err = document.getElementById('log-error');
-	if (err)
-		err.textContent = "Couldn't save — storage unavailable on this device.";
 }
 
 // ─── Toggling / progress ─────────────────────────────────────────────────────
@@ -713,91 +552,7 @@ function composeItemLabel(item) {
 	if (item.cap) parts.push(`cap ${speakMeta(item.cap)}`);
 	if (item.warn) parts.push(`warning: ${speakMeta(item.warn)}`);
 
-	// Fold the visible recall line (#87) into the accessible name — the composed
-	// label overrides the row subtree, so the "Last:" line isn't announced
-	// otherwise. Spoken form: "last session 32.5 kilograms by 12, felt easy".
-	if (item.section === 'ex') {
-		const last = lastExlogEntry(exerciseName(item));
-		if (last) {
-			parts.push(
-				`last session ${fmtNum(last.w)} kilograms by ${fmtNum(last.r)}${last.e ? ', felt easy' : ''}`,
-			);
-		}
-		// Announce the progression hint verbalized (#88) — never the raw glyphs.
-		const hint =
-			typeof hintSpoken === 'function'
-				? hintSpoken(exerciseName(item), item.reps)
-				: '';
-		if (hint) parts.push(hint);
-	}
-
 	return parts.join(', ').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-}
-
-// The clean exercise NAME used as the exlog key (#86): the visible label minus
-// the inline emoji and the "⭐ FIRST" priority flag. Must match the visible
-// name so history keys stay stable across variations of the same movement.
-function exerciseName(item) {
-	return String(item.label || '')
-		.replace('🍌 ', '')
-		.replace('⭐ FIRST', '')
-		.trim();
-}
-
-// "1 Jul"-class short date for the recall line (#87): shortDayLabel (workout.js)
-// trimmed to day + month, reusing its 'en-AU' locale so no new locale path is
-// introduced. Local Date construction avoids the UTC-parse off-by-one.
-function recallDate(key) {
-	const [y, m, d] = String(key).split('-').map(Number);
-	return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
-		day: 'numeric',
-		month: 'short',
-	});
-}
-
-// The progression suggestion for an ex item (or null): shared by the active row,
-// the log sheet and the aria-label so all three read the same rule. Guarded so
-// the DOM-free aria-label harness (which doesn't load workout.js) degrades to
-// no hint rather than throwing.
-function itemSuggestion(name, planned) {
-	if (typeof suggestNext !== 'function') return null;
-	return suggestNext(name, planned);
-}
-
-// Visible hint line for the recall slot (#88): accent-700 "Try 35kg — 32.5×12
-// felt easy · cap 40kg" for a go, quiet neutral-600 "At cap — hold" when capped.
-// Empty string when there's no suggestion, so it drops out of the stack cleanly.
-function hintLineHTML(item) {
-	const sug = itemSuggestion(exerciseName(item), item.reps);
-	if (!sug) return '';
-	if (sug.hold)
-		return '<div class="item-hint item-hint-hold">At cap — hold</div>';
-	const capPart = sug.cap != null ? ` · cap ${fmtNum(sug.cap)}kg` : '';
-	return `<div class="item-hint">Try ${fmtNum(sug.weight)}kg — ${fmtNum(sug.from)}<span class="item-recall-x">×</span>${fmtNum(sug.reps)} felt easy${capPart}</div>`;
-}
-
-// Spoken form of the hint for the composed aria-label (#75 verbalization): no
-// raw ×/kg glyphs reach the screen reader — "suggestion: try 35 kilograms, cap
-// 40 kilograms" / "at cap, hold weight". Empty when there's no suggestion.
-function hintSpoken(name, planned) {
-	const sug = itemSuggestion(name, planned);
-	if (!sug) return '';
-	if (sug.hold) return 'at cap, hold weight';
-	const capPart = sug.cap != null ? `, cap ${fmtNum(sug.cap)} kilograms` : '';
-	return `suggestion: try ${fmtNum(sug.weight)} kilograms${capPart}`;
-}
-
-// Escape a string for safe use inside an HTML double-quoted attribute value.
-function escapeAttr(s) {
-	return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-}
-
-// First signed decimal number in a string, or null. Used to pre-fill the capture
-// sheet from plan strings: '25–30kg' → 25, '7→10' → 7, '15kg/side' → 15,
-// 'max' / 'each leg' → null (blank). No unit math — just the leading numeral.
-function parseLeadNum(str) {
-	const m = /-?\d+(?:\.\d+)?/.exec(String(str == null ? '' : str));
-	return m ? parseFloat(m[0]) : null;
 }
 
 function itemCardHTML(item, activeId) {
@@ -813,13 +568,6 @@ function itemCardHTML(item, activeId) {
 	const label = raw.replace('🍌 ', '').replace('⭐ FIRST', '').trim();
 	const firstHTML = hasFirst ? '<span class="item-first">FIRST</span>' : '';
 
-	// The Log chip (#86) rides in EVERY card's markup but is shown by CSS only on
-	// the active row — the same always-in-DOM / show-on-active technique the
-	// SETS×REPS microlabel uses, so a tick (which repaints classNames without
-	// re-rendering innerHTML) moves the chip to the new active row for free.
-	// stopPropagation keeps a tap from also ticking the row (a separate control).
-	const chipHTML = `<button class="log-chip" type="button" aria-label="Log ${escapeAttr(exerciseName(item))}" onclick="event.stopPropagation();openLogSheet('${item.id}')">Log</button>`;
-
 	// sub (weight/qualifier), note, cap and warn each stack as their own line
 	// under the name. sub sits at full opacity on upcoming rows — the retired
 	// day-hue meta line is gone.
@@ -829,24 +577,6 @@ function itemCardHTML(item, activeId) {
 	if (item.cap) stack += `<div class="item-cap">Cap · ${item.cap}</div>`;
 	if (item.warn)
 		stack += `<div class="item-warn">${WARN_SVG}<span><span class="sr-only">Warning: </span>${item.warn}</span></div>`;
-
-	// Last-session recall (#87): an exercise row's most recent exlog entry,
-	// rendered as one quiet line under the meta stack — the app becoming the
-	// weight database. Name-keyed via exerciseName (the same key the Log chip
-	// writes, #86) so it recalls across A/B variations of the movement. ex-
-	// rows only; a row with no history gets no line and renders as before.
-	if (item.section === 'ex') {
-		const last = lastExlogEntry(exerciseName(item));
-		if (last) {
-			const easy = last.e ? ' · easy' : '';
-			stack += `<div class="item-recall">Last: ${fmtNum(last.w)}kg<span class="item-recall-x">×</span>${fmtNum(last.r)}${easy} · ${recallDate(last.d)}</div>`;
-		}
-		// Progression hint (#88): the app's own "+2.5kg when the top reps felt
-		// easy" rule, rendered as one line in the recall slot — right below the
-		// history it reasons from, so the fact and the recommendation read
-		// together. Only ex rows, only when there's a suggestion or a cap-hold.
-		stack += hintLineHTML(item);
-	}
 
 	// Split numerals (sets × reps). The SETS × REPS microlabel is always in the
 	// DOM but hidden by CSS unless the row is active.
@@ -861,7 +591,7 @@ function itemCardHTML(item, activeId) {
 	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" aria-label="${composeItemLabel(item)}" tabindex="0" onclick="toggleItem('${item.id}')">
     <div class="item-indicator">${IND_CHECK}${IND_PLAY}</div>
     <div class="item-body">
-      <div class="item-namerow"><span class="item-name">${label}</span>${firstHTML}${chipHTML}</div>
+      <div class="item-namerow"><span class="item-name">${label}</span>${firstHTML}</div>
       ${stack}
     </div>
     ${numHTML}

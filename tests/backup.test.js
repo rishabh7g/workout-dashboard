@@ -51,13 +51,13 @@ function load(store, today = '2026-07-14') {
 }
 
 // A representative seed: a v1 tick envelope, a quarantined corrupt record, a
-// borrow map, an exlog store, and a prior last-export marker.
+// borrow map, and a prior last-export marker. Covers the ws-, ws-corrupt-,
+// day-borrow and non-ws- marker key shapes the generic enumeration must sweep.
 function seedState() {
 	return {
 		'ws-2026-07-14-back-A': JSON.stringify({ v: 1, n: 3, done: ['ex-1', 'ex-2'] }),
 		'ws-corrupt-2026-07-01': '{broken',
 		'day-borrow': JSON.stringify({ '2026-07-14': '2026-07-18' }),
-		exlog: JSON.stringify({ 'Bench press': [{ d: '2026-07-14', w: 42.5, r: 8, e: true }] }),
 		'last-export': '2026-07-10T09:00:00.000Z',
 	};
 }

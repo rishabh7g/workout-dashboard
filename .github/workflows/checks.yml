@@ -1,0 +1,39 @@
+name: checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the cache-bump guard (ticket #36) diffs against the PR base
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # Pi runs v24; >=20 needed. No npm install anywhere.
+
+      - name: Syntax — node --check every classic script
+        run: |
+          for f in js/*.js sw.js; do node --check "$f"; done
+
+      - name: Unit tests — standalone node scripts (exit code == pass/fail)
+        run: |
+          # tests/*.test.js are zero-dependency scripts, NOT node --test/TAP.
+          # Run each and fail the job if any exits non-zero.
+          for f in tests/*.test.js; do
+            echo "--- $f ---"
+            node "$f" || exit 1
+          done
+
+      - name: sw.js precache list matches the repo
+        run: |
+          missing=0
+          while IFS= read -r a; do
+            f="${a:-index.html}"
+            [ -f "$f" ] || { echo "::error file=sw.js::precaches '${a:-./}' but '$f' is not in the repo"; missing=1; }
+          done < <(scripts/sw-assets.sh)
+          exit $missing

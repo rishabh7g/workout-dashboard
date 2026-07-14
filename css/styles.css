@@ -257,25 +257,38 @@ header {
 	margin: 0 auto;
 }
 
-/* Condensed uppercase label with a hairline rule filling the remaining row */
+/* Modernist ruled section header: uppercase micro-heading over a 2px divider,
+   with an accent check (when complete) and a right-aligned d/total count. */
 .section-label {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	font-family: var(--display);
-	font-size: 13px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.16em;
-	color: var(--text2);
-	margin: 24px 0 10px;
+	gap: 0.5rem;
+	margin-top: 1.375rem;
+	padding-bottom: 0.375rem;
+	border-bottom: 2px solid var(--color-divider);
 }
 
-.section-label::after {
-	content: '';
-	flex: 1;
-	height: 1px;
-	background: var(--border);
+.section-name {
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-text);
+}
+
+.sec-check-wrap {
+	display: inline-flex;
+	align-items: center;
+}
+
+.sec-count {
+	margin-left: auto;
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
+	color: var(--color-neutral-600);
+	font-variant-numeric: tabular-nums;
 }
 
 /* Stacked meta lines under the name: sub · note · cap · warn (see .item-body) */
@@ -428,23 +441,13 @@ header {
 	line-height: 1.5;
 }
 
-.principles-card {
-	background: var(--surface);
-	border-radius: var(--radius);
-	padding: 14px 16px;
-	border: 1px solid var(--border);
-}
-
+/* Principles are a plain ruled list in the Modernist language — no card box. */
 .principle {
-	font-size: 13px;
-	color: var(--text2);
+	font-size: 0.71875rem;
+	color: var(--color-neutral-700);
 	line-height: 1.5;
-	padding: 6px 0;
-	border-bottom: 1px solid var(--border);
-}
-
-.principle:last-child {
-	border-bottom: none;
+	padding: 0.5625rem 0;
+	border-bottom: 1px solid var(--color-divider);
 }
 
 .stairmaster-card {
@@ -717,12 +720,9 @@ header {
 	font-variant-numeric: tabular-nums;
 }
 
-/* ── Section done tick ── */
+/* ── Section done tick (accent check SVG, colour set inline on the <svg>) ── */
 .sec-check {
-	color: var(--good);
-	margin-left: 5px;
-	font-size: 10px;
-	font-weight: 700;
+	display: block;
 }
 
 /* ── Completion banner ── */

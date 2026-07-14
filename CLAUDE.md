@@ -35,4 +35,5 @@ Live: https://rishabh7g.github.io/workout-dashboard/
   ⇒ bump `const CACHE` in `sw.js` (v54 → v55 → …) and keep its ASSETS list in
   sync. CI-guarded (#36). Doc-only changes → NO CACHE bump.
 - **Deployed-root policy:** nothing lands in the repo root that shouldn't be on
-  the live site (GitHub Pages serves the repo root).
+  the live site (GitHub Pages serves the repo root). Design mockups live on the
+  `design` branch, not main.

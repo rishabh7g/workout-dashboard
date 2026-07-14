@@ -646,6 +646,7 @@ function render() {
           <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </main>`;
+		document.title = 'No workout today — workout-dashboard';
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -669,6 +670,7 @@ function render() {
           <div class="poster-sub">Sleep well. Let the muscles rebuild.</div>
         </div>
       </main>`;
+		document.title = 'Rest Day — workout-dashboard';
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -701,6 +703,7 @@ function render() {
           <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || 'TBC'}</code>). Check js/data.js.</div>
         </div>
       </main>`;
+		document.title = "Couldn't load workout — workout-dashboard";
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -735,6 +738,7 @@ function render() {
     <main id="wcontent" class="content">
       ${workoutContentHTML(workout)}
     </main>`;
+	document.title = `${workout.title} — workout-dashboard`;
 
 	// Derive the completion banner from state on this paint. A reloaded/finished
 	// day (reload, borrow/undo, midnight-refresh) shows it with no scroll jump.

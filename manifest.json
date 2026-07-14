@@ -1,6 +1,6 @@
 {
 	"name": "workout-dashboard",
-	"short_name": "workout-dashboard",
+	"short_name": "Workout",
 	"start_url": "./",
 	"scope": "./",
 	"display": "standalone",

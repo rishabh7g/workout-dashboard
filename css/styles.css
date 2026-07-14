@@ -95,6 +95,14 @@
 	white-space: nowrap;
 }
 
+html,
+body {
+	/* Standalone ergonomics (#85): block overscroll chaining so pulling down at
+	   the page top can't trigger Android pull-to-refresh (a jarring mid-workout
+	   reload) while normal scrolling feel is preserved. */
+	overscroll-behavior-y: none;
+}
+
 body {
 	background: var(--bg);
 	color: var(--text);
@@ -117,7 +125,10 @@ header {
 .header-inner {
 	max-width: 480px;
 	margin: 0 auto;
-	padding: 0 1.125rem; /* 18px gutters, matching the mockup */
+	/* 18px gutters (matching the mockup), expanded to clear the notch in
+	   landscape via the horizontal safe-area insets (#85). */
+	padding-inline: max(1.125rem, env(safe-area-inset-left))
+		max(1.125rem, env(safe-area-inset-right));
 }
 
 /* Kicker row: "WEEK 9 / 26 · BACK WEEK · VAR A" left; uppercase date + swap
@@ -224,7 +235,11 @@ header {
 }
 
 .content {
-	padding: 16px 20px;
+	padding-block: 16px;
+	/* 20px gutters, expanded to clear the notch in landscape via the horizontal
+	   safe-area insets (#85). */
+	padding-inline: max(20px, env(safe-area-inset-left))
+		max(20px, env(safe-area-inset-right));
 	max-width: 480px;
 	margin: 0 auto;
 }
@@ -694,6 +709,9 @@ header {
 	max-width: 480px;
 	max-height: 72%;
 	overflow-y: auto;
+	/* Keep overscroll inside the sheet: when the internal scroll reaches its
+	   end, don't chain the scroll to the page behind the overlay (#85). */
+	overscroll-behavior: contain;
 }
 .swap-sheet-header {
 	display: flex;

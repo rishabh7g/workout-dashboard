@@ -145,17 +145,18 @@ function updateProgress(activeId) {
 	const txt = document.getElementById('pbar-txt');
 	if (txt) txt.textContent = `${done} / ${total}`;
 
-	// Section completion ticks
+	// Section completion ticks + live d/total counts (rewritten on every toggle,
+	// and on resetProgress which routes back through here with an empty set).
 	const groups = {};
 	for (const item of allItems) {
 		(groups[item.section] = groups[item.section] || []).push(item);
 	}
 	for (const [sec, items] of Object.entries(groups)) {
-		const chk = document.querySelector(`[data-sec="${sec}"] .sec-check`);
-		if (chk)
-			chk.style.display = items.every((i) => completedItems.has(i.id))
-				? ''
-				: 'none';
+		const secDone = items.filter((i) => completedItems.has(i.id)).length;
+		const chk = document.querySelector(`[data-sec="${sec}"] .sec-check-wrap`);
+		if (chk) chk.style.display = secDone === items.length ? '' : 'none';
+		const cnt = document.querySelector(`[data-sec-count="${sec}"]`);
+		if (cnt) cnt.textContent = `${secDone}/${items.length}`;
 	}
 
 	// Completion banner — derived from state, synced in both directions so a
@@ -217,6 +218,10 @@ const IND_PLAY =
 	'<svg class="ind-play" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>';
 const WARN_SVG =
 	'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+// Accent check shown when every item in a section is done. Kept in the DOM and
+// toggled via display by updateProgress so a tick/untick needs no re-render.
+const SEC_CHECK =
+	'<svg class="sec-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
 function itemCardHTML(item, activeId) {
 	const isDone = completedItems.has(item.id);
@@ -277,14 +282,19 @@ function workoutContentHTML(workout) {
 
 	let html = '';
 	for (const sec of sections) {
-		const allDone = sec.items.every((i) => completedItems.has(i.id));
-		html += `<div class="section-label" data-sec="${sec.key}">${SECTION_NAMES[sec.key] || sec.key}<span class="sec-check" style="${allDone ? '' : 'display:none'}"> ✓</span></div>`;
+		const done = sec.items.filter((i) => completedItems.has(i.id)).length;
+		const allDone = done === sec.items.length;
+		html += `<div class="section-label" data-sec="${sec.key}">
+      <span class="section-name">${SECTION_NAMES[sec.key] || sec.key}</span>
+      <span class="sec-check-wrap" style="${allDone ? '' : 'display:none'}">${SEC_CHECK}</span>
+      <span class="sec-count" data-sec-count="${sec.key}">${done}/${sec.items.length}</span>
+    </div>`;
 		html += sec.items.map((item) => itemCardHTML(item, activeId)).join('');
 	}
 
 	if (workout.exercises) {
-		html += `<div class="section-label">Principles</div>
-      <div class="principles-card">
+		html += `<div class="section-label"><span class="section-name">Principles</span></div>
+      <div class="principles">
         <div class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</div>
         <div class="principle">Rest 60–90s isolation · 2 min compounds</div>
         ${workout.hasCore ? '<div class="principle">Side lateral raises non-negotiable — form over weight, always</div>' : ''}

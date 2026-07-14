@@ -161,6 +161,82 @@ function buildItemList(workout) {
 	return items;
 }
 
+// ─── Progression hints (#88) ─────────────────────────────────────────────────
+// The program's own rule, made literal: "add 2.5kg when the top reps feel easy",
+// with the program's own caps and its non-negotiable strict-form exceptions.
+// Pure and DOM-free — it reads only the name-keyed exlog store (#86, via the
+// global lastExlogEntry) and the per-exercise guardrails baked into data.js.
+
+// The TOP of a planned reps value, as the rep target to beat before adding
+// weight: '7→10' → 10, '12' → 12, '12 each side' → 12; 'max' / non-numeric → null
+// (no fixed target, so no automatic suggestion). Reuses the same digit-run scan
+// splitReps/parseLeadNum lean on — the largest number in the range is the top.
+function topRep(planned) {
+	const nums = String(planned).match(/\d+/g);
+	if (!nums) return null;
+	return Math.max(...nums.map(Number));
+}
+
+// Per-movement guardrails, merged across every occurrence of a movement in the
+// schedule. exlog is keyed by the CLEAN exercise NAME (#86), so a movement that
+// appears on several days shares one history — and must share one set of rules:
+// the STRICTEST cap (min capKg, so a suggestion never exceeds the lowest stated
+// cap for that movement) and noIncrease if ANY occurrence forbids an increase
+// (side lateral raises are the program's strict-form lift, flagged everywhere).
+// Built once, lazily, off the data.js globals loaded before this file.
+let _exConfigCache = null;
+function exerciseConfig(name) {
+	if (!_exConfigCache) {
+		_exConfigCache = {};
+		const clean = (s) =>
+			String(s).replace('🍌 ', '').replace('⭐ FIRST', '').trim();
+		const tables = [];
+		if (typeof WORKOUTS !== 'undefined')
+			for (const t of Object.values(WORKOUTS))
+				for (const v of Object.values(t)) tables.push(v);
+		for (const w of tables) {
+			for (const ex of w.exercises || []) {
+				const k = clean(ex.name);
+				const c = (_exConfigCache[k] = _exConfigCache[k] || {});
+				if (ex.capKg != null)
+					c.capKg = c.capKg == null ? ex.capKg : Math.min(c.capKg, ex.capKg);
+				if (ex.noIncrease) c.noIncrease = true;
+				if (ex.stepKg != null) c.stepKg = ex.stepKg;
+			}
+		}
+	}
+	return _exConfigCache[name] || null;
+}
+
+// Should the app suggest more weight for this movement next time? Reads the
+// LAST logged entry for `name` and the movement's guardrails, and returns:
+//   • { weight, from, reps, cap } — go: last set was easy AND hit the top rep
+//     target, so add stepKg (2.5kg default, or the per-dumbbell stepKg),
+//     clamped to capKg. `from`/`reps` carry the reason ("32.5 × 12 felt easy").
+//   • { hold: true, cap } — already at (or above) the cap: hold, don't add.
+//   • null — no suggestion: no history, last set not easy, short of the target,
+//     bodyweight-only (no weight to add to), no numeric target, or the movement
+//     forbids increases (noIncrease). NEVER suggests past a cap or on a
+//     strict-form lift.
+function suggestNext(name, planned) {
+	const cfg = exerciseConfig(name);
+	if (cfg && cfg.noIncrease) return null; // strict-form lift — never suggest more
+	const last =
+		typeof lastExlogEntry === 'function' ? lastExlogEntry(name) : null;
+	if (!last) return null; // no history to reason over
+	if (!last.e) return null; // last session wasn't easy
+	if (last.w == null) return null; // bodyweight/reps-only — nothing to add to
+	const target = topRep(planned);
+	if (target == null) return null; // no fixed rep target (e.g. 'max')
+	if (!(last.r >= target)) return null; // fell short of the top rep count
+	const cap = cfg && cfg.capKg != null ? cfg.capKg : null;
+	if (cap != null && last.w >= cap) return { hold: true, cap };
+	const step = cfg && cfg.stepKg != null ? cfg.stepKg : 2.5;
+	let weight = last.w + step;
+	if (cap != null && weight > cap) weight = cap; // clamp to the cap
+	return { weight, from: last.w, reps: last.r, cap };
+}
+
 // ─── Date helpers ────────────────────────────────────────────────────────────
 // "Today" as a YYYY-MM-DD key — the same format SCHEDULE is keyed by.
 function todayKey() {

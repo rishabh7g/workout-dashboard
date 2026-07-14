@@ -631,11 +631,16 @@ header {
 	color: var(--color-accent-800);
 }
 .swap-banner-undo {
+	/* WCAG 2.5.8: the underlined "Undo" glyph is only ~35×11px, so pad the hit
+	   area out to ≥44px in both dimensions and pull it back in with a matching
+	   negative margin so the banner keeps its tight height and the text stays
+	   flush-right against the banner's padding edge. */
+	padding: 17px 14px;
+	margin: -17px -14px;
 	margin-left: auto;
 	background: none;
 	border: none;
 	cursor: pointer;
-	padding: 0;
 	font-family: var(--font-heading);
 	font-size: 0.625rem;
 	font-weight: 800;

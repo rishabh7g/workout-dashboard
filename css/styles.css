@@ -336,6 +336,9 @@ header {
 }
 
 /* Principles are a plain ruled list in the Modernist language — no card box. */
+.principles {
+	list-style: none;
+}
 .principle {
 	font-size: 0.71875rem;
 	color: var(--color-neutral-700);

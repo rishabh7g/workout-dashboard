@@ -420,7 +420,7 @@ function workoutContentHTML(workout) {
 		const done = sec.items.filter((i) => completedItems.has(i.id)).length;
 		const allDone = done === sec.items.length;
 		html += `<div class="section-label" data-sec="${sec.key}">
-      <span class="section-name">${SECTION_NAMES[sec.key] || sec.key}</span>
+      <h2 class="section-name" id="sec-${sec.key}">${SECTION_NAMES[sec.key] || sec.key}</h2>
       <span class="sec-check-wrap" style="${allDone ? '' : 'display:none'}">${SEC_CHECK}</span>
       <span class="sec-count" data-sec-count="${sec.key}">${done}/${sec.items.length}</span>
     </div>`;
@@ -428,14 +428,14 @@ function workoutContentHTML(workout) {
 	}
 
 	if (workout.exercises) {
-		html += `<div class="section-label"><span class="section-name">Principles</span></div>
-      <div class="principles">
-        <div class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</div>
-        <div class="principle">Rest 60–90s isolation · 2 min compounds</div>
-        ${workout.hasCore ? '<div class="principle">Side lateral raises non-negotiable — form over weight, always</div>' : ''}
-        <div class="principle">Hanging raises: no twisting variants — oblique growth widens waist</div>
-        <div class="principle">No shrugs · no weighted side bends · no heavy deadlifts</div>
-      </div>`;
+		html += `<div class="section-label"><h2 class="section-name" id="sec-principles">Principles</h2></div>
+      <ul class="principles">
+        <li class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</li>
+        <li class="principle">Rest 60–90s isolation · 2 min compounds</li>
+        ${workout.hasCore ? '<li class="principle">Side lateral raises non-negotiable — form over weight, always</li>' : ''}
+        <li class="principle">Hanging raises: no twisting variants — oblique growth widens waist</li>
+        <li class="principle">No shrugs · no weighted side bends · no heavy deadlifts</li>
+      </ul>`;
 	}
 	html += `<div style="text-align:center;padding:24px 0 40px">
       <button class="reset-btn" onclick="resetProgress()">
@@ -593,19 +593,19 @@ function render() {
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
-        <div class="workout-title">No workout today</div>
+        <h1 class="workout-title">No workout today</h1>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         <div class="header-rule"></div>
        </div>
       </header>
-      <div class="content">
+      <main class="content">
         <div class="poster poster-ink">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m14 15 4 4"/><path d="m18 15-4 4"/></svg>
           <div class="poster-title">No workout today</div>
           <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
-      </div>`;
+      </main>`;
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -615,20 +615,20 @@ function render() {
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-        <div class="workout-title">Rest Day</div>
+        <h1 class="workout-title">Rest Day</h1>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
         <div class="header-rule"></div>
        </div>
       </header>
-      <div class="content">
+      <main class="content">
         <div class="poster poster-accent">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
           <div class="poster-title">Rest &amp; Recover</div>
           <div class="poster-sub">Sleep well. Let the muscles rebuild.</div>
         </div>
-      </div>`;
+      </main>`;
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -647,20 +647,20 @@ function render() {
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-        <div class="workout-title">Couldn't load workout</div>
+        <h1 class="workout-title">Couldn't load workout</h1>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
         <div class="header-rule"></div>
        </div>
       </header>
-      <div class="content">
+      <main class="content">
         <div class="poster poster-ink">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           <div class="poster-title">Couldn't load workout</div>
           <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
         </div>
-      </div>`;
+      </main>`;
 		if (!storageOK) insertStorageWarning();
 		return;
 	}
@@ -681,7 +681,7 @@ function render() {
     <header>
      <div class="header-inner">
       ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-      <div class="workout-title">${workout.title}</div>
+      <h1 class="workout-title">${workout.title}</h1>
       ${weekStripHTML(key)}
       ${swapBannerHTML}
       ${noticeHTML}
@@ -692,9 +692,9 @@ function render() {
       <div class="header-rule"></div>
      </div>
     </header>
-    <div id="wcontent" class="content">
+    <main id="wcontent" class="content">
       ${workoutContentHTML(workout)}
-    </div>`;
+    </main>`;
 
 	// Derive the completion banner from state on this paint. A reloaded/finished
 	// day (reload, borrow/undo, midnight-refresh) shows it with no scroll jump.

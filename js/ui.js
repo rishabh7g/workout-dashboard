@@ -38,9 +38,9 @@ function entryLabel(entry) {
 	if (!entry) return 'Outside schedule';
 	if (entry.type === 'rest') return 'Rest Day';
 	if (entry.type === 'running')
-		return `Running · Sat · Var ${entry.variation || '?'}`;
+		return `Running · Sat · Var ${entry.variation || 'TBC'}`;
 	if (entry.type === 'recovery')
-		return `Running · Sun · Var ${entry.variation || '?'}`;
+		return `Running · Sun · Var ${entry.variation || 'TBC'}`;
 	const w = WORKOUTS[entry.type]?.[entry.variation];
 	return w ? `${w.title} · Var ${entry.variation}` : entry.type;
 }
@@ -419,7 +419,7 @@ function itemCardHTML(item, activeId) {
 	if (item.note) stack += `<div class="item-note">${item.note}</div>`;
 	if (item.cap) stack += `<div class="item-cap">Cap · ${item.cap}</div>`;
 	if (item.warn)
-		stack += `<div class="item-warn">${WARN_SVG}<span>${item.warn}</span></div>`;
+		stack += `<div class="item-warn">${WARN_SVG}<span><span class="sr-only">Warning: </span>${item.warn}</span></div>`;
 
 	// Split numerals (sets × reps). The SETS × REPS microlabel is always in the
 	// DOM but hidden by CSS unless the row is active.
@@ -461,7 +461,7 @@ function workoutContentHTML(workout) {
 		const allDone = done === sec.items.length;
 		html += `<div class="section-label" data-sec="${sec.key}">
       <h2 class="section-name" id="sec-${sec.key}">${SECTION_NAMES[sec.key] || sec.key}</h2>
-      <span class="sec-check-wrap" style="${allDone ? '' : 'display:none'}">${SEC_CHECK}</span>
+      <span class="sec-check-wrap" role="img" aria-label="section complete" style="${allDone ? '' : 'display:none'}">${SEC_CHECK}</span>
       <span class="sec-count" data-sec-count="${sec.key}">${done}/${sec.items.length}</span>
     </div>`;
 		html += sec.items.map((item) => itemCardHTML(item, activeId)).join('');
@@ -698,7 +698,7 @@ function render() {
         <div class="poster poster-ink">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           <div class="poster-title">Couldn't load workout</div>
-          <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || '?'}</code>). Check js/data.js.</div>
+          <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || 'TBC'}</code>). Check js/data.js.</div>
         </div>
       </main>`;
 		if (!storageOK) insertStorageWarning();

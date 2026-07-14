@@ -36,6 +36,11 @@
 		<!-- The whole UI is rendered into this single mount point by js/ui.js render() -->
 		<div id="app"></div>
 
+		<!-- Persistent polite live region. render() rebuilds #app wholesale, so a
+		     live region inside it can never fire; this sibling survives every paint
+		     and is written by doBorrow/undoBorrow to announce the swap (issue #77). -->
+		<div id="sr-status" role="status" aria-live="polite" class="sr-only"></div>
+
 		<!-- Bottom sheet for "follow a different day". Hidden until openSwapSheet() shows it. -->
 		<div
 			id="swap-sheet-overlay"

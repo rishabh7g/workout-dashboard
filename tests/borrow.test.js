@@ -33,6 +33,10 @@ function makeCtx(schedule, tk) {
 		saveBorrows: (b) => { saved = b; },
 		closeSwapSheet: () => { closed = true; },
 		render: () => { rendered = true; },
+		// doBorrow now announces the swap via the #sr-status live region (#77);
+		// stub the helpers it calls so the isolated extraction runs.
+		announce: () => {},
+		shortDayLabel: () => '',
 	};
 	vm.createContext(ctx);
 	vm.runInContext(skMatch[0] + '\n' + m[0] + '\nthis.__doBorrow = doBorrow;', ctx);

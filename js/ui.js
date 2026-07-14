@@ -125,12 +125,24 @@ function doBorrow(targetKey) {
 	saveBorrows(b);
 	closeSwapSheet();
 	render();
+	// render() rebuilds #app wholesale, so announce via the persistent sibling
+	// live region (issue #77). One polite message per borrow.
+	announce(`Following ${shortDayLabel(targetKey)}'s workout`);
 }
 function undoBorrow() {
 	const b = loadBorrows();
 	delete b[todayKey()];
 	saveBorrows(b);
 	render();
+	announce("Back to today's workout");
+}
+
+// Write to the persistent polite live region (#sr-status, a sibling of #app in
+// index.html). Only doBorrow/undoBorrow use it — progress and completion are
+// announced by their own role="status" elements (issue #77).
+function announce(msg) {
+	const region = document.getElementById('sr-status');
+	if (region) region.textContent = msg;
 }
 
 // ─── Toggling / progress ─────────────────────────────────────────────────────
@@ -209,7 +221,17 @@ function updateProgress(activeId) {
 		if (!document.getElementById('done-banner')) {
 			const content = document.getElementById('wcontent');
 			if (content) {
-				content.insertAdjacentHTML('afterbegin', doneBannerHTML());
+				// Insert the empty role="status" shell first, then fill it in a
+				// setTimeout(0) so AT that skip announce-on-insert still speak the
+				// title/sub on the fill — "Workout complete …" (issue #77).
+				content.insertAdjacentHTML(
+					'afterbegin',
+					'<div id="done-banner" class="done-banner" role="status"></div>',
+				);
+				setTimeout(() => {
+					const banner = document.getElementById('done-banner');
+					if (banner) banner.innerHTML = doneBannerInnerHTML();
+				}, 0);
 				// Only a live completion scrolls the fresh banner into view.
 				document
 					.getElementById('done-banner')
@@ -274,17 +296,25 @@ function resetProgress() {
 }
 
 // ─── HTML builders ───────────────────────────────────────────────────────────
-function doneBannerHTML() {
+// Inner content of the completion banner (svg + title + sub), separated so the
+// live-tick path can inject the empty role="status" shell first and fill it in
+// a setTimeout(0) — some AT skip announce-on-insert but honour a fill (issue #77).
+function doneBannerInnerHTML() {
 	const isProgramEnd = cachedDayKey === PROGRAM_END;
 	const title = isProgramEnd ? 'Program Complete!' : 'Workout complete';
 	const sub = isProgramEnd
 		? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
 		: 'Great session. Hydrate and rest well.';
-	return `<div id="done-banner" class="done-banner">
-      <svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+	return `<svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
       <div class="done-title">${title}</div>
-      <div class="done-sub">${sub}</div>
-    </div>`;
+      <div class="done-sub">${sub}</div>`;
+}
+
+// role="status" makes the banner announce its title/sub on completion. render()
+// injects it whole for a reloaded/finished day (no announce-on-insert expected);
+// the live tick path uses the empty-shell-then-fill technique in updateProgress.
+function doneBannerHTML() {
+	return `<div id="done-banner" class="done-banner" role="status">${doneBannerInnerHTML()}</div>`;
 }
 
 // Modernist row iconography. The indicator carries BOTH the done-check and the
@@ -687,7 +717,7 @@ function render() {
       ${noticeHTML}
       <div class="progress-row">
         <div class="segs" id="pbar-segs">${segsHTML}</div>
-        <div class="progress-text" id="pbar-txt">${done} / ${total}</div>
+        <div class="progress-text" id="pbar-txt" role="status">${done} / ${total}</div>
       </div>
       <div class="header-rule"></div>
      </div>

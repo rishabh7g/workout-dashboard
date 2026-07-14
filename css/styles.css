@@ -82,6 +82,19 @@
 	padding: 0;
 }
 
+/* Visually-hidden but screen-reader-available. Used by the #sr-status polite
+   live region (issue #77) — clipped to a 1px box so it never paints or shifts
+   layout while its textContent stays announceable. */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
 body {
 	background: var(--bg);
 	color: var(--text);

@@ -48,15 +48,15 @@ function openSwapSheet() {
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 		if (!SCHEDULE[k]) continue;
 		rows += `<div class="swap-option" onclick="doBorrow('${k}')">
-      <div>
+      <div class="swap-option-text">
         <div class="swap-option-day">${shortDayLabel(k)}</div>
         <div class="swap-option-label">${entryLabel(SCHEDULE[k])}</div>
       </div>
-      <div class="swap-option-arrow">›</div>
+      <svg class="swap-option-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
     </div>`;
 	}
 	if (!rows)
-		rows = `<div style="padding:24px;text-align:center;color:var(--text2)">No upcoming days in schedule</div>`;
+		rows = `<div class="swap-empty">No upcoming days in schedule</div>`;
 	document.getElementById('swap-options').innerHTML = rows;
 	document.getElementById('swap-sheet-overlay').style.display = 'flex';
 }

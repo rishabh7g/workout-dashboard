@@ -307,14 +307,11 @@ function eyebrowLabel(entry, realKey, effectiveKey) {
 				: `Week ${n} / ${TOTAL_WEEKS}`;
 	if (!entry) return wk;
 	if (entry.type === 'rest') return `${wk} · Rest Day`;
-	// Front/Back parity describes the borrowed workout's home week, so it keeps
-	// using effectiveKey — that segment is already correct.
-	const mid =
-		entry.type === 'running'
-			? 'Saturday'
-			: entry.type === 'recovery'
-				? 'Sunday'
-				: getWeekType(entry.type, effectiveKey);
+	// Single owner for the middle segment: getWeekType produces Front/Back Week
+	// for gym days and 'Sat · 9→4' / 'Sun · 9→4' for running/recovery — no more
+	// duplicate 'Saturday'/'Sunday' literals here (#65). Front/Back parity
+	// describes the borrowed workout's home week, so it uses effectiveKey.
+	const mid = getWeekType(entry.type, effectiveKey);
 	return `${wk} · ${mid} · Var ${entry.variation}`;
 }
 
@@ -339,12 +336,13 @@ function weekStripHTML(key) {
 	return html + '</div>';
 }
 
-// Shared header eyebrow row: program position left, short date + swap right.
+// Shared Modernist kicker row: program-position kicker text left, uppercase
+// date + square swap button right (#65). CSS uppercases the date.
 function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
-	return `<div class="eyebrow-row">
-        <div class="eyebrow">${eyebrowLabel(entry, key, effectiveKey)}</div>
-        <div class="eyebrow-right">
-          <span class="eyebrow-date">${shortDayLabel(key)}</span>
+	return `<div class="kicker-row">
+        <div class="kicker">${eyebrowLabel(entry, key, effectiveKey)}</div>
+        <div class="kicker-meta">
+          <span class="kicker-date">${shortDayLabel(key)}</span>
           ${swapBtnHTML}
         </div>
       </div>`;
@@ -354,8 +352,9 @@ function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
 // header so it stays visible. Injected via the DOM only when storage is failing,
 // so the normal-path markup is untouched when storage works.
 function insertStorageWarning() {
-	document
-		.querySelector('header')
+	// Prepend inside the 480px header rail so the warning aligns with the kicker
+	// row rather than spanning the full-bleed header background (#65).
+	(document.querySelector('.header-inner') || document.querySelector('header'))
 		?.insertAdjacentHTML(
 			'afterbegin',
 			`<div class="storage-warning">⚠ Progress can't be saved on this device — ticks will be lost when you close the app.</div>`
@@ -367,8 +366,7 @@ function insertStorageWarning() {
 // now-unknown ids and set `definitionChanged`; this surfaces a one-line notice
 // via the same header plumbing as the storage warning.
 function insertDefinitionNotice() {
-	document
-		.querySelector('header')
+	(document.querySelector('.header-inner') || document.querySelector('header'))
 		?.insertAdjacentHTML(
 			'afterbegin',
 			`<div class="storage-warning">⚠ Workout definition changed — progress re-checked.</div>`
@@ -396,9 +394,11 @@ function render() {
 	document.documentElement.dataset.day = dayGroup(entry);
 	const app = document.getElementById('app');
 	const swapBannerHTML = borrowedFrom
-		? `<div class="swap-banner">Following ${shortDayLabel(borrowedFrom)}'s workout <button onclick="undoBorrow()">Undo</button></div>`
+		? `<div class="swap-banner"><span class="swap-banner-text">Following ${shortDayLabel(borrowedFrom)}'s workout</span><button class="swap-banner-undo" onclick="undoBorrow()">Undo</button></div>`
 		: '';
-	const swapBtnHTML = `<button class="header-action" onclick="openSwapSheet()" title="Follow a different day">⇄</button>`;
+	// Square Modernist swap button with an inline arrows glyph (#65). The button
+	// name comes from aria-label, not the glyph, so AT announces the action.
+	const swapBtnHTML = `<button class="swap-btn" onclick="openSwapSheet()" aria-label="Follow a different day's workout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>`;
 	const notice = programNotice(key);
 	const noticeHTML = notice
 		? `<div class="program-notice">${notice}</div>`
@@ -407,10 +407,13 @@ function render() {
 	if (!entry) {
 		app.innerHTML = `
       <header>
+       <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
         <div class="workout-title">No workout today</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
+        <div class="header-rule"></div>
+       </div>
       </header>
       <div class="content">
         <div class="no-schedule">
@@ -425,11 +428,14 @@ function render() {
 	if (entry.type === 'rest') {
 		app.innerHTML = `
       <header>
+       <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
         <div class="workout-title">Rest Day</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
+        <div class="header-rule"></div>
+       </div>
       </header>
       <div class="content">
         <div class="rest-card" style="margin-top:16px">
@@ -454,11 +460,14 @@ function render() {
 		cachedDayKey = null;
 		app.innerHTML = `
       <header>
+       <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
         <div class="workout-title">Couldn't load workout</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
+        <div class="header-rule"></div>
+       </div>
       </header>
       <div class="content">
         <div class="no-schedule">
@@ -484,6 +493,7 @@ function render() {
 
 	app.innerHTML = `
     <header>
+     <div class="header-inner">
       ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
       <div class="workout-title">${workout.title}</div>
       ${weekStripHTML(key)}
@@ -493,6 +503,8 @@ function render() {
         <div class="segs" id="pbar-segs">${segsHTML}</div>
         <div class="progress-text" id="pbar-txt">${done} / ${total}</div>
       </div>
+      <div class="header-rule"></div>
+     </div>
     </header>
     <div id="wcontent" class="content">
       ${workoutContentHTML(workout)}

@@ -470,6 +470,159 @@ function resetProgress() {
 	window.scrollTo({ top: 0, behavior: scrollBehavior() });
 }
 
+// ─── One-tap backup: export / import (issue #89) ─────────────────────────────
+//
+// Export serializes every app key (storage.js serializeBackup) into a dated
+// JSON file. Delivery prefers the native share sheet with files (iOS →
+// AirDrop/Files) and falls back to a Blob-URL download everywhere else. Import
+// parses + validates the whole file BEFORE anything destructive, then reuses the
+// #72 two-tap arm as the destructive confirm: a first valid file arms the button
+// ("Tap again to replace all data"); the second tap runs the replace-all
+// restore. A malformed/unversioned file is rejected with a visible message and
+// the state is left untouched.
+
+// Fire the file download for a Blob via a transient <a download>.
+function downloadBackup(blob, filename) {
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	// Revoke after the click has been handled so the download isn't cancelled.
+	setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function backupFilename() {
+	return `workout-backup-${todayKey()}.json`;
+}
+
+// The neutral-600 footer line beside the export control.
+function lastExportLabel() {
+	const d = lastExportDate();
+	return d ? `Last backup ${d.slice(0, 10)}` : 'No backup yet';
+}
+
+function showImportMessage(msg) {
+	const el = document.getElementById('import-msg');
+	if (el) el.textContent = msg;
+}
+
+function exportBackup() {
+	const backup = serializeBackup();
+	const json = JSON.stringify(backup);
+	const filename = backupFilename();
+	// Record the export date (non-ws- marker) and refresh the footer label.
+	recordExport(backup.exported);
+	const lbl = document.getElementById('last-export');
+	if (lbl) lbl.textContent = lastExportLabel();
+	showImportMessage('');
+	const blob = new Blob([json], { type: 'application/json' });
+	// Prefer the native share sheet with files where the platform can share them
+	// (iOS Safari), else fall back to a plain download.
+	try {
+		const file = new File([blob], filename, { type: 'application/json' });
+		if (
+			navigator.canShare &&
+			navigator.canShare({ files: [file] }) &&
+			navigator.share
+		) {
+			navigator
+				.share({ files: [file], title: 'Workout backup' })
+				.catch(() => downloadBackup(blob, filename));
+			return;
+		}
+	} catch (e) {
+		// Share unsupported/blocked — fall through to download.
+	}
+	downloadBackup(blob, filename);
+}
+
+// Two-tap arm for the destructive import confirm, mirroring the reset arm above.
+// State is module-local; a re-render repaints the button unarmed (see render).
+let importArmed = false;
+let importArmTimer = null;
+let pendingImport = null; // the validated backup object awaiting confirmation
+
+function disarmImport() {
+	importArmed = false;
+	pendingImport = null;
+	if (importArmTimer) {
+		clearTimeout(importArmTimer);
+		importArmTimer = null;
+	}
+	const btn = document.querySelector('.import-btn');
+	if (btn) {
+		btn.classList.remove('armed');
+		const label = btn.querySelector('.reset-btn-label');
+		if (label) label.textContent = 'Restore backup';
+	}
+}
+
+function armImport() {
+	importArmed = true;
+	const btn = document.querySelector('.import-btn');
+	if (btn) {
+		btn.classList.add('armed');
+		const label = btn.querySelector('.reset-btn-label');
+		if (label) label.textContent = 'Tap again to replace all data';
+	}
+	importArmTimer = setTimeout(disarmImport, 3000);
+}
+
+// Button handler. Unarmed: open the hidden file picker. Armed (a valid file is
+// staged): run the replace-all restore and repaint.
+function importBackup() {
+	if (importArmed && pendingImport) {
+		const obj = pendingImport;
+		disarmImport();
+		const ok = restoreBackup(obj);
+		if (ok) {
+			render();
+			showImportMessage('Backup restored');
+		} else {
+			showImportMessage('Restore failed — storage unavailable');
+		}
+		return;
+	}
+	const input = document.getElementById('import-file');
+	if (input) input.click();
+}
+
+// onchange for the hidden file input. Read → parse → validate; only a fully
+// valid, correctly-versioned file arms the confirm. Anything else is rejected
+// with a visible message and no state is touched.
+function onImportFile(input) {
+	const file = input.files && input.files[0];
+	input.value = ''; // let the same file be re-picked later
+	if (!file) return;
+	const reader = new FileReader();
+	reader.onload = () => {
+		let obj;
+		try {
+			obj = JSON.parse(reader.result);
+		} catch (e) {
+			disarmImport();
+			showImportMessage('Not a valid backup file');
+			return;
+		}
+		if (!validateBackup(obj)) {
+			disarmImport();
+			showImportMessage('Not a valid backup file');
+			return;
+		}
+		pendingImport = obj;
+		showImportMessage('');
+		armImport();
+	};
+	reader.onerror = () => {
+		disarmImport();
+		showImportMessage('Could not read file');
+	};
+	reader.readAsText(file);
+}
+
 // ─── HTML builders ───────────────────────────────────────────────────────────
 // Inner content of the completion banner (svg + title + sub), separated so the
 // live-tick path can inject the empty role="status" shell first and fill it in
@@ -751,7 +904,19 @@ function workoutContentHTML(workout) {
         <li class="principle">No shrugs · no weighted side bends · no heavy deadlifts</li>
       </ul>`;
 	}
-	html += `<div style="text-align:center;padding:24px 0 40px">
+	html += `<div class="footer-actions" style="text-align:center;padding:24px 0 40px">
+      <div class="backup-row">
+        <button class="reset-btn export-btn" onclick="exportBackup()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+          <span class="reset-btn-label">Export backup</span>
+        </button>
+        <button class="reset-btn import-btn" onclick="importBackup()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+          <span class="reset-btn-label">Restore backup</span>
+        </button>
+      </div>
+      <div class="last-export" id="last-export">${lastExportLabel()}</div>
+      <div class="import-msg" id="import-msg" role="status" aria-live="polite"></div>
       <button class="reset-btn" onclick="resetProgress()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         <span class="reset-btn-label">Reset progress</span>

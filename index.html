@@ -36,6 +36,17 @@
 		<!-- The whole UI is rendered into this single mount point by js/ui.js render() -->
 		<div id="app"></div>
 
+		<!-- Hidden picker for "Restore backup" (issue #89). A sibling of #app so it
+		     survives render()'s wholesale repaint; onImportFile parses + validates
+		     the chosen file before any destructive restore. -->
+		<input
+			type="file"
+			id="import-file"
+			accept="application/json"
+			style="display: none"
+			onchange="onImportFile(this)"
+		/>
+
 		<!-- Persistent polite live region. render() rebuilds #app wholesale, so a
 		     live region inside it can never fire; this sibling survives every paint
 		     and is written by doBorrow/undoBorrow to announce the swap (issue #77). -->

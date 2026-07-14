@@ -76,6 +76,29 @@
 	color: var(--color-accent-600);
 }
 
+/* One-tap backup footer (issue #89) — the Export/Restore controls reuse the
+ * .reset-btn Modernist uppercase-chip language, sat in a centered row above the
+ * reset affordance. The last-export date and any import message sit below in
+ * quiet neutral-600, matching the app's other sub/note text. */
+.backup-row {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.last-export,
+.import-msg {
+	font-family: var(--font-heading);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--color-neutral-600);
+	margin-top: 2px;
+	min-height: 12px;
+}
+
 * {
 	box-sizing: border-box;
 	margin: 0;

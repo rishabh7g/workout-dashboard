@@ -288,3 +288,111 @@ function pruneOldBorrows() {
 		if (changed) saveBorrows(b);
 	} catch (e) {}
 }
+
+// ─── One-tap backup: export / import (issue #89) ─────────────────────────────
+//
+// localStorage on an installed PWA is OS-evictable and dies with the device.
+// Once the exercise log (#86) exists, months of progression history become the
+// most valuable data in the app, so the record has to be recoverable. These
+// three functions are the whole persistence-export surface.
+//
+// SCOPE — "all app keys", enumerated, not hardcoded. This origin is exclusively
+// the workout app, so EVERY localStorage key is app data: the ws-<date> ticks,
+// ws-corrupt-* quarantine, day-borrow, exlog, the last-export marker, and any
+// FUTURE store — all get swept up automatically by iterating localStorage rather
+// than naming keys. The one exclusion is `ws-probe`: it is the transient boot
+// round-trip probe (written then removed synchronously at load), never real
+// state, so it is skipped from both export and the restore-clear.
+//
+// The last-export date lives under a NON-`ws-` key so pruneOldState's
+// `^ws-\d{4}-\d{2}-\d{2}` sweep can never touch it (same discipline as exlog).
+const LAST_EXPORT_KEY = 'last-export';
+const BACKUP_SCHEMA = 1;
+const PROBE_KEY = 'ws-probe';
+
+// True for a key we own and should export / clear on restore. Everything except
+// the transient boot probe.
+function isAppKey(k) {
+	return typeof k === 'string' && k.length > 0 && k !== PROBE_KEY;
+}
+
+// Read-only serializer: iterate localStorage.key(i)/getItem and copy every app
+// key's raw string value into `data`. Never mutates storage. Values are kept as
+// the exact stored strings so a round-trip is byte-identical (no re-encoding of
+// the JSON envelopes). Returns a plain, JSON-serializable backup object.
+function serializeBackup() {
+	const data = {};
+	try {
+		for (let i = 0; i < localStorage.length; i++) {
+			const k = localStorage.key(i);
+			if (!isAppKey(k)) continue;
+			const v = localStorage.getItem(k);
+			if (v !== null) data[k] = v;
+		}
+	} catch (e) {
+		// A throwing store yields whatever we read so far; export never crashes.
+	}
+	return { schema: BACKUP_SCHEMA, exported: new Date().toISOString(), data };
+}
+
+// Full-shape validator — the gate that makes import atomic. Returns true ONLY
+// for a well-formed, correctly-versioned backup: a plain object with
+// schema === 1 and a plain-object `data` map whose every value is a string.
+// Anything else (array, null, wrong/missing schema, non-string value) is
+// rejected so a malformed or unversioned file can be refused BEFORE any
+// destructive clear runs.
+function validateBackup(obj) {
+	if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+	if (obj.schema !== BACKUP_SCHEMA) return false;
+	const data = obj.data;
+	if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+	for (const k of Object.keys(data)) {
+		if (typeof data[k] !== 'string') return false;
+	}
+	return true;
+}
+
+// Replace-all restore. ATOMIC by construction: validate the ENTIRE object first
+// and bail (returning false, touching nothing) if it fails, so a bad file can
+// never partially apply. Only once valid do we clear existing app keys and write
+// the file's keys. A mid-write storage failure (quota/disabled) is the one case
+// that can leave a partial state — that is a genuine storage fault, not a bad
+// file — and it flips storageOK so the UI can warn, mirroring saveState (#51).
+function restoreBackup(obj) {
+	if (!validateBackup(obj)) return false;
+	const data = obj.data;
+	try {
+		// Clear existing app keys first (snapshot keys before mutating the store).
+		const toRemove = [];
+		for (let i = 0; i < localStorage.length; i++) {
+			const k = localStorage.key(i);
+			if (isAppKey(k)) toRemove.push(k);
+		}
+		for (const k of toRemove) localStorage.removeItem(k);
+		// Write from the file.
+		for (const k of Object.keys(data)) {
+			localStorage.setItem(k, data[k]);
+		}
+		return true;
+	} catch (e) {
+		storageOK = false;
+		return false;
+	}
+}
+
+// Persist the last-export timestamp (ISO) under the non-ws- marker key, and read
+// it back for the footer label. Silent-fail like the rest of storage.js.
+function recordExport(iso) {
+	try {
+		localStorage.setItem(LAST_EXPORT_KEY, iso);
+	} catch (e) {
+		storageOK = false;
+	}
+}
+function lastExportDate() {
+	try {
+		return localStorage.getItem(LAST_EXPORT_KEY);
+	} catch (e) {
+		return null;
+	}
+}

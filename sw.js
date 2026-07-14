@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v46';
+const CACHE = 'workout-dashboard-v47';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -39,6 +39,12 @@ self.addEventListener('fetch', (e) => {
 	// fresh deploy still shows up on the very next load (issue #5 invariant).
 	// On a stalling network the cache answers in ≤3s and the background fetch
 	// still updates the cache, so the deploy lands one load later.
+	//
+	// F06-7: GitHub Pages serves `cache-control: max-age=600`; within 10 minutes
+	// of a load, fetch() is satisfied from the HTTP cache, so "deploy visible on
+	// next load" has a ≤10-min window by design. Accepted: it also shields
+	// flaky-wifi loads inside the window. Do not add `{cache:'no-cache'}` without
+	// pairing it with the 3s race (already present).
 	if (e.request.method !== 'GET') return;
 	if (new URL(e.request.url).origin !== self.location.origin) return;
 	e.respondWith((async () => {

@@ -869,74 +869,75 @@ header {
 	position: fixed;
 	inset: 0;
 	z-index: 200;
-	background: rgba(0, 0, 0, 0.72);
+	background: color-mix(in srgb, var(--color-neutral-900) 55%, transparent);
 	display: flex;
 	align-items: flex-end;
 	justify-content: center;
 }
 .swap-sheet {
-	background: var(--surface);
-	border-radius: 20px 20px 0 0;
-	padding-bottom: env(safe-area-inset-bottom, 20px);
+	background: var(--color-bg);
+	border-top: 2px solid var(--color-text);
+	padding-bottom: calc(44px + env(safe-area-inset-bottom, 0px));
 	width: 100%;
 	max-width: 480px;
-	max-height: 80vh;
+	max-height: 72%;
 	overflow-y: auto;
 }
-.swap-sheet-handle {
-	text-align: center;
-	padding: 12px 0 4px;
-}
-.swap-sheet-handle::after {
-	content: '';
-	display: inline-block;
-	width: 36px;
-	height: 4px;
-	background: var(--border);
-	border-radius: 2px;
-}
 .swap-sheet-header {
-	padding: 8px 20px 16px;
-	border-bottom: 1px solid var(--border);
+	padding: 16px 18px 12px;
+	border-bottom: 2px solid var(--color-divider);
 }
 .swap-sheet-title {
-	font-family: var(--display);
-	font-size: 20px;
-	font-weight: 700;
+	font-family: var(--font-heading);
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
 	text-transform: uppercase;
-	letter-spacing: 0.02em;
 }
 .swap-sheet-sub {
-	font-size: 13px;
-	color: var(--text2);
-	margin-top: 3px;
+	font-size: 11.5px;
+	color: var(--color-neutral-600);
+	margin-top: 4px;
 }
 .swap-option {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	padding: 14px 20px;
-	border-bottom: 1px solid var(--border);
+	gap: 10px;
+	padding: 13px 18px;
+	border-bottom: 1px solid var(--color-divider);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 	transition: background 0.1s;
 }
 .swap-option:active {
-	background: var(--surface2);
+	background: var(--color-accent-200);
 }
-.swap-option:last-child {
-	border-bottom: none;
+.swap-option-text {
+	flex: 1;
+	min-width: 0;
 }
 .swap-option-day {
-	font-size: 15px;
-	font-weight: 600;
+	font-family: var(--font-heading);
+	font-size: 14px;
+	font-weight: 800;
 }
 .swap-option-label {
-	font-size: 13px;
-	color: var(--text2);
+	font-size: 11.5px;
+	color: var(--color-neutral-600);
 	margin-top: 2px;
 }
-.swap-option-arrow {
-	font-size: 18px;
-	color: var(--border);
+.swap-option-chevron {
+	flex-shrink: 0;
+}
+.swap-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--color-neutral-600);
+}
+
+@media (hover: hover) {
+	.swap-option:hover {
+		background: var(--color-accent-100);
+	}
 }

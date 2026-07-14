@@ -307,3 +307,18 @@ function getWeekType(type, key) {
 	}
 	return '';
 }
+
+// ─── Node-only test exports (inert in the browser — see js/data.js) ─────────
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = {
+		SECTION_NAMES,
+		splitReps,
+		buildItemList,
+		todayKey,
+		shortDayLabel,
+		programNotice,
+		TOTAL_WEEKS,
+		weekNumber,
+		getWeekType,
+	};
+}

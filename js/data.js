@@ -822,3 +822,26 @@ const RUNNING_DAYS = {
 		},
 	},
 };
+
+// ─── Node-only test exports ──────────────────────────────────────────────────
+// In the browser this whole block is inert: `module` is not declared in a
+// classic script, and `typeof` on an undeclared identifier is safe ('undefined').
+// Under Node's require() each file gets its own module scope instead of the
+// one shared global scope classic <script> tags give us — so besides exporting,
+// re-create that shared scope by copying the consts onto globalThis. That lets
+// workout.js resolve CORE / PROGRAM_END / CYCLE_ANCHOR at call time, exactly
+// like it does in the browser.
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = {
+		PROGRAM_START,
+		PROGRAM_END,
+		PROGRAM_LABEL,
+		CYCLE_ANCHOR,
+		SCHEDULE,
+		CORE,
+		WORKOUTS,
+		DRILLS,
+		RUNNING_DAYS,
+	};
+	Object.assign(globalThis, module.exports);
+}

@@ -63,9 +63,26 @@ setInterval(refreshIfDayChanged, 60000); // belt-and-braces; no-ops when day unc
 // refresh only re-renders, it never reloads code. `controllerchange` fires when
 // the new worker takes control; we surface a non-intrusive toast rather than
 // auto-reloading mid-workout. The first-install claim is skipped via the
-// hadController flag. (Error surfacing for register() is ticket #83.)
+// hadController flag.
+//
+// caches.addAll(ASSETS) in sw.js is atomic: a single 404 (a renamed file with a
+// lagging ASSETS list) rejects the whole install, the new worker goes
+// `redundant` without ever taking control, and offline support breaks with NO
+// user-facing signal — worst case for a gym app, found only inside a dead zone.
+// So we no longer swallow register()'s rejection, and we watch the installing
+// worker for a `redundant` transition. Console-level is enough for a
+// single-user app (#83).
 if ('serviceWorker' in navigator) {
-	navigator.serviceWorker.register('./sw.js').catch(() => {});
+	navigator.serviceWorker.register('./sw.js').then((reg) => {
+		reg.addEventListener('updatefound', () => {
+			const w = reg.installing;
+			w.addEventListener('statechange', () => {
+				if (w.state === 'redundant' && !navigator.serviceWorker.controller) {
+					console.warn('SW install failed — offline unavailable');
+				}
+			});
+		});
+	}).catch((err) => console.warn('SW registration failed:', err));
 	let hadController = !!navigator.serviceWorker.controller;
 	navigator.serviceWorker.addEventListener('controllerchange', () => {
 		if (hadController) showUpdateToast(); // skip the first-install claim

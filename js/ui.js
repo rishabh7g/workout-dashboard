@@ -206,38 +206,58 @@ function doneBannerHTML() {
     </div>`;
 }
 
+// Modernist row iconography. The indicator carries BOTH the done-check and the
+// active-play SVG at all times; CSS shows exactly one (or neither, for upcoming)
+// per state class. Keeping them in the DOM lets toggleItem/reset repaint by
+// swapping the row's className alone — no innerHTML re-render, so focus survives
+// a keyboard toggle. Colours come from currentColor (the indicator is bg-tinted).
+const IND_CHECK =
+	'<svg class="ind-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+const IND_PLAY =
+	'<svg class="ind-play" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>';
+const WARN_SVG =
+	'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
 function itemCardHTML(item, activeId) {
 	const isDone = completedItems.has(item.id);
 	const isActive = !isDone && item.id === activeId;
 	const cls = isDone ? 'done' : isActive ? 'active' : 'upcoming';
 
-	// Items now expose sets/reps separately (WD blueprint). With both present
-	// the numerals live in the right-aligned block, so the sub line (weight,
-	// qualifiers) folds into the note line. Without a numeral block the sub
-	// keeps its own colored meta line, as before.
+	// A label may carry an inline "⭐ FIRST" priority flag (data.js). Strip it
+	// (and any stray leading emoji) from the visible name and render it as a
+	// bordered badge instead — the star glyph never reaches the DOM.
+	const raw = item.label || '';
+	const hasFirst = raw.includes('⭐ FIRST');
+	const label = raw.replace('🍌 ', '').replace('⭐ FIRST', '').trim();
+	const firstHTML = hasFirst ? '<span class="item-first">FIRST</span>' : '';
+
+	// sub (weight/qualifier), note, cap and warn each stack as their own line
+	// under the name. sub sits at full opacity on upcoming rows — the retired
+	// day-hue meta line is gone.
+	let stack = '';
+	if (item.sub) stack += `<div class="item-sub">${item.sub}</div>`;
+	if (item.note) stack += `<div class="item-note">${item.note}</div>`;
+	if (item.cap) stack += `<div class="item-cap">Cap · ${item.cap}</div>`;
+	if (item.warn)
+		stack += `<div class="item-warn">${WARN_SVG}<span>${item.warn}</span></div>`;
+
+	// Split numerals (sets × reps). The SETS × REPS microlabel is always in the
+	// DOM but hidden by CSS unless the row is active.
 	const hasScheme = item.sets != null && item.reps != null;
-	const noteBits = [];
-	if (hasScheme && item.sub) noteBits.push(item.sub);
-	if (item.note) noteBits.push(item.note);
-	if (item.cap) noteBits.push(`Cap <span class="cap-value">${item.cap}</span>`);
-	if (item.warn) noteBits.push(`<span class="item-warn">⚠ ${item.warn}</span>`);
-	const metaHTML =
-		!hasScheme && item.sub ? `<div class="item-meta">${item.sub}</div>` : '';
-	const noteHTML = noteBits.length
-		? `<div class="item-note">${noteBits.join(' · ')}</div>`
-		: '';
-	const schemeHTML = hasScheme
-		? `<div class="scheme">${item.sets}<span class="scheme-x">×</span>${item.reps}<div class="scheme-label">sets × reps</div></div>`
+	const numHTML = hasScheme
+		? `<div class="item-num">
+        <div class="item-num-val">${item.sets}<span class="item-num-x">×</span>${item.reps}</div>
+        <div class="item-num-label">SETS × REPS</div>
+      </div>`
 		: '';
 
 	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" tabindex="0" onclick="toggleItem('${item.id}')">
-    <div class="item-indicator"></div>
+    <div class="item-indicator">${IND_CHECK}${IND_PLAY}</div>
     <div class="item-body">
-      <div class="item-name">${item.label}</div>
-      ${metaHTML}
-      ${noteHTML}
+      <div class="item-namerow"><span class="item-name">${label}</span>${firstHTML}</div>
+      ${stack}
     </div>
-    ${schemeHTML}
+    ${numHTML}
   </div>`;
 }
 

@@ -131,56 +131,82 @@ body {
 	padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
+/* Modernist header (#65): NOT sticky — the header scrolls with the content in a
+   single scroll container, per the mockup (non-sticky decision confirmed at
+   review). The full-bleed day-hue wash stays; content is constrained to the
+   480px rail by .header-inner so it aligns with the cards on wide viewports. */
 header {
-	padding: calc(env(safe-area-inset-top, 20px) + 16px) 20px 16px;
+	padding: calc(env(safe-area-inset-top, 20px) + 1rem) 0 0;
 	background:
 		linear-gradient(180deg, var(--day-soft) 0%, transparent 78%),
 		var(--bg);
-	position: sticky;
-	top: 0;
-	z-index: 10;
-	border-bottom: 1px solid var(--border);
 }
 
-/* Program-position row: "WEEK 9 / 26 · BACK WEEK · VAR A" + short date. */
-.eyebrow-row {
+.header-inner {
+	max-width: 480px;
+	margin: 0 auto;
+	padding: 0 1.125rem; /* 18px gutters, matching the mockup */
+}
+
+/* Kicker row: "WEEK 9 / 26 · BACK WEEK · VAR A" left; uppercase date + swap
+   button right. Fits ONE line at 320px for the longest label at 10px. */
+.kicker-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
+	gap: 0.625rem;
 }
 
-.eyebrow {
-	font-size: 12px;
-	font-weight: 700;
+.kicker {
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
-	color: var(--day);
-}
-
-.eyebrow-right {
-	display: flex;
-	align-items: center;
-	gap: 10px;
+	color: var(--color-accent-700);
+	/* The kicker is the priority: it never wraps and never yields space. When
+	   the row is tight (320px, longest label + long date) the DATE truncates
+	   instead — see .kicker-date. */
+	white-space: nowrap;
 	flex-shrink: 0;
 }
 
-.eyebrow-date {
-	font-size: 12px;
-	font-weight: 600;
+.kicker-meta {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	min-width: 0; /* let the date ellipsize rather than push the kicker */
+}
+
+.kicker-date {
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: var(--text2);
+	letter-spacing: 0.1em;
+	color: var(--color-neutral-600);
+	/* A locale-long date truncates rather than wrapping the kicker row. */
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .workout-title {
-	font-family: var(--display);
-	font-size: 46px;
-	font-weight: 700;
-	line-height: 0.98;
+	font-family: var(--font-heading);
+	font-size: 1.9375rem; /* 31px */
+	font-weight: 800;
+	line-height: 1;
 	text-transform: uppercase;
-	letter-spacing: 0.01em;
-	margin-top: 8px;
+	letter-spacing: -0.015em;
+	margin-top: 0.5rem;
+	text-wrap: balance;
+}
+
+/* Closing 2px rule of the header stack. */
+.header-rule {
+	height: 0.125rem;
+	background: var(--color-divider);
+	margin-top: 0.875rem;
 }
 
 /* Week strip: Mon–Sun day-type bars under the title. Bars carry the day-group
@@ -744,14 +770,18 @@ header {
 }
 
 /* ── Day swap ── */
-.header-action {
-	width: 34px;
-	height: 34px;
-	border-radius: 50%;
-	background: var(--surface2);
-	border: 1px solid var(--border);
-	color: var(--text2);
-	font-size: 15px;
+/* Square 30×30 Modernist swap button (no radius). Padding + negative margin
+   grow the tap target to ≥44px without enlarging the visual square (#65). */
+.swap-btn {
+	width: 1.875rem;
+	height: 1.875rem;
+	box-sizing: content-box;
+	padding: 0.4375rem; /* 30 + 2×7 = 44px effective hit area */
+	margin: -0.4375rem;
+	border: 1px solid var(--color-divider);
+	border-radius: 0;
+	background: transparent;
+	color: var(--color-text);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -760,32 +790,48 @@ header {
 	-webkit-tap-highlight-color: transparent;
 	transition: background 0.15s;
 }
-.header-action:active {
-	background: var(--border);
+.swap-btn:hover {
+	background: var(--color-accent-100);
 }
+.swap-btn:active {
+	background: var(--color-accent-200);
+}
+.swap-btn svg {
+	display: block;
+}
+
+/* Borrow banner: flat accent-100 wash, no border (the old same-colour border is
+   gone). accent-800 on accent-100 computes ≥4.5:1 (#8f1d0b on #fbe0da). */
 .swap-banner {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 7px 12px;
-	background: var(--day-soft);
-	border: 1px solid var(--day-soft);
-	border-radius: 8px;
-	margin-top: 8px;
-	font-size: 12px;
-	color: var(--day);
-	font-weight: 500;
+	gap: 0.5rem;
+	background: var(--color-accent-100);
+	padding: 0.5rem 0.625rem;
+	margin-top: 0.75rem;
 }
-.swap-banner button {
+.swap-banner-text {
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-accent-800);
+}
+.swap-banner-undo {
 	margin-left: auto;
 	background: none;
 	border: none;
-	color: var(--day);
-	font-size: 12px;
-	font-weight: 700;
 	cursor: pointer;
 	padding: 0;
+	font-family: var(--font-heading);
+	font-size: 0.625rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-accent-700);
 	text-decoration: underline;
+	text-underline-offset: 3px;
 }
 
 .program-notice {

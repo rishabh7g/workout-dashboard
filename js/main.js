@@ -58,6 +58,31 @@ scheduleMidnightRefresh();
 setInterval(refreshIfDayChanged, 60000); // belt-and-braces; no-ops when day unchanged
 
 // ─── Service Worker (offline support) ────────────────────────────────────────
+// A mid-session deploy activates immediately (sw.js: skipWaiting + claim), so
+// the page keeps running OLD js until it is next relaunched — and the midnight
+// refresh only re-renders, it never reloads code. `controllerchange` fires when
+// the new worker takes control; we surface a non-intrusive toast rather than
+// auto-reloading mid-workout. The first-install claim is skipped via the
+// hadController flag. (Error surfacing for register() is ticket #83.)
 if ('serviceWorker' in navigator) {
 	navigator.serviceWorker.register('./sw.js').catch(() => {});
+	let hadController = !!navigator.serviceWorker.controller;
+	navigator.serviceWorker.addEventListener('controllerchange', () => {
+		if (hadController) showUpdateToast(); // skip the first-install claim
+		hadController = true;
+	});
+}
+
+// Fixed bottom pill announcing a new deploy; tapping it reloads onto the fresh
+// code. role="status" so screen readers announce it. Idempotent — a second
+// controllerchange won't stack toasts.
+function showUpdateToast() {
+	if (document.querySelector('.update-toast')) return;
+	const toast = document.createElement('button');
+	toast.className = 'update-toast';
+	toast.type = 'button';
+	toast.setAttribute('role', 'status');
+	toast.textContent = 'Updated — tap to refresh';
+	toast.onclick = () => location.reload();
+	document.body.appendChild(toast);
 }

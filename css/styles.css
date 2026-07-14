@@ -1,11 +1,4 @@
-/* Self-hosted display face — bundled, never fetched from a CDN (offline PWA). */
-@font-face {
-	font-family: 'Barlow Condensed';
-	font-style: normal;
-	font-weight: 700;
-	font-display: swap;
-	src: url('../fonts/barlow-condensed-latin-700.woff2') format('woff2');
-}
+/* Self-hosted heading face — bundled, never fetched from a CDN (offline PWA). */
 @font-face {
 	font-family: 'Archivo';
 	font-style: normal;
@@ -45,37 +38,11 @@
 	--font-heading: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* file ships in the next ticket */
 	--font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* DECISION: mockup's --font-body is unresolvable; system stack = zero bytes, matches the app's existing UI stack */
 
-	/* Legacy aliases remapped onto the Modernist tokens so the whole app moves
-	   to light in one PR (old rules keep working). Transitional look accepted
-	   until the surface tickets migrate each rule. Old dark values were
-	   #101216 / #181b21 / #20242c / #2a2f38 / #edeef0 / #8a919c. */
+	/* Short aliases remapped onto the Modernist tokens, kept for the few base
+	   rules (body, storage warning) that still read them. */
 	--bg: var(--color-bg);
-	--surface: var(--color-surface);
-	--surface2: var(--color-neutral-200);
-	--border: var(--color-divider);
 	--text: var(--color-text);
-	--text2: var(--color-neutral-600);
-	--good: #57c785;
 	--warn: #e2a13d;
-	--radius: 16px;
-	--display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
-
-	/* DEPRECATED — removed in the day-hue decommission ticket (#73).
-	   Surfaces still consume these until each is migrated. */
-	/* Day hues — one per day-type group ("the day has a color"). */
-	--h-rest: #8e8ac0;
-	--h-legs: #e8a33c;
-	--h-back: #5b8def;
-	--h-chest: #f0654a;
-	--h-arms: #d76bc0;
-	--h-shoulders: #3fc1c9;
-	--h-run: #4fc978;
-	--h-recovery: #7fd6b8;
-
-	/* DEPRECATED — removed in the day-hue decommission ticket (#73). */
-	/* Active-day tokens: overridden per day via html[data-day="…"]. */
-	--day: var(--h-rest);
-	--day-soft: rgba(142, 138, 192, 0.13);
 }
 
 :focus-visible {
@@ -109,39 +76,6 @@
 	color: var(--color-accent-600);
 }
 
-html[data-day='rest'] {
-	--day: var(--h-rest);
-	--day-soft: rgba(142, 138, 192, 0.13);
-}
-html[data-day='legs'] {
-	--day: var(--h-legs);
-	--day-soft: rgba(232, 163, 60, 0.13);
-}
-html[data-day='back'] {
-	--day: var(--h-back);
-	--day-soft: rgba(91, 141, 239, 0.13);
-}
-html[data-day='chest'] {
-	--day: var(--h-chest);
-	--day-soft: rgba(240, 101, 74, 0.13);
-}
-html[data-day='arms'] {
-	--day: var(--h-arms);
-	--day-soft: rgba(215, 107, 192, 0.13);
-}
-html[data-day='shoulders'] {
-	--day: var(--h-shoulders);
-	--day-soft: rgba(63, 193, 201, 0.13);
-}
-html[data-day='run'] {
-	--day: var(--h-run);
-	--day-soft: rgba(79, 201, 120, 0.13);
-}
-html[data-day='recovery'] {
-	--day: var(--h-recovery);
-	--day-soft: rgba(127, 214, 184, 0.13);
-}
-
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -159,13 +93,12 @@ body {
 
 /* Modernist header (#65): NOT sticky — the header scrolls with the content in a
    single scroll container, per the mockup (non-sticky decision confirmed at
-   review). The full-bleed day-hue wash stays; content is constrained to the
-   480px rail by .header-inner so it aligns with the cards on wide viewports. */
+   review). A static light chrome — the header no longer tints per day (the
+   day-hue system is retired). Content is constrained to the 480px rail by
+   .header-inner so it aligns with the cards on wide viewports. */
 header {
 	padding: calc(env(safe-area-inset-top, 20px) + 1rem) 0 0;
-	background:
-		linear-gradient(180deg, var(--day-soft) 0%, transparent 78%),
-		var(--bg);
+	background: var(--bg);
 }
 
 .header-inner {
@@ -402,94 +335,6 @@ header {
 	font-size: 0.9em;
 }
 
-.recovery-list {
-	text-align: left;
-	margin-top: 16px;
-	border-top: 1px solid var(--border);
-	padding-top: 4px;
-}
-
-.recovery-item {
-	font-size: 14px;
-	color: var(--text2);
-	padding: 8px 0;
-	border-bottom: 1px solid var(--border);
-	line-height: 1.4;
-}
-
-.recovery-item:last-child {
-	border-bottom: none;
-}
-
-.run-card {
-	background: var(--surface);
-	border-radius: var(--radius);
-	padding: 20px;
-	border: 1px solid var(--border);
-}
-
-.run-stats {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 12px;
-	margin-top: 14px;
-}
-
-.run-stat {
-	background: var(--surface2);
-	border-radius: 10px;
-	padding: 12px 14px;
-}
-
-.run-stat-label {
-	font-size: 11px;
-	color: var(--text2);
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	font-weight: 600;
-}
-
-.run-stat-value {
-	font-size: 20px;
-	font-weight: 700;
-	margin-top: 3px;
-	color: var(--day);
-}
-
-.run-stat-unit {
-	font-size: 12px;
-	color: var(--text2);
-	font-weight: 400;
-}
-
-.rugby-card {
-	background: var(--surface);
-	border-radius: var(--radius);
-	padding: 14px 16px;
-	border: 1px solid var(--border);
-	display: flex;
-	align-items: flex-start;
-	gap: 12px;
-}
-
-.rugby-emoji {
-	font-size: 28px;
-	line-height: 1;
-	padding-top: 2px;
-}
-
-.rugby-title {
-	font-size: 15px;
-	font-weight: 600;
-}
-
-.rugby-sub {
-	font-size: 13px;
-	color: var(--text2);
-	margin-top: 4px;
-	line-height: 1.5;
-}
-
 /* Principles are a plain ruled list in the Modernist language — no card box. */
 .principle {
 	font-size: 0.71875rem;
@@ -497,86 +342,6 @@ header {
 	line-height: 1.5;
 	padding: 0.5625rem 0;
 	border-bottom: 1px solid var(--color-divider);
-}
-
-.stairmaster-card {
-	background: var(--surface2);
-	border-radius: 10px;
-	padding: 12px 14px;
-	margin-top: 8px;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-
-.stairmaster-icon {
-	font-size: 24px;
-}
-
-.stairmaster-text {
-	font-size: 14px;
-	font-weight: 600;
-}
-
-.stairmaster-sub {
-	font-size: 12px;
-	color: var(--text2);
-	margin-top: 1px;
-}
-
-.core-card {
-	background: var(--surface2);
-	border-radius: 10px;
-	padding: 14px 16px;
-	margin-bottom: 8px;
-	border-left: 3px solid var(--day);
-}
-
-.core-title {
-	font-size: 13px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: var(--day);
-	margin-bottom: 8px;
-}
-
-.core-item {
-	font-size: 14px;
-	font-weight: 500;
-	padding: 3px 0;
-}
-
-.conditioning-block {
-	background: var(--surface2);
-	border-radius: 10px;
-	padding: 12px 14px;
-	margin-bottom: 8px;
-	border-left: 3px solid var(--day);
-}
-
-.conditioning-title {
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: var(--text2);
-	margin-bottom: 6px;
-}
-
-.conditioning-item {
-	font-size: 13px;
-	color: var(--text);
-	padding: 2px 0;
-	line-height: 1.5;
-}
-
-.conditioning-note {
-	font-size: 12px;
-	color: var(--text2);
-	margin-top: 5px;
-	line-height: 1.4;
-	font-style: italic;
 }
 
 /* ── Interactive item cards ── */
@@ -865,18 +630,18 @@ header {
 	text-underline-offset: 3px;
 }
 
+/* Final-week countdown strip — flat accent-100 wash in the Modernist language,
+   square corners, no border (matches .swap-banner). */
 .program-notice {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	padding: 7px 12px;
-	background: var(--day-soft);
-	border: 1px solid var(--day-soft);
-	border-radius: 8px;
+	background: var(--color-accent-100);
 	margin-top: 8px;
 	font-size: 12px;
-	color: var(--day);
-	font-weight: 500;
+	color: var(--color-accent-800);
+	font-weight: 600;
 }
 
 .storage-warning {

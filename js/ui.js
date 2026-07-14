@@ -350,7 +350,9 @@ function workoutContentHTML(workout) {
 
 // ─── Render ─────────────────────────────────────────────────────────────────
 // The single entry point that paints the whole screen for "today".
-// Map a schedule entry's type to its day-hue group (html[data-day="…"] in CSS).
+// Collapse a schedule entry's type into a coarse group name, used only for the
+// week strip's screen-reader labels (WS_GROUP_NAME). The day-hue system that
+// once consumed this to tint the UI is retired (#73).
 function dayGroup(entry) {
 	if (!entry) return 'rest'; // outside-schedule dates fall back to rest
 	const t = entry.type;
@@ -442,7 +444,7 @@ function insertStorageWarning() {
 	(document.querySelector('.header-inner') || document.querySelector('header'))
 		?.insertAdjacentHTML(
 			'afterbegin',
-			`<div class="storage-warning">⚠ Progress can't be saved on this device — ticks will be lost when you close the app.</div>`
+			`<div class="storage-warning">Progress can't be saved on this device — ticks will be lost when you close the app.</div>`
 		);
 }
 
@@ -454,7 +456,7 @@ function insertDefinitionNotice() {
 	(document.querySelector('.header-inner') || document.querySelector('header'))
 		?.insertAdjacentHTML(
 			'afterbegin',
-			`<div class="storage-warning">⚠ Workout definition changed — progress re-checked.</div>`
+			`<div class="storage-warning">Workout definition changed — progress re-checked.</div>`
 		);
 }
 
@@ -475,8 +477,6 @@ function render() {
 	}
 	const effectiveKey = borrowedFrom || key;
 	const entry = SCHEDULE[effectiveKey];
-	// Tint the whole UI with the effective (borrowed) day's hue.
-	document.documentElement.dataset.day = dayGroup(entry);
 	const app = document.getElementById('app');
 	const swapBannerHTML = borrowedFrom
 		? `<div class="swap-banner"><span class="swap-banner-text">Following ${shortDayLabel(borrowedFrom)}'s workout</span><button class="swap-banner-undo" onclick="undoBorrow()">Undo</button></div>`

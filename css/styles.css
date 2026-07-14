@@ -299,6 +299,20 @@ header {
 	color: var(--color-accent-700);
 	margin-top: 4px;
 }
+/* Last-session recall (#87): the quiet weight-history line under the meta stack.
+   Modernist tokens only — 11px neutral-600, no day-hue. Numerals inherit the
+   body font; the compact × is dimmed. Short enough to clear the numeral block
+   at 320px. */
+.item-recall {
+	font-size: 11px;
+	color: var(--color-neutral-600);
+	line-height: 1.4;
+	margin-top: 4px;
+}
+.item-recall-x {
+	margin: 0 3px;
+	opacity: 0.55;
+}
 .item-warn {
 	display: flex;
 	align-items: flex-start;

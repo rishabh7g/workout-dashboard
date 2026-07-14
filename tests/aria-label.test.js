@@ -14,15 +14,24 @@ const assert = require('assert');
 const uiSrc = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
 const speak = uiSrc.match(/function speakMeta\(text\) \{[\s\S]*?\n\}/);
 const compose = uiSrc.match(/function composeItemLabel\(item\) \{[\s\S]*?\n\}/);
+const exName = uiSrc.match(/function exerciseName\(item\) \{[\s\S]*?\n\}/);
+const fmt = uiSrc.match(/function fmtNum\(v\) \{[\s\S]*?\n\}/);
 assert.ok(speak, 'speakMeta(text) must exist in js/ui.js');
 assert.ok(compose, 'composeItemLabel(item) must exist in js/ui.js');
+assert.ok(exName, 'exerciseName(item) must exist in js/ui.js');
+assert.ok(fmt, 'fmtNum(v) must exist in js/ui.js');
 
-const ctx = { console };
+// composeItemLabel now reads the exlog store via lastExlogEntry (#87). Inject a
+// controllable stub so this DOM-free harness can drive the recall fold; default
+// returns null (no history), matching a fresh install.
+let stubLast = () => null;
+const prelude =
+	speak[0] + '\n' + fmt[0] + '\n' + exName[0] +
+	'\nfunction lastExlogEntry(name) { return __stub(name); }\n';
+
+const ctx = { console, __stub: (n) => stubLast(n) };
 vm.createContext(ctx);
-vm.runInContext(
-	speak[0] + '\n' + compose[0] + '\nthis.__c = composeItemLabel;',
-	ctx
-);
+vm.runInContext(prelude + compose[0] + '\nthis.__c = composeItemLabel;', ctx);
 const composeItemLabel = ctx.__c;
 
 // 1. Scheme item with weight, cap and warning verbalizes fully.
@@ -76,10 +85,10 @@ const composeItemLabel = ctx.__c;
 {
 	const dataSrc = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
 	const workoutSrc = fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8');
-	const c2 = { console };
+	const c2 = { console, __stub: () => null };
 	vm.createContext(c2);
 	vm.runInContext(
-		dataSrc + '\n' + workoutSrc + '\n' + speak[0] + '\n' + compose[0] +
+		dataSrc + '\n' + workoutSrc + '\n' + prelude + compose[0] +
 			'\nthis.__c = composeItemLabel; this.__b = buildItemList; this.__s = SCHEDULE;' +
 			'\nthis.__w = typeof WORKOUTS !== "undefined" ? WORKOUTS : {};' +
 			'\nthis.__r = typeof RUNNING_DAYS !== "undefined" ? RUNNING_DAYS : {};',
@@ -101,6 +110,45 @@ const composeItemLabel = ctx.__c;
 	}
 	assert.ok(checked > 0, 'expected to check at least one real item');
 	console.log(`PASS 6: ${checked} real items compose clean names (no glyph/markup/emoji leak)`);
+}
+
+// 7. Last-session recall (#87) folds into an ex- row's accessible name, and
+//    only for ex- rows with history — never a raw glyph, never for warmups.
+{
+	stubLast = () => ({ d: '2026-07-01', w: 32.5, r: 12, e: true });
+	const got = composeItemLabel({
+		label: '⭐ FIRST Hack squat',
+		section: 'ex',
+		sets: 3,
+		reps: '10',
+	});
+	assert.strictEqual(
+		got,
+		'Hack squat, first exercise, 3 sets of 10, last session 32.5 kilograms by 12, felt easy',
+		`got "${got}"`
+	);
+	assert.ok(!/[×·]/.test(got), 'recall must not leak raw glyphs into the name');
+
+	// felt-easy false drops the qualifier.
+	stubLast = () => ({ d: '2026-07-01', w: 40, r: 8, e: false });
+	assert.strictEqual(
+		composeItemLabel({ label: 'Preacher curl', section: 'ex', sets: 3, reps: '10' }),
+		'Preacher curl, 3 sets of 10, last session 40 kilograms by 8'
+	);
+
+	// A non-ex row (warmup) with a matching store entry gets NO recall.
+	assert.strictEqual(
+		composeItemLabel({ label: 'Leg swings', section: 'warmup', sub: '10 each' }),
+		'Leg swings, 10 each'
+	);
+
+	// An ex- row with no history renders byte-identically to pre-#87.
+	stubLast = () => null;
+	assert.strictEqual(
+		composeItemLabel({ label: 'Skull crushers', section: 'ex', sets: 3, reps: '10' }),
+		'Skull crushers, 3 sets of 10'
+	);
+	console.log('PASS 7: recall folds into ex- names only, glyph-free, history-gated');
 }
 
 console.log('\nALL ARIA-LABEL TESTS PASSED');

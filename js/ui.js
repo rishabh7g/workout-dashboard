@@ -547,6 +547,18 @@ function composeItemLabel(item) {
 	if (item.cap) parts.push(`cap ${speakMeta(item.cap)}`);
 	if (item.warn) parts.push(`warning: ${speakMeta(item.warn)}`);
 
+	// Fold the visible recall line (#87) into the accessible name — the composed
+	// label overrides the row subtree, so the "Last:" line isn't announced
+	// otherwise. Spoken form: "last session 32.5 kilograms by 12, felt easy".
+	if (item.section === 'ex') {
+		const last = lastExlogEntry(exerciseName(item));
+		if (last) {
+			parts.push(
+				`last session ${fmtNum(last.w)} kilograms by ${fmtNum(last.r)}${last.e ? ', felt easy' : ''}`,
+			);
+		}
+	}
+
 	return parts.join(', ').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
@@ -558,6 +570,17 @@ function exerciseName(item) {
 		.replace('🍌 ', '')
 		.replace('⭐ FIRST', '')
 		.trim();
+}
+
+// "1 Jul"-class short date for the recall line (#87): shortDayLabel (workout.js)
+// trimmed to day + month, reusing its 'en-AU' locale so no new locale path is
+// introduced. Local Date construction avoids the UTC-parse off-by-one.
+function recallDate(key) {
+	const [y, m, d] = String(key).split('-').map(Number);
+	return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
+		day: 'numeric',
+		month: 'short',
+	});
 }
 
 // Escape a string for safe use inside an HTML double-quoted attribute value.
@@ -602,6 +625,19 @@ function itemCardHTML(item, activeId) {
 	if (item.cap) stack += `<div class="item-cap">Cap · ${item.cap}</div>`;
 	if (item.warn)
 		stack += `<div class="item-warn">${WARN_SVG}<span><span class="sr-only">Warning: </span>${item.warn}</span></div>`;
+
+	// Last-session recall (#87): an exercise row's most recent exlog entry,
+	// rendered as one quiet line under the meta stack — the app becoming the
+	// weight database. Name-keyed via exerciseName (the same key the Log chip
+	// writes, #86) so it recalls across A/B variations of the movement. ex-
+	// rows only; a row with no history gets no line and renders as before.
+	if (item.section === 'ex') {
+		const last = lastExlogEntry(exerciseName(item));
+		if (last) {
+			const easy = last.e ? ' · easy' : '';
+			stack += `<div class="item-recall">Last: ${fmtNum(last.w)}kg<span class="item-recall-x">×</span>${fmtNum(last.r)}${easy} · ${recallDate(last.d)}</div>`;
+		}
+	}
 
 	// Split numerals (sets × reps). The SETS × REPS microlabel is always in the
 	// DOM but hidden by CSS unless the row is active.

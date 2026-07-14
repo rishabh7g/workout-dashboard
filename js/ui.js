@@ -9,6 +9,16 @@
  * the global scope where the HTML can reach them.
  */
 
+// ─── Motion preference ────────────────────────────────────────────────────────
+// An explicit `behavior:'smooth'` bypasses any CSS-level reduced-motion rule, so
+// the JS-driven scrolls MUST be guarded in code: fall back to an instant jump
+// when the OS "Reduce Motion" setting is on (#79). Evaluated per-call so a
+// mid-session preference change is honoured.
+const scrollBehavior = () =>
+	window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		? 'auto'
+		: 'smooth';
+
 // ─── Keyboard support ─────────────────────────────────────────────────────────
 // Item cards are role="checkbox" divs (see itemCardHTML). One delegated
 // listener toggles the focused card on Space/Enter — delegation survives every
@@ -185,7 +195,7 @@ function toggleItem(id) {
 		if (el) {
 			const r = el.getBoundingClientRect();
 			if (r.bottom > window.innerHeight - 20 || r.top < 70)
-				el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				el.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
 		}
 	}, 80);
 }
@@ -235,7 +245,7 @@ function updateProgress(activeId) {
 				// Only a live completion scrolls the fresh banner into view.
 				document
 					.getElementById('done-banner')
-					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
 			}
 		}
 	} else {
@@ -292,7 +302,7 @@ function resetProgress() {
 		}
 	}
 	updateProgress(activeId);
-	window.scrollTo({ top: 0, behavior: 'smooth' });
+	window.scrollTo({ top: 0, behavior: scrollBehavior() });
 }
 
 // ─── HTML builders ───────────────────────────────────────────────────────────

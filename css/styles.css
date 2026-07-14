@@ -787,3 +787,15 @@ header {
 		background: var(--color-accent-100);
 	}
 }
+
+/* Respect the OS "Reduce Motion" setting (#79): neutralise all transitions and
+   animations, and force instant scroll. Paired with the JS scrollBehavior()
+   guard in ui.js, since an explicit behavior:'smooth' bypasses CSS. This is the
+   only !important usage in the file. */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

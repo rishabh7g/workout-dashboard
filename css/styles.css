@@ -675,8 +675,33 @@ header {
 	overflow-y: auto;
 }
 .swap-sheet-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
 	padding: 16px 18px 12px;
 	border-bottom: 2px solid var(--color-divider);
+}
+.swap-sheet-heading {
+	flex: 1;
+	min-width: 0;
+}
+.sheet-close {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	margin: -10px -12px -10px 0;
+	padding: 0;
+	background: none;
+	border: 0;
+	color: var(--color-text);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.sheet-close:active {
+	background: var(--color-accent-200);
 }
 .swap-sheet-title {
 	font-family: var(--font-heading);
@@ -695,8 +720,14 @@ header {
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	width: 100%;
 	padding: 13px 18px;
+	background: none;
+	border: 0;
 	border-bottom: 1px solid var(--color-divider);
+	font: inherit;
+	color: inherit;
+	text-align: left;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 	transition: background 0.1s;
@@ -705,15 +736,18 @@ header {
 	background: var(--color-accent-200);
 }
 .swap-option-text {
+	display: block;
 	flex: 1;
 	min-width: 0;
 }
 .swap-option-day {
+	display: block;
 	font-family: var(--font-heading);
 	font-size: 14px;
 	font-weight: 800;
 }
 .swap-option-label {
+	display: block;
 	font-size: 11.5px;
 	color: var(--color-neutral-600);
 	margin-top: 2px;

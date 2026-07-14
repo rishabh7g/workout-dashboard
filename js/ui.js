@@ -35,8 +35,13 @@ function entryLabel(entry) {
 	return w ? `${w.title} · Var ${entry.variation}` : entry.type;
 }
 
+// The element focus should return to when the sheet closes (the ⇄ button).
+let sheetReturnFocus = null;
+
 // Build and show the bottom sheet listing the next 7 scheduled days.
 function openSwapSheet() {
+	// Remember where focus was so we can restore it on close (WCAG 2.4.3).
+	sheetReturnFocus = document.activeElement;
 	// If the day rolled over while the screen was stale, refresh the header
 	// behind the sheet so the whole flow shares one clock.
 	if (cachedDayKey !== todayKey()) render();
@@ -47,22 +52,61 @@ function openSwapSheet() {
 		const dt = new Date(y, m - 1, d + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 		if (!SCHEDULE[k]) continue;
-		rows += `<div class="swap-option" onclick="doBorrow('${k}')">
-      <div class="swap-option-text">
-        <div class="swap-option-day">${shortDayLabel(k)}</div>
-        <div class="swap-option-label">${entryLabel(SCHEDULE[k])}</div>
-      </div>
+		rows += `<button type="button" class="swap-option" onclick="doBorrow('${k}')">
+      <span class="swap-option-text">
+        <span class="swap-option-day">${shortDayLabel(k)}</span>
+        <span class="swap-option-label">${entryLabel(SCHEDULE[k])}</span>
+      </span>
       <svg class="swap-option-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-    </div>`;
+    </button>`;
 	}
 	if (!rows)
 		rows = `<div class="swap-empty">No upcoming days in schedule</div>`;
 	document.getElementById('swap-options').innerHTML = rows;
 	document.getElementById('swap-sheet-overlay').style.display = 'flex';
+	// Move focus into the dialog: the first option, or the close button when
+	// the schedule is empty and there are no options to focus.
+	const firstOption = document.querySelector('#swap-options .swap-option');
+	(firstOption ||
+		document.querySelector('#swap-sheet-overlay .sheet-close'))?.focus();
 }
 function closeSwapSheet() {
 	document.getElementById('swap-sheet-overlay').style.display = 'none';
+	// Return focus to whatever opened the sheet (the ⇄ swap button).
+	sheetReturnFocus?.focus?.();
+	sheetReturnFocus = null;
 }
+
+// ─── Swap sheet dialog keyboard handling ───────────────────────────────────────
+// A modal dialog must contain focus while open (WCAG 2.1.1/2.4.3): Escape
+// dismisses it, and Tab/Shift+Tab wrap between the first and last focusable
+// controls inside the sheet so nothing behind the scrim is reachable.
+document.addEventListener('keydown', (e) => {
+	const overlay = document.getElementById('swap-sheet-overlay');
+	if (!overlay || overlay.style.display === 'none') return;
+	if (e.key === 'Escape') {
+		e.preventDefault();
+		closeSwapSheet();
+		return;
+	}
+	if (e.key !== 'Tab') return;
+	const focusable = overlay.querySelectorAll('button, [href], [tabindex]');
+	if (!focusable.length) return;
+	const first = focusable[0];
+	const last = focusable[focusable.length - 1];
+	if (e.shiftKey && document.activeElement === first) {
+		e.preventDefault();
+		last.focus();
+	} else if (!e.shiftKey && document.activeElement === last) {
+		e.preventDefault();
+		first.focus();
+	} else if (!overlay.contains(document.activeElement)) {
+		// Focus escaped the dialog (e.g. was on a background control) — pull it
+		// back in on the next Tab.
+		e.preventDefault();
+		first.focus();
+	}
+});
 // Record that "today" should follow targetKey's workout, then re-render.
 function doBorrow(targetKey) {
 	const tk = todayKey();

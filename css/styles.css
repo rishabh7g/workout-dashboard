@@ -278,21 +278,39 @@ header {
 	background: var(--border);
 }
 
-/* Single note line under the name: meta remainder · note · cap · warn */
+/* Stacked meta lines under the name: sub · note · cap · warn (see .item-body) */
+.item-sub {
+	font-size: 12px;
+	color: var(--color-neutral-600);
+	margin-top: 2px;
+}
 .item-note {
-	font-size: 13px;
-	color: var(--text2);
+	font-size: 11.5px;
+	color: var(--color-neutral-600);
+	line-height: 1.45;
+	margin-top: 3px;
+}
+.item-cap {
+	font-family: var(--font-heading);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--color-accent-700);
 	margin-top: 4px;
-	line-height: 1.4;
 }
-
 .item-warn {
-	color: var(--warn);
+	display: flex;
+	align-items: flex-start;
+	gap: 5px;
+	font-size: 11.5px;
+	color: var(--color-accent-700);
+	line-height: 1.4;
+	margin-top: 4px;
 }
-
-.cap-value {
-	color: var(--good);
-	font-weight: 600;
+.item-warn svg {
+	flex-shrink: 0;
+	margin-top: 2px;
 }
 
 .rest-card {
@@ -521,180 +539,148 @@ header {
 .done-banner {
 	scroll-margin-top: calc(var(--header-h, 176px) + 8px);
 }
+/* Modernist row: flat list row, hairline divider, square indicator, split
+   numerals. No card chrome, no day-hue tokens. */
 .item-card {
-	background: var(--surface);
-	border-radius: var(--radius);
-	padding: 12px 14px;
-	margin-bottom: 8px;
-	border: 1.5px solid var(--border);
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
+	padding: 11px 0;
+	border-bottom: 1px solid var(--color-divider);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	user-select: none;
-	transition:
-		opacity 0.2s,
-		border-color 0.15s,
-		background-color 0.15s;
+	transition: opacity 0.15s;
 }
 .item-card:active {
-	transform: scale(0.985);
+	background: var(--color-neutral-200);
 }
 
-.item-card.upcoming {
-	opacity: 0.5;
-}
+/* Upcoming rows sit at FULL opacity now (F05-12): no dimming. */
 
-/* Scoreboard treatment: the one card you're acting on */
+/* Active row: a 2px accent border block on surface, square corners. */
 .item-card.active {
-	border-color: var(--day);
-	background:
-		linear-gradient(160deg, var(--day-soft), transparent 70%),
-		var(--surface);
-	opacity: 1;
-	padding: 18px 18px;
+	padding: 14px 12px;
+	margin: 10px 0;
+	border: 2px solid var(--color-accent);
+	background: var(--color-surface);
 }
 .item-card.active .item-name {
-	font-family: var(--display);
-	font-size: 24px;
-	font-weight: 700;
+	font-family: var(--font-heading);
+	font-size: 19px;
+	font-weight: 800;
 	text-transform: uppercase;
-	letter-spacing: 0.01em;
+	letter-spacing: -0.005em;
 	line-height: 1.1;
 }
-.item-card.active .item-meta {
-	font-size: 15px;
-	margin-top: 5px;
+.item-card.active .item-num-val {
+	font-size: 26px;
+	color: var(--color-accent);
 }
-.item-card.active .item-indicator {
-	width: 34px;
-	height: 34px;
-	margin-top: 3px;
-}
-.item-card.active .item-note {
-	margin-top: 7px;
-}
-.item-card.active .scheme {
-	font-size: clamp(26px, 10vw, 44px);
-	color: var(--day);
-}
-.item-card.active .scheme-timed .scheme-n {
-	font-size: clamp(26px, 10vw, 44px);
-}
-.item-card.active .item-body {
-	min-width: 55%;
-}
-.item-card.active .scheme-label {
+.item-card.active .item-num-label {
 	display: block;
 }
 
+/* Done rows fade + strike. */
 .item-card.done {
-	opacity: 0.34;
+	opacity: 0.55;
 }
 .item-card.done .item-name {
 	text-decoration: line-through;
-	color: var(--text2);
+	color: var(--color-neutral-500);
 }
-.item-card.done .item-meta {
-	color: var(--text2);
+.item-card.done .item-num-val {
+	color: var(--color-neutral-400);
 }
 
+/* Square indicator: done = ink square + white check, active = accent square +
+   play, upcoming = 1.5px neutral outline. Both SVGs live in the DOM; state
+   class shows exactly one (or neither). Icons inherit the bg tint. */
 .item-indicator {
-	width: 26px;
-	height: 26px;
-	border-radius: 50%;
-	border: 2px solid var(--border);
+	width: 24px;
+	height: 24px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	margin-top: 2px;
-	transition: all 0.15s;
-	font-size: 10px;
-	font-weight: 800;
+	margin-top: 1px;
+	border: 1.5px solid var(--color-neutral-400);
+	background: transparent;
+	color: var(--color-bg);
+}
+.ind-check,
+.ind-play {
+	display: none;
 }
 .item-card.active .item-indicator {
-	border-color: var(--day);
-	background: var(--day);
-	color: #0f0f0f;
+	border: none;
+	background: var(--color-accent);
 }
-.item-card.active .item-indicator::after {
-	content: '▶';
-	margin-left: 1px;
+.item-card.active .ind-play {
+	display: block;
 }
 .item-card.done .item-indicator {
-	border-color: var(--good);
-	background: var(--good);
-	color: #0f0f0f;
+	border: none;
+	background: var(--color-neutral-900);
 }
-.item-card.done .item-indicator::after {
-	content: '✓';
-	font-size: 12px;
+.item-card.done .ind-check {
+	display: block;
 }
 
 .item-body {
 	flex: 1;
 	min-width: 0;
 }
+/* Name + FIRST badge share a baseline row and wrap together at narrow widths. */
+.item-namerow {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	flex-wrap: wrap;
+}
 .item-name {
-	font-size: 15px;
+	font-size: 14.5px;
 	font-weight: 600;
 	line-height: 1.3;
-	color: var(--text);
+	color: var(--color-text);
 }
-.item-meta {
-	font-size: 13px;
-	color: var(--day);
-	font-weight: 500;
-	margin-top: 2px;
+.item-first {
+	font-family: var(--font-heading);
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	border: 1px solid var(--color-accent);
+	color: var(--color-accent-700);
+	padding: 1px 6px;
 }
 
-/* Right-aligned set-scheme numeral block — the glance-at-mid-set numbers */
-.scheme {
-	font-family: var(--display);
-	font-size: 21px;
-	font-weight: 600;
-	font-variant-numeric: tabular-nums;
-	line-height: 1;
-	color: var(--text);
+/* Right-aligned split numeral block — the glance-at-mid-set numbers. */
+.item-num {
 	text-align: right;
-	white-space: nowrap;
 	flex-shrink: 0;
-	align-self: center;
 }
-.scheme-x {
-	opacity: 0.45;
-	font-weight: 400;
-	margin: 0 3px;
+.item-num-val {
+	font-family: var(--font-heading);
+	font-size: 16px;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--color-text);
 }
-.scheme-timed .scheme-n {
-	font-size: 21px;
+.item-num-x {
+	font-size: 0.6em;
+	opacity: 0.5;
+	margin: 0 2px;
 }
-.scheme-unit {
-	font-size: 10px;
-	font-weight: 600;
-	font-family:
-		-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	color: var(--text2);
-	margin-top: 3px;
-	text-align: center;
-}
-/* SETS × REPS microlabel — only shown under the active card's scheme */
-.scheme-label {
+/* SETS × REPS microlabel — only shown under the active row's numerals. */
+.item-num-label {
 	display: none;
-	font-size: 10px;
-	font-weight: 600;
-	font-family:
-		-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	color: var(--text2);
-	margin-top: 3px;
-	text-align: center;
+	font-family: var(--font-heading);
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	color: var(--color-neutral-600);
+	margin-top: 4px;
 }
 
 /* ── Progress bar ── */

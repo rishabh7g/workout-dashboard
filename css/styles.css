@@ -8,18 +8,53 @@
 }
 
 :root {
-	color-scheme: dark;
-	--bg: #101216;
-	--surface: #181b21;
-	--surface2: #20242c;
-	--border: #2a2f38;
-	--text: #edeef0;
-	--text2: #8a919c;
+	color-scheme: light;
+
+	/* ── Modernist tokens ── anchors from design/Brand.dc.html (#ec3013 accent,
+	   #201e1d ink) + mockup canvas hint #dddbd9 (Modernist Workout.dc.html:15,20).
+	   Ramps derived — confirm at review. */
+	--color-bg: #dddbd9;
+	--color-surface: #f7f6f5;      /* derived: active-card panel, pops off bg */
+	--color-text: #201e1d;         /* Brand ink */
+	--color-divider: #c6c2be;      /* derived: 1px hairlines + 2px section rules on bg */
+
+	--color-accent: #ec3013;       /* Brand primary */
+	--color-accent-100: #fbe0da;   /* derived: banner bg, hover wash */
+	--color-accent-200: #f6beb2;   /* derived: press state */
+	--color-accent-600: #d02a10;   /* derived: hover/darker accent */
+	--color-accent-700: #b0240e;   /* derived: small accent TEXT on bg (kicker, cap, undo) — ≥4.5:1 */
+	--color-accent-800: #8f1d0b;   /* derived: banner text on accent-100 */
+
+	--color-neutral-900: #201e1d;  /* = ink (completion block, done indicator, scrim base) */
+	--color-neutral-800: #3a3735;  /* past week bars */
+	--color-neutral-700: #524e4b;  /* principles text */
+	--color-neutral-600: #5f5a55;  /* subs/notes/date — darkened from a pure ramp step so 11.5px text passes 4.5:1 on bg */
+	--color-neutral-500: #837d77;  /* de-emphasis only (done names, chevrons) — ≈2.9:1 on bg, NOT for informational text */
+	--color-neutral-400: #a49e98;  /* upcoming indicator borders, done numerals */
+	--color-neutral-300: #c2bdb8;  /* future week bars, unlit segments (see 06 ticket note) */
+	--color-neutral-200: #d1cdc9;  /* row press state */
+	--color-neutral-100: #e9e7e5;  /* faint fills */
+
+	--font-heading: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* file ships in the next ticket */
+	--font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* DECISION: mockup's --font-body is unresolvable; system stack = zero bytes, matches the app's existing UI stack */
+
+	/* Legacy aliases remapped onto the Modernist tokens so the whole app moves
+	   to light in one PR (old rules keep working). Transitional look accepted
+	   until the surface tickets migrate each rule. Old dark values were
+	   #101216 / #181b21 / #20242c / #2a2f38 / #edeef0 / #8a919c. */
+	--bg: var(--color-bg);
+	--surface: var(--color-surface);
+	--surface2: var(--color-neutral-200);
+	--border: var(--color-divider);
+	--text: var(--color-text);
+	--text2: var(--color-neutral-600);
 	--good: #57c785;
 	--warn: #e2a13d;
 	--radius: 16px;
 	--display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
 
+	/* DEPRECATED — removed in the day-hue decommission ticket (#73).
+	   Surfaces still consume these until each is migrated. */
 	/* Day hues — one per day-type group ("the day has a color"). */
 	--h-rest: #8e8ac0;
 	--h-legs: #e8a33c;
@@ -30,9 +65,15 @@
 	--h-run: #4fc978;
 	--h-recovery: #7fd6b8;
 
+	/* DEPRECATED — removed in the day-hue decommission ticket (#73). */
 	/* Active-day tokens: overridden per day via html[data-day="…"]. */
 	--day: var(--h-rest);
 	--day-soft: rgba(142, 138, 192, 0.13);
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
 }
 
 html[data-day='rest'] {

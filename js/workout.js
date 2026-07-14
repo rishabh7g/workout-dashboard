@@ -191,7 +191,7 @@ function programNotice(key) {
 		(new Date(ey, em - 1, ed) - new Date(ky, km - 1, kd)) / 86400000,
 	);
 	if (daysLeft < 0 || daysLeft > 6) return null;
-	if (daysLeft === 0) return '🎉 Final day of the program — great work.';
+	if (daysLeft === 0) return 'Final day of the program — great work.';
 	return `Program ends ${shortDayLabel(PROGRAM_END)} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`;
 }
 

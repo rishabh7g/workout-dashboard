@@ -100,55 +100,6 @@
 			</div>
 		</div>
 
-		<!-- Bottom sheet for the per-exercise LOG capture (#86). Hidden until
-		     openLogSheet() shows it. Reuses the swap-sheet Modernist frame; the
-		     body (steppers, felt-easy toggle, Save, last-3 history) is built by
-		     js/ui.js. A real dialog: role="dialog" aria-modal, Escape closes,
-		     focus returns to the Log chip that opened it (#74 pattern). -->
-		<div
-			id="log-sheet-overlay"
-			style="display: none"
-			class="swap-sheet-overlay"
-			onclick="closeLogSheet()"
-		>
-			<div
-				class="swap-sheet log-sheet"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="log-sheet-title"
-				onclick="event.stopPropagation()"
-			>
-				<div class="swap-sheet-header">
-					<div class="swap-sheet-heading">
-						<div class="swap-sheet-title" id="log-sheet-title">
-							Log
-						</div>
-						<div class="swap-sheet-sub" id="log-sheet-sub"></div>
-					</div>
-					<button
-						class="sheet-close"
-						type="button"
-						onclick="closeLogSheet()"
-						aria-label="Close"
-					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.4"
-							stroke-linecap="square"
-							aria-hidden="true"
-						>
-							<path d="M6 6l12 12M18 6L6 18" />
-						</svg>
-					</button>
-				</div>
-				<div id="log-sheet-body"></div>
-			</div>
-		</div>
-
 		<!--
   Scripts load in dependency order (classic scripts share one global scope):
     data    → the constants everything reads

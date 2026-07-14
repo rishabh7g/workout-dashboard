@@ -40,8 +40,8 @@ const {
 } = data;
 const { buildItemList, weekNumber, getWeekType, TOTAL_WEEKS } = w;
 
-// Mirror of workout.js topRep (not exported): the highest number in a reps
-// value, or null when it carries no digits at all (pure free text like 'max').
+// Whether a reps value carries any numeric target at all (a bare number, a
+// range, or a qualified count) versus pure free text like 'max'.
 const hasNumericTarget = (reps) => /\d/.test(String(reps));
 
 const DATA_SRC = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
@@ -254,7 +254,7 @@ DRILLS.forEach((d) => conditioning.push({ ctx: `DRILLS "${d.name}"`, item: d }))
 
 // ─── (f) Exercise shape ──────────────────────────────────────────────────────
 check('(f) strength exercise shape: name/sets/reps/weight, allowlisted free-text, no stray fields', () => {
-	const ALLOWED = new Set(['name', 'sets', 'reps', 'weight', 'note', 'cap', 'capKg', 'warn', 'stepKg', 'noIncrease']);
+	const ALLOWED = new Set(['name', 'sets', 'reps', 'weight', 'note', 'cap', 'warn']);
 	const FREE_TEXT_REPS = new Set(['max']); // only intentional non-numeric reps
 	const WEIGHT_RE = /^\d+(–\d+)?kg(\/side)?$/;
 

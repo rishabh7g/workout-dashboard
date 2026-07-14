@@ -157,8 +157,8 @@ function loadState(key) {
 //
 // Milestone-06 constraint: future stores must AVOID the `ws-` key prefix. Old
 // clients may still run old code that prunes eagerly by that prefix, and this
-// filter keys off it too — the planned `exlog`/`hist` stores sidestep it by
-// using a different prefix.
+// filter keys off it too — any future non-`ws-` store sidesteps it by using a
+// different prefix.
 //
 // This only touches real day records (`ws-YYYY-MM-DD-...`), NOT the boot probe
 // (`ws-probe`) or quarantined corrupt records (`ws-corrupt-*`) — their
@@ -177,79 +177,6 @@ function pruneOldState() {
 			}
 		}
 	} catch (e) {}
-}
-
-// ─── Per-exercise log (exlog) ───────────────────────────────────────────────
-//
-// A separate capture store for the numbers the tick array can't hold: the
-// weight, reps and a felt-easy signal for each logged set — the data the
-// "add 2.5 kg when 12 reps feels easy" progression rule actually needs.
-//
-// KEY DECISIONS (issue #86):
-//   • Key = 'exlog', deliberately NOT `ws-` prefixed. pruneOldState only ever
-//     matches `^ws-\d{4}-\d{2}-\d{2}`, so this store is invisible to it — the
-//     in-program history the progression rule reads is never destroyed. The
-//     js/storage.js prune note above records this constraint for future stores.
-//   • Keyed by exercise NAME, not the positional item id. Ids (`ex-3`) are
-//     per-workout positional, but the same exercise (e.g. Romanian deadlift)
-//     recurs across A/B variations; name-keying gives ~14-day recall instead of
-//     28 and one trajectory per movement rather than per slot.
-//   • Shape: { "<name>": [{ d:'YYYY-MM-DD', w:32.5, r:12, e:true }, …] }, newest
-//     LAST, capped at the last 10 entries per exercise (≈15 KB over 26 weeks —
-//     bounded, so no pruning is needed).
-//
-// Every access is wrapped in try/catch with the same storageOK discipline as
-// the tick store (#51): a read falls back to {} and a failed write flips
-// storageOK (so the UI can warn) instead of throwing.
-const EXLOG_KEY = 'exlog';
-const EXLOG_CAP = 10;
-
-function loadExlog() {
-	try {
-		const s = localStorage.getItem(EXLOG_KEY);
-		if (!s) return {};
-		const parsed = JSON.parse(s);
-		// Guard the shape: only a plain object maps names → entry arrays. Anything
-		// else (array, primitive, corrupt) falls back to empty rather than throwing.
-		if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-			return parsed;
-		}
-	} catch (e) {
-		// Unreadable store (disabled/corrupt) — behave as if empty.
-	}
-	return {};
-}
-
-// The (up to 10) entries logged for one exercise NAME, newest last. Empty array
-// when nothing's been logged for it yet.
-function exlogEntries(name) {
-	const arr = loadExlog()[name];
-	return Array.isArray(arr) ? arr : [];
-}
-
-// The most recent entry for an exercise NAME (to pre-fill the capture sheet), or
-// null when there's no history yet.
-function lastExlogEntry(name) {
-	const arr = exlogEntries(name);
-	return arr.length ? arr[arr.length - 1] : null;
-}
-
-// Append one entry for an exercise NAME, keeping only the last EXLOG_CAP. Never
-// throws: a failed write flips storageOK (so the UI can warn) and returns false;
-// a successful write returns true. Honors storageOK the same way saveState does
-// — it always attempts the write and records failure rather than pretending.
-function appendExlog(name, entry) {
-	const log = loadExlog();
-	const arr = Array.isArray(log[name]) ? log[name] : [];
-	arr.push(entry);
-	log[name] = arr.slice(-EXLOG_CAP);
-	try {
-		localStorage.setItem(EXLOG_KEY, JSON.stringify(log));
-		return true;
-	} catch (e) {
-		storageOK = false;
-		return false;
-	}
 }
 
 // ─── Day borrow ("follow a different day") ──────────────────────────────────
@@ -291,21 +218,20 @@ function pruneOldBorrows() {
 
 // ─── One-tap backup: export / import (issue #89) ─────────────────────────────
 //
-// localStorage on an installed PWA is OS-evictable and dies with the device.
-// Once the exercise log (#86) exists, months of progression history become the
-// most valuable data in the app, so the record has to be recoverable. These
-// three functions are the whole persistence-export surface.
+// localStorage on an installed PWA is OS-evictable and dies with the device, so
+// the record of the program has to be recoverable. These three functions are the
+// whole persistence-export surface.
 //
 // SCOPE — "all app keys", enumerated, not hardcoded. This origin is exclusively
 // the workout app, so EVERY localStorage key is app data: the ws-<date> ticks,
-// ws-corrupt-* quarantine, day-borrow, exlog, the last-export marker, and any
-// FUTURE store — all get swept up automatically by iterating localStorage rather
-// than naming keys. The one exclusion is `ws-probe`: it is the transient boot
+// ws-corrupt-* quarantine, day-borrow, the last-export marker, and any FUTURE
+// store — all get swept up automatically by iterating localStorage rather than
+// naming keys. The one exclusion is `ws-probe`: it is the transient boot
 // round-trip probe (written then removed synchronously at load), never real
 // state, so it is skipped from both export and the restore-clear.
 //
 // The last-export date lives under a NON-`ws-` key so pruneOldState's
-// `^ws-\d{4}-\d{2}-\d{2}` sweep can never touch it (same discipline as exlog).
+// `^ws-\d{4}-\d{2}-\d{2}` sweep can never touch it.
 const LAST_EXPORT_KEY = 'last-export';
 const BACKUP_SCHEMA = 1;
 const PROBE_KEY = 'ws-probe';

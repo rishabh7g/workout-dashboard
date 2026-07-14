@@ -303,6 +303,61 @@ const WARN_SVG =
 const SEC_CHECK =
 	'<svg class="sec-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
+// Verbalize the numeral/qualifier glyphs of a meta string so a screen reader
+// speaks it naturally (#75): × → "by", → and – → "to", / → "per", the middot
+// separator → a comma, and "sec"/"min" expanded to full words. Used only for
+// the composed aria-label — the visible markup keeps the compact glyphs.
+function speakMeta(text) {
+	return String(text)
+		.replace(/×/g, ' by ')
+		.replace(/→/g, ' to ')
+		.replace(/[–—]/g, ' to ')
+		.replace(/\//g, ' per ')
+		.replace(/\s*·\s*/g, ', ')
+		.replace(/\bsec\b/g, 'seconds')
+		.replace(/\bmin\b/g, 'minutes')
+		.replace(/\s+/g, ' ')
+		.replace(/\s+,/g, ',')
+		.trim();
+}
+
+// Compose a natural, screen-reader-friendly accessible name for a checklist row
+// (#75). Because the row is role="checkbox", this aria-label overrides its
+// visible subtree — silencing the fragment-order noise (name → meta → cap →
+// warn → bare numerals) and the decorative indicator SVGs in one move. done/
+// active state is deliberately NOT included: aria-checked announces "checked"/
+// "not checked" natively.
+function composeItemLabel(item) {
+	const raw = item.label || '';
+	const hasFirst = raw.includes('⭐ FIRST');
+	// A few drill names carry a "→" sequencing arrow ("Walk → back kicks"); read
+	// it as "to". "/" is left intact — in a name it means "or" (Light jog /
+	// shuttle jog), not "per".
+	const name = raw
+		.replace('🍌 ', '')
+		.replace('⭐ FIRST', '')
+		.replace(/→/g, ' to ')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+	const parts = [hasFirst ? `${name}, first exercise` : name];
+
+	// Scheme items speak "N sets of X"; timed/sub-only items carry their
+	// duration or qualifier in `sub` and speak that instead.
+	const hasScheme = item.sets != null && item.reps != null;
+	if (hasScheme) {
+		parts.push(`${item.sets} sets of ${speakMeta(item.reps)}`);
+		if (item.sub) parts.push(speakMeta(item.sub));
+	} else if (item.sub) {
+		parts.push(speakMeta(item.sub));
+	}
+	if (item.note) parts.push(speakMeta(item.note));
+	if (item.cap) parts.push(`cap ${speakMeta(item.cap)}`);
+	if (item.warn) parts.push(`warning: ${speakMeta(item.warn)}`);
+
+	return parts.join(', ').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
 function itemCardHTML(item, activeId) {
 	const isDone = completedItems.has(item.id);
 	const isActive = !isDone && item.id === activeId;
@@ -336,7 +391,7 @@ function itemCardHTML(item, activeId) {
       </div>`
 		: '';
 
-	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" tabindex="0" onclick="toggleItem('${item.id}')">
+	return `<div class="item-card ${cls}" data-id="${item.id}" role="checkbox" aria-checked="${isDone}" aria-label="${composeItemLabel(item)}" tabindex="0" onclick="toggleItem('${item.id}')">
     <div class="item-indicator">${IND_CHECK}${IND_PLAY}</div>
     <div class="item-body">
       <div class="item-namerow"><span class="item-name">${label}</span>${firstHTML}</div>

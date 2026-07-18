@@ -7,7 +7,7 @@ Live: https://rishabh7g.github.io/workout-dashboard/
 
 ## Verify (the whole recipe — do not rediscover it)
 - `bash scripts/verify.sh` → ONE line:
-  `SYNTAX ok | TEST 11/11 | SERVE ok | ASSETS 11/11 | RENDER ok | SHOT ok (out/verify-shot.png)`
+  `SYNTAX ok | TEST 12/12 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok (out/verify-shot.png)`
   Detail in `out/verify.log` — open it ONLY on FAIL (the failure block already
   holds the ~20 relevant lines). Exit codes: 2 SYNTAX · 3 TEST · 4 SERVE/LIVE
   · 5 ASSETS · 6 RENDER · 7 SHOT.
@@ -19,7 +19,7 @@ Live: https://rishabh7g.github.io/workout-dashboard/
 ## Conventions
 - **No npm / zero deps.** Tests are standalone scripts: `node tests/<name>.test.js`
   (NOT `node --test tests/` — the dir-as-glob trap dies with MODULE_NOT_FOUND).
-  11 files in `tests/`. Enforcement that runs = `node --check` (verify.sh SYNTAX
+  12 files in `tests/`. Enforcement that runs = `node --check` (verify.sh SYNTAX
   stage + CI `.github/workflows/checks.yml`).
 - **Load order / one shared global scope.** Five classic scripts load in order in
   `index.html`: data.js → storage.js → workout.js → ui.js → main.js. They share

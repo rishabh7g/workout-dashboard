@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v57';
+const CACHE = 'workout-dashboard-v58';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -17,6 +17,7 @@ const ASSETS = [
 	'./assets/icon-512.svg',
 	'./assets/icon-192.png',
 	'./assets/icon-512.png',
+	'./assets/icon-512-maskable.png',
 ];
 
 self.addEventListener('install', (e) => {

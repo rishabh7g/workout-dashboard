@@ -48,7 +48,7 @@ standalone test suites can import their pure logic.
     node tests/*.test.js            # just the unit tests (11 standalone, zero-dependency suites)
 
 `scripts/verify.sh` prints **one summary line** on success
-(`SYNTAX ok | TEST 11/11 | SERVE ok | ASSETS 11/11 | RENDER ok | SHOT ok`), writes
+(`SYNTAX ok | TEST 12/12 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes
 all detail to `out/verify.log`, and uses a distinct exit code per stage (read the
 log only on FAIL). The test suites in `tests/` are zero-dependency Node scripts
 that exit non-zero on failure — they are **not** `node --test`/TAP, so run them

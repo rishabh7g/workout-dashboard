@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v56';
+const CACHE = 'workout-dashboard-v57';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -10,6 +10,13 @@ const ASSETS = [
 	'./js/workout.js',
 	'./js/ui.js',
 	'./js/main.js',
+	// Icons referenced by index.html (apple-touch-icon, favicon) and by
+	// manifest.json (#152). assets/icon-512-ink.svg is referenced by neither,
+	// so it is deliberately not precached.
+	'./assets/apple-touch-icon-180.png',
+	'./assets/icon-512.svg',
+	'./assets/icon-192.png',
+	'./assets/icon-512.png',
 ];
 
 self.addEventListener('install', (e) => {

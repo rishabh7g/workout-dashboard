@@ -783,15 +783,12 @@ function insertDefinitionNotice() {
 		);
 }
 
-// Called once on load (main.js) and again after any state change (toggle/borrow).
-function render() {
-	const key = todayKey();
-	cachedDayKey = key; // track the plain date on every path for the midnight check
+// Self-heal a stale borrow: if the stored target is no longer a SCHEDULE key
+// (a schedule edit removed/renamed the date, or a device-clock jump), drop the
+// dangling entry and fall back to the real day rather than rendering the
+// un-undoable outside-program lock-out screen.
+function resolveEffectiveEntry(key) {
 	const borrows = loadBorrows();
-	// Self-heal a stale borrow: if the stored target is no longer a SCHEDULE
-	// key (a schedule edit removed/renamed the date, or a device-clock jump),
-	// drop the dangling entry and fall back to the real day rather than
-	// rendering the un-undoable outside-program lock-out screen.
 	let borrowedFrom = borrows[key] || null;
 	if (borrowedFrom && !SCHEDULE[borrowedFrom]) {
 		delete borrows[key];
@@ -799,8 +796,12 @@ function render() {
 		borrowedFrom = null;
 	}
 	const effectiveKey = borrowedFrom || key;
-	const entry = SCHEDULE[effectiveKey];
-	const app = document.getElementById('app');
+	return { borrowedFrom, effectiveKey, entry: SCHEDULE[effectiveKey] };
+}
+
+// Assembles the three pieces of header markup that depend only on today's key
+// and the (possibly self-healed) borrow — shared across every render() path.
+function headerBannersHTML(key, borrowedFrom) {
 	const swapBannerHTML = borrowedFrom
 		? `<div class="swap-banner"><span class="swap-banner-text">Following ${shortDayLabel(borrowedFrom)}'s workout</span><button class="swap-banner-undo" onclick="undoBorrow()">Undo</button></div>`
 		: '';
@@ -811,9 +812,13 @@ function render() {
 	const noticeHTML = notice
 		? `<div class="program-notice">${notice}</div>`
 		: '';
+	return { swapBannerHTML, swapBtnHTML, noticeHTML };
+}
 
-	if (!entry) {
-		app.innerHTML = `
+// No SCHEDULE entry resolves for today (outside the current program).
+function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
+	const app = document.getElementById('app');
+	app.innerHTML = `
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
@@ -830,13 +835,13 @@ function render() {
           <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </main>`;
-		document.title = 'No workout today — workout-dashboard';
-		if (!storageOK) insertStorageWarning();
-		return;
-	}
+	document.title = 'No workout today — workout-dashboard';
+	if (!storageOK) insertStorageWarning();
+}
 
-	if (entry.type === 'rest') {
-		app.innerHTML = `
+function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML) {
+	const app = document.getElementById('app');
+	app.innerHTML = `
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
@@ -854,22 +859,18 @@ function render() {
           <div class="poster-sub">Sleep well. Let the muscles rebuild.</div>
         </div>
       </main>`;
-		document.title = 'Rest Day — workout-dashboard';
-		if (!storageOK) insertStorageWarning();
-		return;
-	}
+	document.title = 'Rest Day — workout-dashboard';
+	if (!storageOK) insertStorageWarning();
+}
 
-	// Gym day or running day — both share the same interactive checklist path.
-	const workout = (WORKOUTS[entry.type] || RUNNING_DAYS[entry.type])?.[
-		entry.variation
-	];
-	if (!workout) {
-		// A SCHEDULE entry that doesn't resolve to a workout (e.g. a data.js
-		// typo). Paint a visible error instead of a blank/stale screen, and DON'T
-		// leave cachedDayKey marked as today's key — otherwise refreshIfDayChanged
-		// would treat the failed paint as a successful render and never retry.
-		cachedDayKey = null;
-		app.innerHTML = `
+// A SCHEDULE entry that doesn't resolve to a workout (e.g. a data.js typo).
+// Paint a visible error instead of a blank/stale screen, and DON'T leave
+// cachedDayKey marked as today's key — otherwise refreshIfDayChanged would
+// treat the failed paint as a successful render and never retry.
+function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML) {
+	cachedDayKey = null;
+	const app = document.getElementById('app');
+	app.innerHTML = `
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
@@ -887,13 +888,16 @@ function render() {
           <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || 'TBC'}</code>). Check js/data.js.</div>
         </div>
       </main>`;
-		document.title = "Couldn't load workout — workout-dashboard";
-		if (!storageOK) insertStorageWarning();
-		return;
-	}
+	document.title = "Couldn't load workout — workout-dashboard";
+	if (!storageOK) insertStorageWarning();
+}
 
-	// Build item list and load persisted state. The key encodes the workout
-	// identity (via the effective entry) so a borrowed day's ticks stay separate.
+// Gym day or running day — both share the same interactive checklist path.
+// Builds the item list, loads persisted state, and paints the header/progress
+// bar/checklist along with the done-banner and definition-changed notice.
+function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML, noticeHTML) {
+	// The key encodes the workout identity (via the effective entry) so a
+	// borrowed day's ticks stay separate.
 	cachedKey = stateKey(key, entry);
 	allItems = buildItemList(workout);
 	completedItems = loadState(cachedKey);
@@ -904,6 +908,7 @@ function render() {
 		.map((i) => `<div class="seg${completedItems.has(i.id) ? ' on' : ''}"></div>`)
 		.join('');
 
+	const app = document.getElementById('app');
 	app.innerHTML = `
     <header>
      <div class="header-inner">
@@ -936,12 +941,40 @@ function render() {
 	// loadState (line above) sets definitionChanged when the stored item count no
 	// longer matches this workout — tell the user their progress was re-checked.
 	if (definitionChanged) insertDefinitionNotice();
+}
 
-	// Expose the (possibly banner-inflated) sticky-header height so cards and the
-	// done-banner can offset scrollIntoView by it via `scroll-margin-top` and not
-	// tuck under the opaque sticky header (issue #46).
+// Expose the (possibly banner-inflated) sticky-header height so cards and the
+// done-banner can offset scrollIntoView by it via `scroll-margin-top` and not
+// tuck under the opaque sticky header (issue #46).
+function syncHeaderHeight() {
 	const headerH = document.querySelector('header')?.offsetHeight;
 	if (headerH) {
 		document.documentElement.style.setProperty('--header-h', headerH + 'px');
 	}
+}
+
+// Called once on load (main.js) and again after any state change (toggle/borrow).
+// Reads today's key, resolves the effective (possibly borrowed) schedule entry,
+// then delegates to the named step matching what that entry resolves to.
+function render() {
+	const key = todayKey();
+	cachedDayKey = key; // track the plain date on every path for the midnight check
+	const { borrowedFrom, effectiveKey, entry } = resolveEffectiveEntry(key);
+	const { swapBannerHTML, swapBtnHTML, noticeHTML } = headerBannersHTML(key, borrowedFrom);
+
+	if (!entry) return renderNoWorkout(key, effectiveKey, entry, swapBannerHTML);
+
+	if (entry.type === 'rest') {
+		return renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML);
+	}
+
+	const workout = (WORKOUTS[entry.type] || RUNNING_DAYS[entry.type])?.[
+		entry.variation
+	];
+	if (!workout) {
+		return renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML);
+	}
+
+	renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML, noticeHTML);
+	syncHeaderHeight();
 }

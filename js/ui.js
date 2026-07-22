@@ -257,43 +257,72 @@ function updateProgress(activeId) {
 	}
 }
 
-// Two-tap arm for the (destructive, un-undoable) reset. The first activation
-// only arms — swapping the label and starting a 3 s disarm timer — so a single
-// stray sweaty-thumb tap can never wipe a session. The second activation inside
-// the window runs the real wipe. A re-render while armed re-paints the button
-// unarmed, which naturally disarms (state is module-local); the timer clearing
-// on the next arm keeps things tidy.
-let resetArmed = false;
-let resetArmTimer = null;
+// Two-tap arm — shared confirm gate for destructive, un-undoable actions
+// (reset progress, restore-from-backup). The first activation only arms —
+// swapping the label, toggling `.armed`, and starting a `windowMs` disarm
+// timer — so a single stray sweaty-thumb tap can never run the real action.
+// The second activation inside the window is the caller's job to detect
+// (via isArmed()) and act on; disarm() runs either from that timeout or from
+// the caller once it has consumed the armed state. State is module-local to
+// each instance (closure), so a re-render that repaints the button unarmed
+// naturally matches — nothing here reads painted DOM state back. onDisarm, if
+// given, runs after every disarm (timeout or explicit) for callers with extra
+// per-arm state to clear (e.g. import's pending file). See issue #157.
+function createTwoTapArm(
+	btnSelector,
+	labelSelector,
+	armedLabel,
+	unarmedLabel,
+	windowMs,
+	onDisarm,
+) {
+	let armed = false;
+	let timer = null;
 
-function disarmReset() {
-	resetArmed = false;
-	if (resetArmTimer) {
-		clearTimeout(resetArmTimer);
-		resetArmTimer = null;
+	function disarm() {
+		armed = false;
+		if (timer) {
+			clearTimeout(timer);
+			timer = null;
+		}
+		const btn = document.querySelector(btnSelector);
+		if (btn) {
+			btn.classList.remove('armed');
+			const label = btn.querySelector(labelSelector);
+			if (label) label.textContent = unarmedLabel;
+		}
+		if (onDisarm) onDisarm();
 	}
-	const btn = document.querySelector('.reset-btn');
-	if (btn) {
-		btn.classList.remove('armed');
-		const label = btn.querySelector('.reset-btn-label');
-		if (label) label.textContent = 'Reset progress';
-	}
-}
 
-function resetProgress() {
-	if (!resetArmed) {
-		resetArmed = true;
-		const btn = document.querySelector('.reset-btn');
+	function arm() {
+		armed = true;
+		const btn = document.querySelector(btnSelector);
 		if (btn) {
 			btn.classList.add('armed');
-			const label = btn.querySelector('.reset-btn-label');
-			if (label) label.textContent = 'Tap again to reset';
+			const label = btn.querySelector(labelSelector);
+			if (label) label.textContent = armedLabel;
 		}
-		resetArmTimer = setTimeout(disarmReset, 3000);
+		timer = setTimeout(disarm, windowMs);
+	}
+
+	return { arm, disarm, isArmed: () => armed };
+}
+
+const resetArm = createTwoTapArm(
+	'.reset-btn',
+	'.reset-btn-label',
+	'Tap again to reset',
+	'Reset progress',
+	3000,
+);
+
+function resetProgress() {
+	if (!resetArm.isArmed()) {
+		resetArm.arm();
 		return;
 	}
 
-	disarmReset();
+	resetArm.disarm();
 	completedItems = new Set();
 	saveState(cachedKey);
 	const activeId = allItems[0]?.id;
@@ -378,44 +407,30 @@ function exportBackup() {
 	downloadBackup(blob, filename);
 }
 
-// Two-tap arm for the destructive import confirm, mirroring the reset arm above.
-// State is module-local; a re-render repaints the button unarmed (see render).
-let importArmed = false;
-let importArmTimer = null;
-let pendingImport = null; // the validated backup object awaiting confirmation
+// Two-tap arm for the destructive import confirm, sharing createTwoTapArm with
+// the reset arm above. pendingImport (the validated backup object awaiting
+// confirmation) is import-specific extra state, so it's cleared via onDisarm —
+// on both an explicit disarm and the timeout — to mirror the old
+// disarmImport()'s behaviour exactly.
+let pendingImport = null;
 
-function disarmImport() {
-	importArmed = false;
-	pendingImport = null;
-	if (importArmTimer) {
-		clearTimeout(importArmTimer);
-		importArmTimer = null;
-	}
-	const btn = document.querySelector('.import-btn');
-	if (btn) {
-		btn.classList.remove('armed');
-		const label = btn.querySelector('.reset-btn-label');
-		if (label) label.textContent = 'Restore backup';
-	}
-}
-
-function armImport() {
-	importArmed = true;
-	const btn = document.querySelector('.import-btn');
-	if (btn) {
-		btn.classList.add('armed');
-		const label = btn.querySelector('.reset-btn-label');
-		if (label) label.textContent = 'Tap again to replace all data';
-	}
-	importArmTimer = setTimeout(disarmImport, 3000);
-}
+const importArm = createTwoTapArm(
+	'.import-btn',
+	'.reset-btn-label',
+	'Tap again to replace all data',
+	'Restore backup',
+	3000,
+	() => {
+		pendingImport = null;
+	},
+);
 
 // Button handler. Unarmed: open the hidden file picker. Armed (a valid file is
 // staged): run the replace-all restore and repaint.
 function importBackup() {
-	if (importArmed && pendingImport) {
+	if (importArm.isArmed() && pendingImport) {
 		const obj = pendingImport;
-		disarmImport();
+		importArm.disarm();
 		const ok = restoreBackup(obj);
 		if (ok) {
 			render();
@@ -442,21 +457,21 @@ function onImportFile(input) {
 		try {
 			obj = JSON.parse(reader.result);
 		} catch (e) {
-			disarmImport();
+			importArm.disarm();
 			showImportMessage('Not a valid backup file');
 			return;
 		}
 		if (!validateBackup(obj)) {
-			disarmImport();
+			importArm.disarm();
 			showImportMessage('Not a valid backup file');
 			return;
 		}
 		pendingImport = obj;
 		showImportMessage('');
-		armImport();
+		importArm.arm();
 	};
 	reader.onerror = () => {
-		disarmImport();
+		importArm.disarm();
 		showImportMessage('Could not read file');
 	};
 	reader.readAsText(file);

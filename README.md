@@ -45,10 +45,10 @@ standalone test suites can import their pure logic.
 
     bash scripts/verify.sh          # local: syntax -> tests -> serve -> assets -> render -> screenshot
     bash scripts/verify.sh --live   # the same checks against the deployed site
-    node tests/*.test.js            # just the unit tests (12 standalone, zero-dependency suites)
+    node tests/*.test.js            # just the unit tests (13 standalone, zero-dependency suites)
 
 `scripts/verify.sh` prints **one summary line** on success
-(`SYNTAX ok | TEST 12/12 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes
+(`SYNTAX ok | TEST 13/13 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes
 all detail to `out/verify.log`, and uses a distinct exit code per stage (read the
 log only on FAIL). The test suites in `tests/` are zero-dependency Node scripts
 that exit non-zero on failure — they are **not** `node --test`/TAP, so run them

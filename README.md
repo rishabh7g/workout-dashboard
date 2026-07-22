@@ -45,7 +45,7 @@ standalone test suites can import their pure logic.
 
     bash scripts/verify.sh          # local: syntax -> tests -> serve -> assets -> render -> screenshot
     bash scripts/verify.sh --live   # the same checks against the deployed site
-    node tests/*.test.js            # just the unit tests (11 standalone, zero-dependency suites)
+    node tests/*.test.js            # just the unit tests (12 standalone, zero-dependency suites)
 
 `scripts/verify.sh` prints **one summary line** on success
 (`SYNTAX ok | TEST 12/12 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes

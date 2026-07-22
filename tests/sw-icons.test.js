@@ -45,7 +45,7 @@ for (const a of assets) {
 console.log(`PASS 2: every ASSETS entry (${assets.length}) exists on disk`);
 
 // Unreferenced assets stay out of the precache: they cost install bandwidth
-// for nothing. icon-512-ink.svg is the current example (#152).
+// for nothing (#152, #158).
 const unreferenced = fs
 	.readdirSync(path.join(ROOT, 'assets'))
 	.map((f) => `assets/${f}`)

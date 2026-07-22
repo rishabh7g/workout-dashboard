@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v58';
+const CACHE = 'workout-dashboard-v59';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -11,8 +11,8 @@ const ASSETS = [
 	'./js/ui.js',
 	'./js/main.js',
 	// Icons referenced by index.html (apple-touch-icon, favicon) and by
-	// manifest.json (#152). assets/icon-512-ink.svg is referenced by neither,
-	// so it is deliberately not precached.
+	// manifest.json (#152). Unreferenced assets/ files are deliberately not
+	// precached (#158).
 	'./assets/apple-touch-icon-180.png',
 	'./assets/icon-512.svg',
 	'./assets/icon-192.png',

@@ -739,10 +739,7 @@ header {
 	font-weight: 600;
 }
 
-/* The one raised notice (#172) — role="alert" panel shared by every
-   warning/failure path (storage warning, definition-changed notice, and any
-   future notice raised via raiseNotice() in js/ui.js). */
-.notice {
+.storage-warning {
 	padding: 8px 12px;
 	background: rgba(226, 161, 61, 0.14);
 	border: 1px solid var(--warn);
@@ -752,30 +749,6 @@ header {
 	line-height: 1.35;
 	color: var(--warn);
 	font-weight: 600;
-}
-
-.notice-title {
-	font-family: var(--font-heading);
-	font-weight: 800;
-	margin-bottom: 2px;
-}
-
-.notice-detail {
-	margin-top: 4px;
-	opacity: 0.85;
-}
-
-.notice-action {
-	display: block;
-	margin-top: 6px;
-	background: none;
-	border: none;
-	padding: 0;
-	font: inherit;
-	font-weight: 800;
-	text-decoration: underline;
-	color: inherit;
-	cursor: pointer;
 }
 
 .swap-sheet-overlay {

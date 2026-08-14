@@ -35,12 +35,12 @@ document.addEventListener('keydown', (e) => {
 // ─── Day borrow UI ───────────────────────────────────────────────────────────
 // A short label for a schedule entry, shown in the swap sheet rows.
 function entryLabel(entry) {
-	if (!entry) return 'Outside schedule';
-	if (entry.type === 'rest') return 'Rest Day';
+	if (!entry) return t('ui.entry.outsideSchedule');
+	if (entry.type === 'rest') return t('ui.entry.restDay');
 	if (entry.type === 'running')
-		return `Running · Sat · Var ${entry.variation || 'TBC'}`;
+		return t('ui.entry.runningSat', { variation: entry.variation || 'TBC' });
 	if (entry.type === 'recovery')
-		return `Running · Sun · Var ${entry.variation || 'TBC'}`;
+		return t('ui.entry.runningSun', { variation: entry.variation || 'TBC' });
 	const w = WORKOUTS[entry.type]?.[entry.variation];
 	return w ? `${w.title} · Var ${entry.variation}` : entry.type;
 }
@@ -71,7 +71,7 @@ function openSwapSheet() {
     </button>`;
 	}
 	if (!rows)
-		rows = `<div class="swap-empty">No upcoming days in schedule</div>`;
+		rows = `<div class="swap-empty">${t('ui.swap.noUpcoming')}</div>`;
 	document.getElementById('swap-options').innerHTML = rows;
 	document.getElementById('swap-sheet-overlay').style.display = 'flex';
 	// Move focus into the dialog: the first option, or the close button when
@@ -145,7 +145,7 @@ function doBorrow(targetKey) {
 	// (storage.js), which render() surfaces as the one raised notice; loadBorrows
 	// inside render() re-reads from storage, so a failed save also means the
 	// swap banner it paints does NOT claim the borrow, matching this silence.
-	if (saved) announce(`Following ${shortDayLabel(targetKey)}'s workout`);
+	if (saved) announce(t('ui.swap.following', { day: shortDayLabel(targetKey) }));
 }
 function undoBorrow() {
 	const b = loadBorrows();
@@ -154,7 +154,7 @@ function undoBorrow() {
 	render();
 	// Same reasoning as doBorrow: only announce the outcome that actually
 	// persisted. A failed write is reported via the storage-warning notice.
-	if (saved) announce("Back to today's workout");
+	if (saved) announce(t('ui.swap.backToToday'));
 }
 
 // Write to the persistent polite live region (#sr-status, a sibling of #app in
@@ -163,6 +163,19 @@ function undoBorrow() {
 function announce(msg) {
 	const region = document.getElementById('sr-status');
 	if (region) region.textContent = msg;
+}
+
+// index.html's static shell carries a handful of elements whose text/aria
+// content is user-facing copy but never rebuilt by render() (the swap sheet's
+// title/sub, its close button) — index.html itself carries no literal (#175),
+// so this fills them once from the bundle. Called once at boot (js/main.js).
+function applyStaticStrings() {
+	const title = document.getElementById('swap-sheet-title');
+	if (title) title.textContent = t('ui.swap.sheetTitle');
+	const sub = document.getElementById('swap-sheet-sub');
+	if (sub) sub.textContent = t('ui.swap.sheetSub');
+	const close = document.querySelector('.sheet-close');
+	if (close) close.setAttribute('aria-label', t('ui.swap.close'));
 }
 
 // ─── Toggling / progress ─────────────────────────────────────────────────────
@@ -317,8 +330,8 @@ function createTwoTapArm(
 const resetArm = createTwoTapArm(
 	'.reset-btn',
 	'.reset-btn-label',
-	'Tap again to reset',
-	'Reset progress',
+	t('ui.reset.arm'),
+	t('ui.reset.btn'),
 	3000,
 );
 
@@ -377,8 +390,10 @@ function backupFilename() {
 // the same "No backup yet" as a genuine never-exported state (#173).
 function lastExportLabel() {
 	const d = lastExportDate();
-	if (d === undefined) return 'Backup status unknown';
-	return d ? `Last backup ${d.slice(0, 10)}` : 'No backup yet';
+	if (d === undefined) return t('ui.backup.statusUnknown');
+	return d
+		? t('ui.backup.lastBackup', { date: d.slice(0, 10) })
+		: t('ui.backup.noBackupYet');
 }
 
 function showImportMessage(msg) {
@@ -393,7 +408,7 @@ function exportBackup() {
 	// restore. Raise the notice and write nothing (#173).
 	if (backup.truncated) {
 		raiseNotice({
-			body: 'Backup failed — some saved data could not be read.',
+			body: t('ui.backup.exportFailedTruncated'),
 			detail: describeError(backup.error),
 		});
 		return;
@@ -416,7 +431,7 @@ function exportBackup() {
 			navigator.share
 		) {
 			navigator
-				.share({ files: [file], title: 'Workout backup' })
+				.share({ files: [file], title: t('ui.backup.shareTitle') })
 				.catch(() => downloadBackup(blob, filename));
 			return;
 		}
@@ -436,8 +451,8 @@ let pendingImport = null;
 const importArm = createTwoTapArm(
 	'.import-btn',
 	'.reset-btn-label',
-	'Tap again to replace all data',
-	'Restore backup',
+	t('ui.backup.armImport'),
+	t('ui.backup.restoreBtn'),
 	3000,
 	() => {
 		pendingImport = null;
@@ -453,9 +468,9 @@ function importBackup() {
 		const ok = restoreBackup(obj);
 		if (ok) {
 			render();
-			showImportMessage('Backup restored');
+			showImportMessage(t('ui.backup.restored'));
 		} else {
-			showImportMessage('Restore failed — storage unavailable');
+			showImportMessage(t('ui.backup.restoreFailedStorage'));
 		}
 		return;
 	}
@@ -477,12 +492,12 @@ function onImportFile(input) {
 			obj = JSON.parse(reader.result);
 		} catch (e) {
 			importArm.disarm();
-			showImportMessage('Not a valid backup file');
+			showImportMessage(t('ui.backup.notValidFile'));
 			return;
 		}
 		if (!validateBackup(obj)) {
 			importArm.disarm();
-			showImportMessage('Not a valid backup file');
+			showImportMessage(t('ui.backup.notValidFile'));
 			return;
 		}
 		pendingImport = obj;
@@ -491,7 +506,7 @@ function onImportFile(input) {
 	};
 	reader.onerror = () => {
 		importArm.disarm();
-		showImportMessage('Could not read file');
+		showImportMessage(t('ui.backup.couldNotReadFile'));
 	};
 	reader.readAsText(file);
 }
@@ -502,10 +517,12 @@ function onImportFile(input) {
 // a setTimeout(0) — some AT skip announce-on-insert but honour a fill (issue #77).
 function doneBannerInnerHTML() {
 	const isProgramEnd = cachedDayKey === PROGRAM_END;
-	const title = isProgramEnd ? 'Program Complete!' : 'Workout complete';
+	const title = isProgramEnd
+		? t('ui.done.programCompleteTitle')
+		: t('ui.done.workoutCompleteTitle');
 	const sub = isProgramEnd
-		? `You finished the full ${PROGRAM_LABEL} program. Outstanding work.`
-		: 'Great session. Hydrate and rest well.';
+		? t('ui.done.programEndSub', { programLabel: PROGRAM_LABEL })
+		: t('ui.done.normalSub');
 	return `<svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
       <div class="done-title">${title}</div>
       <div class="done-sub">${sub}</div>`;
@@ -632,6 +649,19 @@ function itemCardHTML(item, activeId) {
   </div>`;
 }
 
+// The display text for a buildItemList() section key (js/workout.js's
+// internal SECTION_NAMES stays the section-key -> id map workout.js reads;
+// this is the one render site that turns a key into copy, so it's the one
+// that owns the strings.js lookup). Falls back to the raw key for a future
+// section not yet in the bundle, matching the old `|| sec.key` behaviour.
+function sectionName(key) {
+	try {
+		return t('data.sectionNames.' + key);
+	} catch (e) {
+		return key;
+	}
+}
+
 function workoutContentHTML(workout) {
 	const activeId = allItems.find((i) => !completedItems.has(i.id))?.id;
 
@@ -651,7 +681,7 @@ function workoutContentHTML(workout) {
 		const done = sec.items.filter((i) => completedItems.has(i.id)).length;
 		const allDone = done === sec.items.length;
 		html += `<div class="section-label" data-sec="${sec.key}">
-      <h2 class="section-name" id="sec-${sec.key}">${SECTION_NAMES[sec.key] || sec.key}</h2>
+      <h2 class="section-name" id="sec-${sec.key}">${sectionName(sec.key)}</h2>
       <span class="sec-check-wrap" role="img" aria-label="section complete" style="${allDone ? '' : 'display:none'}">${SEC_CHECK}</span>
       <span class="sec-count" data-sec-count="${sec.key}">${done}/${sec.items.length}</span>
     </div>`;
@@ -659,31 +689,31 @@ function workoutContentHTML(workout) {
 	}
 
 	if (workout.exercises) {
-		html += `<div class="section-label"><h2 class="section-name" id="sec-principles">Principles</h2></div>
+		html += `<div class="section-label"><h2 class="section-name" id="sec-principles">${t('ui.principles.heading')}</h2></div>
       <ul class="principles">
-        <li class="principle">Increase weight before reps — add 2.5kg when 12 reps feels easy</li>
-        <li class="principle">Rest 60–90s isolation · 2 min compounds</li>
-        ${workout.hasCore ? '<li class="principle">Side lateral raises non-negotiable — form over weight, always</li>' : ''}
-        <li class="principle">Hanging raises: no twisting variants — oblique growth widens waist</li>
-        <li class="principle">No shrugs · no weighted side bends · no heavy deadlifts</li>
+        <li class="principle">${t('ui.principles.weight')}</li>
+        <li class="principle">${t('ui.principles.rest')}</li>
+        ${workout.hasCore ? `<li class="principle">${t('ui.principles.lateralRaise')}</li>` : ''}
+        <li class="principle">${t('ui.principles.hangingRaise')}</li>
+        <li class="principle">${t('ui.principles.noShrugs')}</li>
       </ul>`;
 	}
 	html += `<div class="footer-actions" style="text-align:center;padding:24px 0 40px">
       <div class="backup-row">
         <button class="reset-btn export-btn" onclick="exportBackup()">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
-          <span class="reset-btn-label">Export backup</span>
+          <span class="reset-btn-label">${t('ui.backup.exportBtn')}</span>
         </button>
         <button class="reset-btn import-btn" onclick="importBackup()">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
-          <span class="reset-btn-label">Restore backup</span>
+          <span class="reset-btn-label">${t('ui.backup.restoreBtn')}</span>
         </button>
       </div>
       <div class="last-export" id="last-export">${lastExportLabel()}</div>
       <div class="import-msg" id="import-msg" role="status" aria-live="polite"></div>
       <button class="reset-btn" onclick="resetProgress()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        <span class="reset-btn-label">Reset progress</span>
+        <span class="reset-btn-label">${t('ui.reset.btn')}</span>
       </button>
     </div>`;
 
@@ -714,12 +744,12 @@ function eyebrowLabel(entry, realKey, effectiveKey) {
 	const n = weekNumber(realKey);
 	const wk =
 		!entry || n > TOTAL_WEEKS || n < 0
-			? 'Outside program'
+			? t('ui.eyebrow.outsideProgram')
 			: n === 0
-				? 'Opening Weekend'
-				: `Week ${n} / ${TOTAL_WEEKS}`;
+				? t('ui.eyebrow.openingWeekend')
+				: t('ui.eyebrow.week', { n, total: TOTAL_WEEKS });
 	if (!entry) return wk;
-	if (entry.type === 'rest') return `${wk} · Rest Day`;
+	if (entry.type === 'rest') return `${wk} · ${t('ui.entry.restDay')}`;
 	// Single owner for the middle segment: getWeekType produces Front/Back Week
 	// for gym days and 'Sat · 9→4' / 'Sun · 9→4' for running/recovery — no more
 	// duplicate 'Saturday'/'Sunday' literals here (#65). Front/Back parity
@@ -732,16 +762,24 @@ function eyebrowLabel(entry, realKey, effectiveKey) {
 // bars are position-based (today/past/future) and no longer encode type, so
 // this map re-exposes the type in a non-color channel (screen readers).
 const WS_GROUP_NAME = {
-	rest: 'Rest',
-	legs: 'Legs',
-	back: 'Back',
-	chest: 'Chest',
-	arms: 'Arms',
-	shoulders: 'Shoulders',
-	run: 'Run',
-	recovery: 'Recovery',
+	rest: t('ui.weekStrip.groupRest'),
+	legs: t('ui.weekStrip.groupLegs'),
+	back: t('ui.weekStrip.groupBack'),
+	chest: t('ui.weekStrip.groupChest'),
+	arms: t('ui.weekStrip.groupArms'),
+	shoulders: t('ui.weekStrip.groupShoulders'),
+	run: t('ui.weekStrip.groupRun'),
+	recovery: t('ui.weekStrip.groupRecovery'),
 };
-const WS_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const WS_DAY_NAMES = [
+	'dayMonday',
+	'dayTuesday',
+	'dayWednesday',
+	'dayThursday',
+	'dayFriday',
+	'daySaturday',
+	'daySunday',
+].map((key) => t('ui.weekStrip.' + key));
 
 // Week strip: Mon–Sun of the current calendar week as position-based bars —
 // today = accent, past = ink, future = neutral. Bars no longer encode workout
@@ -752,14 +790,14 @@ function weekStripHTML(key) {
 	const dow = new Date(y, m - 1, d).getDay();
 	const toMon = dow === 0 ? -6 : 1 - dow;
 	const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-	let html = '<div class="week-strip" role="group" aria-label="This week">';
+	let html = `<div class="week-strip" role="group" aria-label="${t('ui.weekStrip.ariaLabel')}">`;
 	for (let i = 0; i < 7; i++) {
 		const dt = new Date(y, m - 1, d + toMon + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 		const entry = SCHEDULE[k];
 		const when = k === key ? 'today' : k < key ? 'past' : 'future';
 		const typeName = WS_GROUP_NAME[dayGroup(entry)];
-		const label = `${WS_DAY_NAMES[i]}: ${typeName}${when === 'today' ? ', today' : ''}`;
+		const label = `${WS_DAY_NAMES[i]}: ${typeName}${when === 'today' ? t('ui.weekStrip.todaySuffix') : ''}`;
 		html += `<div class="ws-day ${when}" role="img" aria-label="${label}"><div class="ws-bar"></div><div class="ws-letter" aria-hidden="true">${letters[i]}</div></div>`;
 	}
 	return html + '</div>';
@@ -805,7 +843,7 @@ function raiseNotice(opts) {
 // Error` — localStorage and FileReader in this app can reject with a
 // DOMException, which does not inherit from Error in every engine.
 function describeError(e) {
-	if (e === null || e === undefined) return 'Unknown error';
+	if (e === null || e === undefined) return t('ui.notice.unknownError');
 	if (typeof e === 'string') return e;
 	const name = e && typeof e.name === 'string' && e.name ? e.name : '';
 	const message = e && typeof e.message === 'string' && e.message ? e.message : '';
@@ -819,7 +857,7 @@ function describeError(e) {
 // header so it stays visible. Injected via the DOM only when storage is failing,
 // so the normal-path markup is untouched when storage works.
 function insertStorageWarning() {
-	raiseNotice({ body: "Progress can't be saved on this device — ticks will be lost when you close the app." });
+	raiseNotice({ body: t('ui.notice.storageWarning') });
 }
 
 // The stored item count no longer matched the current workout definition (an
@@ -827,7 +865,7 @@ function insertStorageWarning() {
 // now-unknown ids and set `definitionChanged`; this surfaces a one-line notice
 // via the same raised-notice plumbing as the storage warning.
 function insertDefinitionNotice() {
-	raiseNotice({ body: 'Workout definition changed — progress re-checked.' });
+	raiseNotice({ body: t('ui.notice.definitionChanged') });
 }
 
 // loadState (storage.js) sets stateCorrupted when a ws-* record's JSON could
@@ -836,10 +874,10 @@ function insertDefinitionNotice() {
 // rather than letting it pass silently (#173).
 function insertCorruptStateNotice() {
 	raiseNotice({
-		body: "Today's saved progress was unreadable and has been reset.",
+		body: t('ui.notice.stateCorrupted'),
 		detail: quarantineFailed
-			? `The original record could not be preserved: ${describeError(quarantineFailed)}`
-			: 'The original record was kept for troubleshooting.',
+			? t('ui.notice.quarantineFailed', { detail: describeError(quarantineFailed) })
+			: t('ui.notice.quarantineOk'),
 	});
 }
 
@@ -849,7 +887,7 @@ function insertCorruptStateNotice() {
 // instead of the one they'd chosen (#173).
 function insertBorrowCorruptNotice() {
 	raiseNotice({
-		body: 'Your "follow a different day" choice was unreadable and has been reset.',
+		body: t('ui.notice.borrowsCorrupted'),
 	});
 }
 
@@ -873,11 +911,11 @@ function resolveEffectiveEntry(key) {
 // and the (possibly self-healed) borrow — shared across every render() path.
 function headerBannersHTML(key, borrowedFrom) {
 	const swapBannerHTML = borrowedFrom
-		? `<div class="swap-banner"><span class="swap-banner-text">Following ${shortDayLabel(borrowedFrom)}'s workout</span><button class="swap-banner-undo" onclick="undoBorrow()">Undo</button></div>`
+		? `<div class="swap-banner"><span class="swap-banner-text">${t('ui.swap.following', { day: shortDayLabel(borrowedFrom) })}</span><button class="swap-banner-undo" onclick="undoBorrow()">${t('ui.swap.undo')}</button></div>`
 		: '';
 	// Square Modernist swap button with an inline arrows glyph (#65). The button
 	// name comes from aria-label, not the glyph, so AT announces the action.
-	const swapBtnHTML = `<button class="swap-btn" onclick="openSwapSheet()" aria-label="Follow a different day's workout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>`;
+	const swapBtnHTML = `<button class="swap-btn" onclick="openSwapSheet()" aria-label="${t('ui.swap.sheetTitle')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>`;
 	const notice = programNotice(key);
 	const noticeHTML = notice
 		? `<div class="program-notice">${notice}</div>`
@@ -892,7 +930,7 @@ function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
-        <div class="workout-title">No workout today</div>
+        <div class="workout-title">${t('ui.noWorkout.title')}</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         <div class="header-rule"></div>
@@ -901,11 +939,11 @@ function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
       <main class="content">
         <div class="poster poster-ink" role="alert">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m14 15 4 4"/><path d="m18 15-4 4"/></svg>
-          <h1 class="poster-title">No workout today</h1>
-          <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
+          <h1 class="poster-title">${t('ui.noWorkout.title')}</h1>
+          <div class="poster-sub">${t('ui.noWorkout.sub', { programLabel: PROGRAM_LABEL })}</div>
         </div>
       </main>`;
-	document.title = 'No workout today — workout-dashboard';
+	document.title = t('ui.docTitleWith', { page: t('ui.noWorkout.title') });
 	if (!storageOK) insertStorageWarning();
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
@@ -916,7 +954,7 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-        <h1 class="workout-title">Rest Day</h1>
+        <h1 class="workout-title">${t('ui.entry.restDay')}</h1>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
@@ -926,11 +964,11 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
       <main class="content">
         <div class="poster poster-accent">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-          <div class="poster-title">Rest &amp; Recover</div>
-          <div class="poster-sub">Sleep well. Let the muscles rebuild.</div>
+          <div class="poster-title">${t('ui.restDayPoster.title')}</div>
+          <div class="poster-sub">${t('ui.restDayPoster.sub')}</div>
         </div>
       </main>`;
-	document.title = 'Rest Day — workout-dashboard';
+	document.title = t('ui.docTitleWith', { page: t('ui.entry.restDay') });
 	if (!storageOK) insertStorageWarning();
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
@@ -946,7 +984,7 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-        <div class="workout-title">Couldn't load workout</div>
+        <div class="workout-title">${t('ui.unresolved.title')}</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
@@ -956,11 +994,11 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
       <main class="content">
         <div class="poster poster-ink" role="alert">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-          <h1 class="poster-title">Couldn't load workout</h1>
-          <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || 'TBC'}</code>). Check js/data.js.</div>
+          <h1 class="poster-title">${t('ui.unresolved.title')}</h1>
+          <div class="poster-sub">${t('ui.unresolved.sub', { type: entry.type, variation: entry.variation || 'TBC' })}</div>
         </div>
       </main>`;
-	document.title = "Couldn't load workout — workout-dashboard";
+	document.title = t('ui.docTitleWith', { page: t('ui.unresolved.title') });
 	if (!storageOK) insertStorageWarning();
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
@@ -1000,7 +1038,7 @@ function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, 
     <main id="wcontent" class="content">
       ${workoutContentHTML(workout)}
     </main>`;
-	document.title = `${workout.title} — workout-dashboard`;
+	document.title = t('ui.docTitleWith', { page: workout.title });
 
 	// Derive the completion banner from state on this paint. A reloaded/finished
 	// day (reload, borrow/undo, midnight-refresh) shows it with no scroll jump.

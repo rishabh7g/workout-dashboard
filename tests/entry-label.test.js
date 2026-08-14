@@ -11,7 +11,10 @@ const vm = require('vm');
 const assert = require('assert');
 
 // Pull just entryLabel out of ui.js so its DOM-touching top level never runs.
+// entryLabel reads t() (js/strings.js, #175) for its non-dynamic copy, so load
+// the real bundle alongside it rather than stubbing individual strings.
 const uiSrc = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
+const stringsSrc = fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8');
 const entry = uiSrc.match(/function entryLabel\(entry\) \{[\s\S]*?\n\}/);
 assert.ok(entry, 'entryLabel(entry) must exist in js/ui.js');
 
@@ -21,7 +24,7 @@ const ctx = {
 	WORKOUTS: { push: { A: { title: 'Push Day' } } },
 };
 vm.createContext(ctx);
-vm.runInContext(entry[0] + '\nthis.__e = entryLabel;', ctx);
+vm.runInContext(stringsSrc + '\n' + entry[0] + '\nthis.__e = entryLabel;', ctx);
 const entryLabel = ctx.__e;
 
 // 1. A running day with a missing variation falls back to "TBC", never "?".

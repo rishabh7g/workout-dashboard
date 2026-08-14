@@ -69,19 +69,16 @@
 			>
 				<div class="swap-sheet-header">
 					<div class="swap-sheet-heading">
-						<div class="swap-sheet-title" id="swap-sheet-title">
-							Follow a different day's workout
-						</div>
-						<div class="swap-sheet-sub">
-							Today's schedule is unchanged — you're just
-							following this one instead
-						</div>
+						<!-- Text content set once at boot by applyStaticStrings()
+						     (js/ui.js) from js/strings.js — index.html carries no
+						     literal copy (#175). -->
+						<div class="swap-sheet-title" id="swap-sheet-title"></div>
+						<div class="swap-sheet-sub" id="swap-sheet-sub"></div>
 					</div>
 					<button
 						class="sheet-close"
 						type="button"
 						onclick="closeSwapSheet()"
-						aria-label="Close"
 					>
 						<svg
 							width="18"
@@ -103,12 +100,14 @@
 
 		<!--
   Scripts load in dependency order (classic scripts share one global scope):
+    strings → the keyed copy bundle + t(), read by every file below it (#175)
     data    → the constants everything reads
     storage → localStorage + shared session state
     workout → pure logic that turns data into a checklist
     ui      → builds HTML and handles clicks
     main    → bootstraps: manifest, first render, service worker
 -->
+		<script src="js/strings.js"></script>
 		<script src="js/data.js"></script>
 		<script src="js/storage.js"></script>
 		<script src="js/workout.js"></script>

@@ -20,6 +20,7 @@ if (todayKey() > PROGRAM_END) pruneOldState();
 // runs every boot regardless of the post-program ws- gate above. See
 // pruneOldBorrows in storage.js.
 pruneOldBorrows();
+applyStaticStrings();
 render();
 
 // ─── Keep "today" fresh ──────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ function showUpdateToast() {
 	toast.className = 'update-toast';
 	toast.type = 'button';
 	toast.setAttribute('role', 'status');
-	toast.textContent = 'Updated — tap to refresh';
+	toast.textContent = t('ui.updateToast');
 	toast.onclick = () => location.reload();
 	document.body.appendChild(toast);
 }

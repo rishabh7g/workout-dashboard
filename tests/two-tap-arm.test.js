@@ -159,16 +159,18 @@ function tap(arm) {
 }
 
 // 6. Real call sites still use the shared helper with the historic 3000ms
-//    window (not silently narrowed/widened by the refactor).
+//    window (not silently narrowed/widened by the refactor). Labels moved
+//    into the keyed strings bundle (#175) — the wiring test reads the t()
+//    calls rather than the literal English text now.
 {
 	assert.ok(
-		/const resetArm = createTwoTapArm\(\s*'\.reset-btn',\s*'\.reset-btn-label',\s*'Tap again to reset',\s*'Reset progress',\s*3000,?\s*\);/.test(
+		/const resetArm = createTwoTapArm\(\s*'\.reset-btn',\s*'\.reset-btn-label',\s*t\('ui\.reset\.arm'\),\s*t\('ui\.reset\.btn'\),\s*3000,?\s*\);/.test(
 			uiSrc,
 		),
 		'resetProgress must wire createTwoTapArm with the original 3000ms window',
 	);
 	assert.ok(
-		/const importArm = createTwoTapArm\(\s*'\.import-btn',\s*'\.reset-btn-label',\s*'Tap again to replace all data',\s*'Restore backup',\s*3000,/.test(
+		/const importArm = createTwoTapArm\(\s*'\.import-btn',\s*'\.reset-btn-label',\s*t\('ui\.backup\.armImport'\),\s*t\('ui\.backup\.restoreBtn'\),\s*3000,/.test(
 			uiSrc,
 		),
 		'importBackup must wire createTwoTapArm with the original 3000ms window',

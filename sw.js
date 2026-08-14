@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v65';
+const CACHE = 'workout-dashboard-v66';
 const ASSETS = [
 	'./',
 	'./index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
 	// manifest.json (#152). Unreferenced assets/ files are deliberately not
 	// precached (#158).
 	'./assets/apple-touch-icon-180.png',
+	'./assets/favicon-32.png',
 	'./assets/icon-512.svg',
 	'./assets/icon-192.png',
 	'./assets/icon-512.png',

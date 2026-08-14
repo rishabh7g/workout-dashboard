@@ -27,7 +27,7 @@ function load(store, today = '2026-07-14') {
 	vm.createContext(ctx);
 	vm.runInContext(
 		src +
-			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, get definitionChanged(){return definitionChanged;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
+			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, serializeBackup, get definitionChanged(){return definitionChanged;}, get stateCorrupted(){return stateCorrupted;}, get quarantineFailed(){return quarantineFailed;}, get borrowsCorrupted(){return borrowsCorrupted;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
 		ctx
 	);
 	return ctx.__api;
@@ -198,6 +198,90 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 		'broken store must keep all in-memory ticks (no re-read wipe)'
 	);
 	console.log('PASS 6c: storage-failure path keeps in-memory ticks (#51 x #61)');
+}
+
+// 7. saveBorrows throwing (#173): reports failure to the caller AND flips
+//    storageOK, mirroring saveState — no false "borrow saved" success.
+{
+	const store = makeStore();
+	store.setItem = () => {
+		throw new Error('quota');
+	};
+	const api = load(store);
+	const ok = api.saveBorrows({ '2026-07-14': '2026-07-18' });
+	assert.strictEqual(ok, false, 'saveBorrows reports failure');
+	assert.strictEqual(api.storageOK, false, 'saveBorrows flips storageOK on failure (#173)');
+	console.log('PASS 7: saveBorrows throwing reports failure and flips storageOK (#173)');
+}
+
+// 8. loadBorrows with corrupt JSON (#173): resets to {} (as before) but now
+//    flags borrowsCorrupted so the UI can explain why.
+{
+	const store = makeStore({ 'day-borrow': '{not json' });
+	const api = load(store);
+	const b = api.loadBorrows();
+	assert.strictEqual(JSON.stringify(b), '{}', 'corrupt day-borrow resets to {}');
+	assert.strictEqual(api.borrowsCorrupted, true, 'corrupt day-borrow flags borrowsCorrupted (#173)');
+	console.log('PASS 8: loadBorrows with corrupt JSON flags borrowsCorrupted (#173)');
+}
+
+// 8b. A healthy loadBorrows call must not leave a stale flag set.
+{
+	const store = makeStore({ 'day-borrow': '{}' });
+	const api = load(store);
+	api.loadBorrows();
+	assert.strictEqual(api.borrowsCorrupted, false, 'healthy load leaves borrowsCorrupted false (#173)');
+	console.log('PASS 8b: loadBorrows healthy path leaves borrowsCorrupted false (#173)');
+}
+
+// 9. loadState with corrupt JSON (#173): flags stateCorrupted (quarantine
+//    itself already covered by PASS 4) so the UI can raise a notice.
+{
+	const store = makeStore({ 'ws-2026-07-14-legs-A': '{not json' });
+	const api = load(store);
+	api.allItems = items3;
+	api.loadState('2026-07-14-legs-A');
+	assert.strictEqual(api.stateCorrupted, true, 'corrupt ws-* record flags stateCorrupted (#173)');
+	assert.strictEqual(api.quarantineFailed, null, 'quarantine succeeded, so quarantineFailed stays null (#173)');
+	console.log('PASS 9: loadState with corrupt JSON flags stateCorrupted (#173)');
+}
+
+// 10. loadState where even the quarantine write fails (#173): nothing more
+//     to do, but the failure must be reported, not swallowed.
+{
+	const store = makeStore({ 'ws-2026-07-14-legs-A': '{not json' });
+	const realSetItem = store.setItem;
+	store.setItem = (k, v) => {
+		if (k.startsWith('ws-corrupt-')) throw new Error('quota');
+		return realSetItem(k, v);
+	};
+	const api = load(store);
+	api.allItems = items3;
+	api.loadState('2026-07-14-legs-A');
+	assert.strictEqual(api.stateCorrupted, true);
+	assert.ok(api.quarantineFailed, 'quarantineFailed carries the throw when quarantining itself fails (#173)');
+	console.log('PASS 10: loadState reports a failed quarantine write via quarantineFailed (#173)');
+}
+
+// 11. serializeBackup with a store that throws partway through iteration
+//     (#173): must return truncated:true, never a clean schema-1 backup that
+//     looks complete but silently drops days on restore.
+{
+	const store = makeStore({
+		'ws-2026-07-01': JSON.stringify({ v: 1, n: 1, done: [] }),
+		'ws-2026-07-02': JSON.stringify({ v: 1, n: 1, done: [] }),
+	});
+	let calls = 0;
+	store.getItem = (k) => {
+		calls++;
+		if (calls === 2) throw new Error('device unplugged');
+		return store.map.has(k) ? store.map.get(k) : null;
+	};
+	const api = load(store);
+	const backup = api.serializeBackup();
+	assert.strictEqual(backup.truncated, true, 'a mid-iteration throw marks the backup truncated (#173)');
+	assert.ok(backup.error, 'the throw is carried for the caller to describe (#173)');
+	console.log('PASS 11: serializeBackup marks a mid-iteration failure truncated, never a clean backup (#173)');
 }
 
 console.log('\nALL TESTS PASSED');

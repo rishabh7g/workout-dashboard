@@ -42,6 +42,21 @@ try {
 // notice via the same header plumbing as the storage warning.
 let definitionChanged = false;
 
+// Set by loadState when a record's JSON could not be parsed (a corrupt `ws-*`
+// value). The UI reads this after each load to raise the one notice — the
+// user is entitled to know their saved record was unreadable, not just watch
+// it silently reset (#173).
+let stateCorrupted = false;
+// If the corrupt record's quarantine write (below) itself failed, the raw
+// throw is kept here so the UI can name it in the notice's detail line via
+// describeError. null when quarantining succeeded or wasn't attempted.
+let quarantineFailed = null;
+
+// Set by loadBorrows when the stored `day-borrow` JSON could not be parsed. The
+// UI reads this after each call to raise the one notice — a corrupt borrow
+// record otherwise resets to "today's own workout" with no explanation (#173).
+let borrowsCorrupted = false;
+
 // Build the storage key for a given date + schedule entry.
 function stateKey(dayKey, entry) {
 	return entry ? `${dayKey}-${entry.type}-${entry.variation || 'x'}` : dayKey;
@@ -107,6 +122,8 @@ function toggleAndSave(key, id) {
 }
 function loadState(key) {
 	definitionChanged = false;
+	stateCorrupted = false;
+	quarantineFailed = null;
 	let s = null;
 	try {
 		s = localStorage.getItem('ws-' + key);
@@ -139,10 +156,17 @@ function loadState(key) {
 		} catch (e) {
 			// Corrupt record. Preserve the raw value under a quarantine key FIRST
 			// (in its own try — quarantining must never throw) so the next tap
-			// can't overwrite unreadable data with a fresh one-item array.
+			// can't overwrite unreadable data with a fresh one-item array. Flag it
+			// so the UI raises a notice instead of the reset passing silently.
+			stateCorrupted = true;
 			try {
 				localStorage.setItem('ws-corrupt-' + key, s);
-			} catch (e2) {}
+			} catch (e2) {
+				// Nothing more to do if even the quarantine write fails — but say so
+				// in the notice rather than swallowing it, so the user isn't left
+				// thinking their record was preserved when it wasn't.
+				quarantineFailed = e2;
+			}
 		}
 	}
 	return new Set();
@@ -176,21 +200,39 @@ function pruneOldState() {
 				localStorage.removeItem(k);
 			}
 		}
-	} catch (e) {}
+	} catch (e) {
+		// Best-effort cleanup only: a failing store here means nothing got
+		// pruned, not that anything was lost — in-program history is never the
+		// only copy of a tick this session (completedItems still holds it), and
+		// the boot probe already flags storageOK if the store is genuinely
+		// broken. There's nothing more useful to do than skip this sweep.
+	}
 }
 
 // ─── Day borrow ("follow a different day") ──────────────────────────────────
 function loadBorrows() {
+	borrowsCorrupted = false;
 	try {
 		return JSON.parse(localStorage.getItem('day-borrow') || '{}');
 	} catch (e) {
+		// Corrupt day-borrow value. Resetting to {} silently drops the user's
+		// "follow a different day" choice — flag it so the UI explains why
+		// today's own workout reappeared instead of the borrowed one.
+		borrowsCorrupted = true;
 		return {};
 	}
 }
 function saveBorrows(b) {
 	try {
 		localStorage.setItem('day-borrow', JSON.stringify(b));
-	} catch (e) {}
+		return true;
+	} catch (e) {
+		// Never throw — but report failure so the caller does not announce a
+		// borrow that did not persist, and flip storageOK like every other
+		// write failure so the existing warning fires.
+		storageOK = false;
+		return false;
+	}
 }
 
 // The day-borrow map grows monotonically: every borrow ever made is keyed by
@@ -213,7 +255,12 @@ function pruneOldBorrows() {
 			}
 		}
 		if (changed) saveBorrows(b);
-	} catch (e) {}
+	} catch (e) {
+		// Same as pruneOldState: best-effort dead-key cleanup. A failing store
+		// here doesn't lose reachable data — an unpruned past-dated key is
+		// simply unreachable weight that survives till the next boot — so
+		// there's nothing more useful to do than skip this sweep.
+	}
 }
 
 // ─── One-tap backup: export / import (issue #89) ─────────────────────────────
@@ -256,7 +303,19 @@ function serializeBackup() {
 			if (v !== null) data[k] = v;
 		}
 	} catch (e) {
-		// A throwing store yields whatever we read so far; export never crashes.
+		// A throwing store mid-iteration means the sweep is incomplete. Returning
+		// that as a normal, schema-1-stamped backup would let the caller export
+		// (and the user believe complete) a file that silently drops days on
+		// restore. Report the failure instead — never crash, but never claim
+		// completeness either. `truncated`/`error` are not part of the backup
+		// schema; exportBackup must check for them before writing/sharing.
+		return {
+			schema: BACKUP_SCHEMA,
+			exported: new Date().toISOString(),
+			data,
+			truncated: true,
+			error: e,
+		};
 	}
 	return { schema: BACKUP_SCHEMA, exported: new Date().toISOString(), data };
 }
@@ -315,10 +374,16 @@ function recordExport(iso) {
 		storageOK = false;
 	}
 }
+// Returns the ISO date string, or `null` when there genuinely is no backup
+// recorded yet. A `getItem` failure is a DIFFERENT state — the store is
+// unreadable, not empty — so it returns `undefined` rather than `null`, and
+// flips storageOK like every other read failure in this file, so the caller
+// (lastExportLabel, js/ui.js) can tell "no backup yet" apart from "unknown".
 function lastExportDate() {
 	try {
 		return localStorage.getItem(LAST_EXPORT_KEY);
 	} catch (e) {
-		return null;
+		storageOK = false;
+		return undefined;
 	}
 }

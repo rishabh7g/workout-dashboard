@@ -136,19 +136,25 @@ function doBorrow(targetKey) {
 	}
 	const b = loadBorrows();
 	b[tk] = targetKey;
-	saveBorrows(b);
+	const saved = saveBorrows(b);
 	closeSwapSheet();
 	render();
 	// render() rebuilds #app wholesale, so announce via the persistent sibling
-	// live region (issue #77). One polite message per borrow.
-	announce(`Following ${shortDayLabel(targetKey)}'s workout`);
+	// live region (issue #77). One polite message per borrow — but only when
+	// the borrow actually persisted. A failed write already flips storageOK
+	// (storage.js), which render() surfaces as the one raised notice; loadBorrows
+	// inside render() re-reads from storage, so a failed save also means the
+	// swap banner it paints does NOT claim the borrow, matching this silence.
+	if (saved) announce(`Following ${shortDayLabel(targetKey)}'s workout`);
 }
 function undoBorrow() {
 	const b = loadBorrows();
 	delete b[todayKey()];
-	saveBorrows(b);
+	const saved = saveBorrows(b);
 	render();
-	announce("Back to today's workout");
+	// Same reasoning as doBorrow: only announce the outcome that actually
+	// persisted. A failed write is reported via the storage-warning notice.
+	if (saved) announce("Back to today's workout");
 }
 
 // Write to the persistent polite live region (#sr-status, a sibling of #app in
@@ -366,9 +372,12 @@ function backupFilename() {
 	return `workout-backup-${todayKey()}.json`;
 }
 
-// The neutral-600 footer line beside the export control.
+// The neutral-600 footer line beside the export control. lastExportDate
+// returns `undefined` when storage itself is unreadable — that must not print
+// the same "No backup yet" as a genuine never-exported state (#173).
 function lastExportLabel() {
 	const d = lastExportDate();
+	if (d === undefined) return 'Backup status unknown';
 	return d ? `Last backup ${d.slice(0, 10)}` : 'No backup yet';
 }
 
@@ -379,6 +388,16 @@ function showImportMessage(msg) {
 
 function exportBackup() {
 	const backup = serializeBackup();
+	// A throwing store mid-iteration means the sweep is incomplete — never
+	// export/share a file that would look complete but silently drop days on
+	// restore. Raise the notice and write nothing (#173).
+	if (backup.truncated) {
+		raiseNotice({
+			body: 'Backup failed — some saved data could not be read.',
+			detail: describeError(backup.error),
+		});
+		return;
+	}
 	const json = JSON.stringify(backup);
 	const filename = backupFilename();
 	// Record the export date (non-ws- marker) and refresh the footer label.
@@ -811,6 +830,29 @@ function insertDefinitionNotice() {
 	raiseNotice({ body: 'Workout definition changed — progress re-checked.' });
 }
 
+// loadState (storage.js) sets stateCorrupted when a ws-* record's JSON could
+// not be parsed. It quarantines the raw value first, so name that in the
+// body; if even the quarantine write failed, name that too via describeError
+// rather than letting it pass silently (#173).
+function insertCorruptStateNotice() {
+	raiseNotice({
+		body: "Today's saved progress was unreadable and has been reset.",
+		detail: quarantineFailed
+			? `The original record could not be preserved: ${describeError(quarantineFailed)}`
+			: 'The original record was kept for troubleshooting.',
+	});
+}
+
+// loadBorrows (storage.js) sets borrowsCorrupted when the stored day-borrow
+// value could not be parsed — it resets to {}, silently dropping any "follow
+// a different day" choice. Tell the user why today's own workout reappeared
+// instead of the one they'd chosen (#173).
+function insertBorrowCorruptNotice() {
+	raiseNotice({
+		body: 'Your "follow a different day" choice was unreadable and has been reset.',
+	});
+}
+
 // Self-heal a stale borrow: if the stored target is no longer a SCHEDULE key
 // (a schedule edit removed/renamed the date, or a device-clock jump), drop the
 // dangling entry and fall back to the real day rather than rendering the
@@ -865,6 +907,7 @@ function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
       </main>`;
 	document.title = 'No workout today — workout-dashboard';
 	if (!storageOK) insertStorageWarning();
+	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
 
 function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML) {
@@ -889,6 +932,7 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
       </main>`;
 	document.title = 'Rest Day — workout-dashboard';
 	if (!storageOK) insertStorageWarning();
+	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
 
 // A SCHEDULE entry that doesn't resolve to a workout (e.g. a data.js typo).
@@ -918,6 +962,7 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
       </main>`;
 	document.title = "Couldn't load workout — workout-dashboard";
 	if (!storageOK) insertStorageWarning();
+	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
 
 // Gym day or running day — both share the same interactive checklist path.
@@ -966,9 +1011,12 @@ function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, 
 	}
 
 	if (!storageOK) insertStorageWarning();
+	if (borrowsCorrupted) insertBorrowCorruptNotice();
 	// loadState (line above) sets definitionChanged when the stored item count no
 	// longer matches this workout — tell the user their progress was re-checked.
 	if (definitionChanged) insertDefinitionNotice();
+	// ...and stateCorrupted when it hit a corrupt ws-* record instead.
+	if (stateCorrupted) insertCorruptStateNotice();
 }
 
 // Expose the (possibly banner-inflated) sticky-header height so cards and the

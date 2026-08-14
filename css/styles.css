@@ -35,7 +35,7 @@
 	--color-neutral-200: #d1cdc9;  /* row press state */
 	--color-neutral-100: #e9e7e5;  /* faint fills */
 
-	--font-heading: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* file ships in the next ticket */
+	--font-heading: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Archivo 800 self-hosted, fonts/archivo-latin-800.woff2 — see tests/fonts.test.js */
 	--font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* DECISION: mockup's --font-body is unresolvable; system stack = zero bytes, matches the app's existing UI stack */
 
 	/* Short aliases remapped onto the Modernist tokens, kept for the few base

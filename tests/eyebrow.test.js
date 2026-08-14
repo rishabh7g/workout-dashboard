@@ -8,11 +8,14 @@ const path = require('path');
 const vm = require('vm');
 const assert = require('assert');
 
-// Load the pure domain deps (data.js + workout.js), then pull just the
-// eyebrowLabel function out of ui.js so ui.js's DOM-touching top level never
-// runs. The extracted function closes over weekNumber/TOTAL_WEEKS/getWeekType.
+// Load the pure domain deps (data.js + workout.js) and the strings bundle
+// (js/strings.js, #175 — eyebrowLabel's non-dynamic copy reads t()), then pull
+// just the eyebrowLabel function out of ui.js so ui.js's DOM-touching top
+// level never runs. The extracted function closes over
+// weekNumber/TOTAL_WEEKS/getWeekType.
 const dataSrc = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
 const workoutSrc = fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8');
+const stringsSrc = fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8');
 const uiSrc = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
 
 const m = uiSrc.match(/function eyebrowLabel\(entry, realKey, effectiveKey\) \{[\s\S]*?\n\}/);
@@ -21,7 +24,7 @@ assert.ok(m, 'eyebrowLabel(entry, realKey, effectiveKey) must exist in js/ui.js'
 const ctx = { console };
 vm.createContext(ctx);
 vm.runInContext(
-	dataSrc + '\n' + workoutSrc + '\n' + m[0] + '\nthis.__label = eyebrowLabel; this.__sched = SCHEDULE;',
+	stringsSrc + '\n' + dataSrc + '\n' + workoutSrc + '\n' + m[0] + '\nthis.__label = eyebrowLabel; this.__sched = SCHEDULE;',
 	ctx
 );
 const eyebrowLabel = ctx.__label;

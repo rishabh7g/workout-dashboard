@@ -10,6 +10,8 @@ const vm = require('vm');
 const assert = require('assert');
 
 const uiSrc = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
+// describeError's null/undefined branch reads t() (js/strings.js, #175).
+const stringsSrc = fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8');
 
 const noticeMarkupSrc = uiSrc.match(/function noticeMarkup\([\s\S]*?\n\}/);
 const describeErrorSrc = uiSrc.match(/function describeError\([\s\S]*?\n\}/);
@@ -19,7 +21,7 @@ assert.ok(describeErrorSrc, 'describeError(...) must exist in js/ui.js');
 const ctx = { console };
 vm.createContext(ctx);
 vm.runInContext(
-	`${noticeMarkupSrc[0]}\n${describeErrorSrc[0]}\nthis.__noticeMarkup = noticeMarkup; this.__describeError = describeError;`,
+	`${stringsSrc}\n${noticeMarkupSrc[0]}\n${describeErrorSrc[0]}\nthis.__noticeMarkup = noticeMarkup; this.__describeError = describeError;`,
 	ctx
 );
 const noticeMarkup = ctx.__noticeMarkup;

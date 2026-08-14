@@ -38,6 +38,9 @@
 	--font-heading: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Archivo 800 self-hosted, fonts/archivo-latin-800.woff2 — see tests/fonts.test.js */
 	--font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* DECISION: mockup's --font-body is unresolvable; system stack = zero bytes, matches the app's existing UI stack */
 
+	/* Type floor — zoom is off once installed, so nothing goes below this (#177) */
+	--text-body-min: 16px;
+
 	/* Short aliases remapped onto the Modernist tokens, kept for the few base
 	   rules (body, storage warning) that still read them. */
 	--bg: var(--color-bg);
@@ -64,6 +67,22 @@
 	outline: 2px solid var(--color-accent);
 	outline-offset: 2px;
 }
+
+/* ── Micro-label tier (#177) ──────────────────────────────────────────────
+ * The house standard's 16px body-text floor names "no exceptions, including
+ * captions inside cards" — declared here as a divergence rather than applied
+ * silently, per house standard §1 ("deviating is allowed; deviating silently
+ * is not"). These selectors stay below 16px because they are uppercase,
+ * letter-spaced CHIPS carrying a short LABEL (a count, a unit, a badge word),
+ * never a sentence of prose a user reads for meaning — raising them to 16px
+ * would blow up their tap-target/row geometry and flatten the Modernist type
+ * language the app is built on, for a set of strings nobody reads as text.
+ * The selectors: .reset-btn, .last-export/.import-msg, .kicker,
+ * .kicker-date, .ws-letter, .section-name, .sec-count, .item-cap,
+ * .item-first, .item-num-x, .item-num-label, .swap-banner-text.
+ * (.item-warn and .swap-banner-undo look like this tier but are NOT in it —
+ * a safety warning and an interactive control's only text respectively —
+ * both raised to the floor below.) */
 
 /* Reset affordance — uppercase accent text control with a reset-arrow SVG.
  * Visually a 10px text line, but padded to an effective ≥44px hit box (F08-08)
@@ -334,12 +353,12 @@ header {
 
 /* Stacked meta lines under the name: sub · note · cap · warn (see .item-body) */
 .item-sub {
-	font-size: 12px;
+	font-size: var(--text-body-min);
 	color: var(--color-neutral-600);
 	margin-top: 2px;
 }
 .item-note {
-	font-size: 11.5px;
+	font-size: var(--text-body-min);
 	color: var(--color-neutral-600);
 	line-height: 1.45;
 	margin-top: 3px;
@@ -357,7 +376,7 @@ header {
 	display: flex;
 	align-items: flex-start;
 	gap: 5px;
-	font-size: 11.5px;
+	font-size: var(--text-body-min);
 	color: var(--color-accent-700);
 	line-height: 1.4;
 	margin-top: 4px;
@@ -409,12 +428,15 @@ header {
 }
 
 .poster-sub {
-	font-size: 13px;
+	font-size: var(--text-body-min);
 	opacity: 0.9;
 }
 
 .poster-sub code {
-	font-size: 0.9em;
+	/* Was 0.9em (a relative shrink for monospace visual balance) — with
+	   .poster-sub now at the 16px floor, a shrink would put this body text
+	   back under it (#177). 1em keeps it flush with its parent. */
+	font-size: 1em;
 }
 
 /* Principles are a plain ruled list in the Modernist language — no card box. */
@@ -422,7 +444,7 @@ header {
 	list-style: none;
 }
 .principle {
-	font-size: 0.71875rem;
+	font-size: var(--text-body-min);
 	color: var(--color-neutral-700);
 	line-height: 1.5;
 	padding: 0.5625rem 0;
@@ -536,7 +558,7 @@ header {
 	flex-wrap: wrap;
 }
 .item-name {
-	font-size: 14.5px;
+	font-size: var(--text-body-min);
 	font-weight: 600;
 	line-height: 1.3;
 	color: var(--color-text);
@@ -605,7 +627,7 @@ header {
 	background: var(--color-accent);
 }
 .progress-text {
-	font-size: 12px;
+	font-size: var(--text-body-min);
 	color: var(--color-text);
 	font-weight: 800;
 	font-family: var(--font-heading);
@@ -646,7 +668,7 @@ header {
 
 .done-sub {
 	/* bg-on-ink ≈ 12:1 even at 0.75 */
-	font-size: 12px;
+	font-size: var(--text-body-min);
 	opacity: 0.75;
 }
 
@@ -702,6 +724,7 @@ header {
 	color: var(--color-accent-800);
 }
 .swap-banner-undo {
+	font-size: var(--text-body-min);
 	/* WCAG 2.5.8: the underlined "Undo" glyph is only ~35×11px, so pad the hit
 	   area out to ≥44px in both dimensions and pull it back in with a matching
 	   negative margin so the banner keeps its tight height and the text stays
@@ -713,7 +736,6 @@ header {
 	border: none;
 	cursor: pointer;
 	font-family: var(--font-heading);
-	font-size: 0.625rem;
 	font-weight: 800;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -734,7 +756,7 @@ header {
 	padding: 7px 12px;
 	background: var(--color-accent-100);
 	margin-top: 8px;
-	font-size: 12px;
+	font-size: var(--text-body-min);
 	color: var(--color-accent-800);
 	font-weight: 600;
 }
@@ -748,7 +770,7 @@ header {
 	border: 1px solid var(--warn);
 	border-radius: 8px;
 	margin-bottom: 8px;
-	font-size: 12px;
+	font-size: var(--text-body-min);
 	line-height: 1.35;
 	color: var(--warn);
 	font-weight: 600;
@@ -866,12 +888,12 @@ header {
 .swap-option-day {
 	display: block;
 	font-family: var(--font-heading);
-	font-size: 14px;
+	font-size: var(--text-body-min);
 	font-weight: 800;
 }
 .swap-option-label {
 	display: block;
-	font-size: 11.5px;
+	font-size: var(--text-body-min);
 	color: var(--color-neutral-600);
 	margin-top: 2px;
 }
@@ -919,7 +941,7 @@ header {
 	padding: 12px 18px;
 	font-family: var(--font-heading);
 	font-weight: 800;
-	font-size: 14px;
+	font-size: var(--text-body-min);
 	letter-spacing: -0.01em;
 	text-transform: uppercase;
 	cursor: pointer;

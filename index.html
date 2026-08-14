@@ -71,9 +71,10 @@
 					<div class="swap-sheet-heading">
 						<!-- Text content set once at boot by applyStaticStrings()
 						     (js/ui.js) from js/strings.js — index.html carries no
-						     literal copy (#175). -->
+						     literal copy (#175). No read-once sub line here (#176):
+						     the title already says what the sheet does, and
+						     aria-labelledby points at the title, not a sub. -->
 						<div class="swap-sheet-title" id="swap-sheet-title"></div>
-						<div class="swap-sheet-sub" id="swap-sheet-sub"></div>
 					</div>
 					<button
 						class="sheet-close"

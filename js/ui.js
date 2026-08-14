@@ -167,13 +167,12 @@ function announce(msg) {
 
 // index.html's static shell carries a handful of elements whose text/aria
 // content is user-facing copy but never rebuilt by render() (the swap sheet's
-// title/sub, its close button) — index.html itself carries no literal (#175),
-// so this fills them once from the bundle. Called once at boot (js/main.js).
+// title, its close button) — index.html itself carries no literal (#175), so
+// this fills them once from the bundle. Called once at boot (js/main.js). No
+// sub line here (#176) — read-once explainer copy, deleted along with its key.
 function applyStaticStrings() {
 	const title = document.getElementById('swap-sheet-title');
 	if (title) title.textContent = t('ui.swap.sheetTitle');
-	const sub = document.getElementById('swap-sheet-sub');
-	if (sub) sub.textContent = t('ui.swap.sheetSub');
 	const close = document.querySelector('.sheet-close');
 	if (close) close.setAttribute('aria-label', t('ui.swap.close'));
 }
@@ -520,12 +519,16 @@ function doneBannerInnerHTML() {
 	const title = isProgramEnd
 		? t('ui.done.programCompleteTitle')
 		: t('ui.done.workoutCompleteTitle');
-	const sub = isProgramEnd
-		? t('ui.done.programEndSub', { programLabel: PROGRAM_LABEL })
-		: t('ui.done.normalSub');
+	// The non-program-end .done-sub ("Great session. Hydrate and rest well.")
+	// was read-once reassurance under a title that already says the same thing
+	// — deleted (#176). The program-end sub is a keeper: it carries live data
+	// (PROGRAM_LABEL) and is shown exactly once in the program's life.
+	const subHTML = isProgramEnd
+		? `<div class="done-sub">${t('ui.done.programEndSub', { programLabel: PROGRAM_LABEL })}</div>`
+		: '';
 	return `<svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
       <div class="done-title">${title}</div>
-      <div class="done-sub">${sub}</div>`;
+      ${subHTML}`;
 }
 
 // role="status" makes the banner announce its title/sub on completion. render()
@@ -965,7 +968,6 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
         <div class="poster poster-accent">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
           <div class="poster-title">${t('ui.restDayPoster.title')}</div>
-          <div class="poster-sub">${t('ui.restDayPoster.sub')}</div>
         </div>
       </main>`;
 	document.title = t('ui.docTitleWith', { page: t('ui.entry.restDay') });

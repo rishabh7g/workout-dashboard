@@ -29,7 +29,6 @@ const STRINGS = {
 		},
 		swap: {
 			sheetTitle: "Follow a different day's workout",
-			sheetSub: "Today's schedule is unchanged — you're just following this one instead",
 			close: 'Close',
 			noUpcoming: 'No upcoming days in schedule',
 			following: "Following {day}'s workout",
@@ -58,14 +57,15 @@ const STRINGS = {
 			programCompleteTitle: 'Program Complete!',
 			workoutCompleteTitle: 'Workout complete',
 			programEndSub: 'You finished the full {programLabel} program. Outstanding work.',
-			normalSub: 'Great session. Hydrate and rest well.',
 		},
 		principles: {
 			heading: 'Principles',
 			weight: 'Increase weight before reps — add 2.5kg when 12 reps feels easy',
 			rest: 'Rest 60–90s isolation · 2 min compounds',
-			lateralRaise: 'Side lateral raises non-negotiable — form over weight, always',
-			hangingRaise: 'Hanging raises: no twisting variants — oblique growth widens waist',
+			// Both trimmed to the rule (#176): each dropped only the explanatory
+			// clause wrapped around it, keeping the prescriptive rule itself.
+			lateralRaise: 'Side lateral raises non-negotiable',
+			hangingRaise: 'Hanging raises: no twisting variants',
 			noShrugs: 'No shrugs · no weighted side bends · no heavy deadlifts',
 		},
 		eyebrow: {
@@ -107,9 +107,10 @@ const STRINGS = {
 			title: 'No workout today',
 			sub: 'This date is outside the current program ({programLabel}).',
 		},
+		// No .sub here (#176): "Sleep well. Let the muscles rebuild." was
+		// read-once reassurance under a title that already says the same thing.
 		restDayPoster: {
 			title: 'Rest &amp; Recover',
-			sub: 'Sleep well. Let the muscles rebuild.',
 		},
 		unresolved: {
 			title: "Couldn't load workout",
@@ -146,7 +147,6 @@ const STRINGS_KEYS = [
 	'ui.entry.runningSat',
 	'ui.entry.runningSun',
 	'ui.swap.sheetTitle',
-	'ui.swap.sheetSub',
 	'ui.swap.close',
 	'ui.swap.noUpcoming',
 	'ui.swap.following',
@@ -169,7 +169,6 @@ const STRINGS_KEYS = [
 	'ui.done.programCompleteTitle',
 	'ui.done.workoutCompleteTitle',
 	'ui.done.programEndSub',
-	'ui.done.normalSub',
 	'ui.principles.heading',
 	'ui.principles.weight',
 	'ui.principles.rest',
@@ -206,7 +205,6 @@ const STRINGS_KEYS = [
 	'ui.noWorkout.title',
 	'ui.noWorkout.sub',
 	'ui.restDayPoster.title',
-	'ui.restDayPoster.sub',
 	'ui.unresolved.title',
 	'ui.unresolved.sub',
 	'ui.updateToast',

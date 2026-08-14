@@ -1,11 +1,14 @@
 {
 	"name": "workout-dashboard",
 	"short_name": "Workout",
+	"id": "./",
 	"start_url": "./",
 	"scope": "./",
 	"display": "standalone",
+	"orientation": "portrait",
 	"background_color": "#dddbd9",
 	"theme_color": "#dddbd9",
+	"description": "A personal 26-week workout-program dashboard that tracks daily gym, running and rest ticks offline on this device.",
 	"icons": [
 		{
 			"src": "assets/icon-192.png",

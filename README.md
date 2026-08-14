@@ -39,16 +39,17 @@ standalone test suites can import their pure logic.
 | `js/storage.js` | `localStorage` layer + shared mutable session state: `ws-*` day records under a v1 envelope, day-borrow, the `exlog` exercise log, backup export/import, and a `storageOK` probe. |
 | `js/ui.js` | All DOM rendering and every view; the only file that touches the page, plus the global `onclick` handlers. |
 | `js/main.js` | Bootstrap (loaded last): first render, the day-rollover refresh timer, service-worker registration, and the update toast. |
+| `js/zoom-lock.js` | Standalone zoom lock: appends `maximum-scale=1, user-scalable=no` to the viewport tag only when installed (`display-mode: standalone`), amending it — never replacing it — so `viewport-fit=cover` always survives. |
 | `sw.js` | Offline cache (network-first with a 3 s race). The `CACHE` name is bumped by hand per release; CI enforces it (see Deploy). |
 
 ## Verify
 
     bash scripts/verify.sh          # local: syntax -> tests -> serve -> assets -> render -> screenshot
     bash scripts/verify.sh --live   # the same checks against the deployed site
-    node tests/*.test.js            # just the unit tests (13 standalone, zero-dependency suites)
+    node tests/*.test.js            # just the unit tests (14 standalone, zero-dependency suites)
 
 `scripts/verify.sh` prints **one summary line** on success
-(`SYNTAX ok | TEST 13/13 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes
+(`SYNTAX ok | TEST 14/14 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok`), writes
 all detail to `out/verify.log`, and uses a distinct exit code per stage (read the
 log only on FAIL). The test suites in `tests/` are zero-dependency Node scripts
 that exit non-zero on failure — they are **not** `node --test`/TAP, so run them

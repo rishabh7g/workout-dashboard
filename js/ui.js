@@ -758,29 +758,57 @@ function eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML) {
       </div>`;
 }
 
-// When storage isn't persisting, prepend a persistent warning to the (sticky)
+// ─── The one raised notice (#172) ──────────────────────────────────────────
+// Every failure/warning path in this app raises the same notice shape: a
+// title (optional — bare inline banners like the two below render body
+// only), a body sentence, and optional detail/action extras for richer
+// screens. role="alert" so AT announces it the moment it lands — render()
+// rebuilds #app wholesale on every paint, so a warning injected without a
+// live-region role is announced to a screen-reader user never.
+function noticeMarkup({ title, body, detail, actionLabel, actionOnclick }) {
+	const titleHTML = title ? `<div class="notice-title">${title}</div>` : '';
+	const detailHTML = detail ? `<div class="notice-detail">${detail}</div>` : '';
+	const actionHTML = actionLabel
+		? `<button class="notice-action" onclick="${actionOnclick}">${actionLabel}</button>`
+		: '';
+	return `<div class="notice" role="alert">${titleHTML}${body}${detailHTML}${actionHTML}</div>`;
+}
+
+// Injects a notice into the header rail — the one plumbing path shared by
+// every warning. Prepends inside the 480px header rail so it aligns with the
+// kicker row rather than spanning the full-bleed header background (#65).
+function raiseNotice(opts) {
+	(document.querySelector('.header-inner') || document.querySelector('header'))
+		?.insertAdjacentHTML('afterbegin', noticeMarkup(opts));
+}
+
+// Reads an unknown throw's { name, message } without ever using `instanceof
+// Error` — localStorage and FileReader in this app can reject with a
+// DOMException, which does not inherit from Error in every engine.
+function describeError(e) {
+	if (e === null || e === undefined) return 'Unknown error';
+	if (typeof e === 'string') return e;
+	const name = e && typeof e.name === 'string' && e.name ? e.name : '';
+	const message = e && typeof e.message === 'string' && e.message ? e.message : '';
+	if (name && message) return `${name}: ${message}`;
+	if (name) return name;
+	if (message) return message;
+	return String(e);
+}
+
+// When storage isn't persisting, raise a persistent warning in the (sticky)
 // header so it stays visible. Injected via the DOM only when storage is failing,
 // so the normal-path markup is untouched when storage works.
 function insertStorageWarning() {
-	// Prepend inside the 480px header rail so the warning aligns with the kicker
-	// row rather than spanning the full-bleed header background (#65).
-	(document.querySelector('.header-inner') || document.querySelector('header'))
-		?.insertAdjacentHTML(
-			'afterbegin',
-			`<div class="storage-warning">Progress can't be saved on this device — ticks will be lost when you close the app.</div>`
-		);
+	raiseNotice({ body: "Progress can't be saved on this device — ticks will be lost when you close the app." });
 }
 
 // The stored item count no longer matched the current workout definition (an
 // exercise was added/removed in data.js). loadState has already dropped any
 // now-unknown ids and set `definitionChanged`; this surfaces a one-line notice
-// via the same header plumbing as the storage warning.
+// via the same raised-notice plumbing as the storage warning.
 function insertDefinitionNotice() {
-	(document.querySelector('.header-inner') || document.querySelector('header'))
-		?.insertAdjacentHTML(
-			'afterbegin',
-			`<div class="storage-warning">Workout definition changed — progress re-checked.</div>`
-		);
+	raiseNotice({ body: 'Workout definition changed — progress re-checked.' });
 }
 
 // Self-heal a stale borrow: if the stored target is no longer a SCHEDULE key
@@ -822,16 +850,16 @@ function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, '')}
-        <h1 class="workout-title">No workout today</h1>
+        <div class="workout-title">No workout today</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         <div class="header-rule"></div>
        </div>
       </header>
       <main class="content">
-        <div class="poster poster-ink">
+        <div class="poster poster-ink" role="alert">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="1"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m14 15 4 4"/><path d="m18 15-4 4"/></svg>
-          <div class="poster-title">No workout today</div>
+          <h1 class="poster-title">No workout today</h1>
           <div class="poster-sub">This date is outside the current program (${PROGRAM_LABEL}).</div>
         </div>
       </main>`;
@@ -874,7 +902,7 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
       <header>
        <div class="header-inner">
         ${eyebrowRowHTML(entry, effectiveKey, key, swapBtnHTML)}
-        <h1 class="workout-title">Couldn't load workout</h1>
+        <div class="workout-title">Couldn't load workout</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
         ${noticeHTML}
@@ -882,9 +910,9 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
        </div>
       </header>
       <main class="content">
-        <div class="poster poster-ink">
+        <div class="poster poster-ink" role="alert">
           <svg class="poster-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-          <div class="poster-title">Couldn't load workout</div>
+          <h1 class="poster-title">Couldn't load workout</h1>
           <div class="poster-sub">This day's workout couldn't be loaded (<code>${entry.type} · Var ${entry.variation || 'TBC'}</code>). Check js/data.js.</div>
         </div>
       </main>`;

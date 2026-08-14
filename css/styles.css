@@ -84,6 +84,9 @@
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: var(--color-accent-700);
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
 }
 
 .reset-btn:hover,
@@ -666,6 +669,8 @@ header {
 	justify-content: center;
 	flex-shrink: 0;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
 	transition: background 0.15s;
 }
 .swap-btn:hover {
@@ -715,6 +720,9 @@ header {
 	color: var(--color-accent-700);
 	text-decoration: underline;
 	text-underline-offset: 3px;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
 }
 
 /* Final-week countdown strip — flat accent-100 wash in the Modernist language,
@@ -789,6 +797,8 @@ header {
 	color: var(--color-text);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
 }
 .sheet-close:active {
 	background: var(--color-accent-200);
@@ -820,6 +830,7 @@ header {
 	text-align: left;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
 	transition: background 0.1s;
 }
 .swap-option:active {
@@ -891,4 +902,7 @@ header {
 	text-transform: uppercase;
 	cursor: pointer;
 	box-shadow: 0 2px 12px rgba(32, 30, 29, 0.35);
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
 }

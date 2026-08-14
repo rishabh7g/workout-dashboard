@@ -43,6 +43,21 @@
 	--bg: var(--color-bg);
 	--text: var(--color-text);
 	--warn: #e2a13d;
+
+	/* House breakpoint gutter ramp (#165): 16 / 24 / 32px through the 768 /
+	   1024 bands, one direction per rule. */
+	--gutter-sm: 16px;   /* <768  */
+	--gutter-md: 24px;   /* 768-1023 */
+	--gutter-lg: 32px;   /* >=1024 */
+	--gutter: var(--gutter-sm);
+}
+
+@media (min-width: 768px) {
+	:root { --gutter: var(--gutter-md); }
+}
+
+@media (min-width: 1024px) {
+	:root { --gutter: var(--gutter-lg); }
 }
 
 :focus-visible {
@@ -148,10 +163,11 @@ header {
 .header-inner {
 	max-width: 480px;
 	margin: 0 auto;
-	/* 18px gutters (matching the mockup), expanded to clear the notch in
-	   landscape via the horizontal safe-area insets (#85). */
-	padding-inline: max(1.125rem, env(safe-area-inset-left))
-		max(1.125rem, env(safe-area-inset-right));
+	/* Gutter ramps 16/24/32px through the 768/1024 breakpoints (#165),
+	   expanded to clear the notch in landscape via the horizontal safe-area
+	   insets (#85). */
+	padding-inline: max(var(--gutter), env(safe-area-inset-left))
+		max(var(--gutter), env(safe-area-inset-right));
 }
 
 /* Kicker row: "WEEK 9 / 26 · BACK WEEK · VAR A" left; uppercase date + swap
@@ -259,10 +275,15 @@ header {
 
 .content {
 	padding-block: 16px;
-	/* 20px gutters, expanded to clear the notch in landscape via the horizontal
-	   safe-area insets (#85). */
-	padding-inline: max(20px, env(safe-area-inset-left))
-		max(20px, env(safe-area-inset-right));
+	/* Gutter ramps 16/24/32px through the 768/1024 breakpoints (#165),
+	   expanded to clear the notch in landscape via the horizontal safe-area
+	   insets (#85). */
+	padding-inline: max(var(--gutter), env(safe-area-inset-left))
+		max(var(--gutter), env(safe-area-inset-right));
+	/* Deliberate divergence from the house standard's 720px >=1024 reading
+	   measure (#178): this UI is one checklist column, and 720px would strand
+	   the numerals far from the names, so the 480px rail is kept at every
+	   width instead of widening at the laptop band. */
 	max-width: 480px;
 	margin: 0 auto;
 }

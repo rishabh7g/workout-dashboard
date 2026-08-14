@@ -146,8 +146,11 @@ body {
 	color: var(--text);
 	font-family:
 		-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-	min-height: 100vh;
-	padding-bottom: env(safe-area-inset-bottom, 20px);
+	min-height: 100vh; /* fallback for engines without dvh */
+	min-height: 100dvh; /* never 100vh alone — a mobile URL bar shrinks the viewport, 100vh doesn't notice */
+	/* max(), not a bare env(): a bare env() resolves to 0 on desktop and any
+	   non-notched phone, silently dropping the designed 20px gap there (#167). */
+	padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 /* Modernist header (#65): NOT sticky — the header scrolls with the content in a
@@ -156,7 +159,11 @@ body {
    day-hue system is retired). Content is constrained to the 480px rail by
    .header-inner so it aligns with the cards on wide viewports. */
 header {
-	padding: calc(env(safe-area-inset-top, 20px) + 1rem) 0 0;
+	/* max(), not a bare env(): a bare env() resolves to 0 on desktop and any
+	   non-notched phone, silently dropping the designed 1rem top padding there
+	   (#167). max(1rem, env(...)) gives a non-notched device the designed 16px
+	   and a notched one its real inset, which is always larger. */
+	padding: max(1rem, env(safe-area-inset-top)) 0 0;
 	background: var(--bg);
 }
 

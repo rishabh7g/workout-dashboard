@@ -1,4 +1,4 @@
-const CACHE = 'workout-dashboard-v63';
+const CACHE = 'workout-dashboard-v64';
 const ASSETS = [
 	'./',
 	'./index.html',

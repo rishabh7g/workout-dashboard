@@ -172,12 +172,20 @@ function loadState(key) {
 	return new Set();
 }
 
-// Retention decision: in-program history is kept in full (~60 KB worst case,
-// 184 program days × ~150–300 B against a ~5 MB quota) — the prune buys nothing
-// in-program and would permanently destroy the only record of the program (a
-// workout variation recurs every 28 days, so a 14-day prune wipes the very
-// last-session data the "add 2.5 kg when 12 reps feels easy" rule needs). So
-// this only runs after PROGRAM_END (gated at the call site in main.js).
+// How much day history to keep. A year of records costs ~110 KB (365 days ×
+// ~150–300 B against a ~5 MB quota), so the window is set by what the training
+// needs, not by space: a workout variation recurs every 28 days, and the "add
+// 2.5 kg when 12 reps feels easy" rule reads the LAST time you did that exact
+// variation — so anything near the old 14-day cutoff would wipe precisely the
+// record that matters. A year keeps ~13 repeats of every variation.
+const STATE_RETENTION_DAYS = 365;
+
+// Retention decision: this used to run only after PROGRAM_END (gated at the
+// call site in main.js), because the program was 184 days long and keeping all
+// of it cost nothing. The program no longer ends (#194), so that gate would
+// never fire again and history would grow forever. It now runs every boot
+// against the rolling STATE_RETENTION_DAYS window above — which is far longer
+// than the 28-day cycle, so the prune still never takes the last-session data.
 //
 // Milestone-06 constraint: future stores must AVOID the `ws-` key prefix. Old
 // clients may still run old code that prunes eagerly by that prefix, and this
@@ -190,7 +198,7 @@ function loadState(key) {
 function pruneOldState() {
 	try {
 		const d = new Date();
-		d.setDate(d.getDate() - 14);
+		d.setDate(d.getDate() - STATE_RETENTION_DAYS);
 		const cutoff = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 		// Real day keys look like ws-YYYY-MM-DD optionally followed by -type-var.
 		const dayKeyRe = /^ws-\d{4}-\d{2}-\d{2}(-|$)/;
@@ -239,10 +247,10 @@ function saveBorrows(b) {
 // its (then-current) date via doBorrow, but resolution only ever reads
 // borrows[todayKey()] (ui.js render). A key strictly before today is therefore
 // unreachable by construction — pure dead weight, including the orphans the
-// pre-fix two-clock swap-sheet bug wrote. Unlike ws- history (kept in-program,
-// pruned only post-PROGRAM_END — main.js call site), these entries can never
-// be read again, so this runs at boot unconditionally regardless of the ws-
-// retention policy. Today's and any future-dated key survive.
+// pre-fix two-clock swap-sheet bug wrote. Unlike ws- history (kept for
+// STATE_RETENTION_DAYS because it is still readable training data), these
+// entries can never be read again, so the cutoff here is yesterday, not a
+// retention window. Today's and any future-dated key survive.
 function pruneOldBorrows() {
 	try {
 		const b = loadBorrows();

@@ -27,7 +27,9 @@ function makeCtx(schedule, tk) {
 	let rendered = false;
 	const ctx = {
 		console,
-		SCHEDULE: schedule,
+		// scheduleFor() replaced the SCHEDULE literal (#194); doBorrow calls it
+		// twice, so the stub is a lookup into this test's fixture map.
+		scheduleFor: (k) => schedule[k],
 		todayKey: () => tk,
 		loadBorrows: () => ({}),
 		saveBorrows: (b) => { saved = b; },
@@ -88,8 +90,10 @@ function makeCtx(schedule, tk) {
 	const dataSrc = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
 	const dctx = { console };
 	vm.createContext(dctx);
-	vm.runInContext(stringsSrc + '\n' + dataSrc + '\nthis.__s = SCHEDULE;', dctx);
-	const SCHEDULE = dctx.__s;
+	vm.runInContext(stringsSrc + '\n' + dataSrc + '\nthis.__s = scheduleFor;', dctx);
+	// makeCtx takes a plain map, so wrap the real resolver in one that answers
+	// for whatever key the test asks about (the schedule is generated, #194).
+	const SCHEDULE = new Proxy({}, { get: (_, k) => dctx.__s(String(k)) });
 
 	const same = makeCtx(SCHEDULE, '2026-05-23');
 	same.doBorrow('2026-05-30');

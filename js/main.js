@@ -12,12 +12,13 @@
  */
 
 // ─── First paint ────────────────────────────────────────────────────────────
-// In-program history is kept in full (~60 KB worst case) — deleting it buys
-// nothing and would destroy the only record of the program. Only clean up
-// once the whole program is over. See pruneOldState in storage.js.
-if (todayKey() > PROGRAM_END) pruneOldState();
+// Runs every boot. It used to be gated on `todayKey() > PROGRAM_END`, which
+// with an open-ended schedule (#194) would mean never — history would grow
+// without bound and nothing would ever be cleaned up. pruneOldState now keeps
+// a rolling window instead (see STATE_RETENTION_DAYS in storage.js).
+pruneOldState();
 // Dead borrows (keys before today) are unreachable by construction, so this
-// runs every boot regardless of the post-program ws- gate above. See
+// runs every boot too — on a much tighter rule than the ws- window above. See
 // pruneOldBorrows in storage.js.
 pruneOldBorrows();
 applyStaticStrings();

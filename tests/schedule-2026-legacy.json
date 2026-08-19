@@ -1,0 +1,712 @@
+{
+	"2026-05-23": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-05-24": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-05-25": {
+		"type": "rest"
+	},
+	"2026-05-26": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-05-27": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-05-28": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-05-29": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-05-30": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-05-31": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-06-01": {
+		"type": "rest"
+	},
+	"2026-06-02": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-06-03": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-06-04": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-06-05": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-06-06": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-06-07": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-06-08": {
+		"type": "rest"
+	},
+	"2026-06-09": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-06-10": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-06-11": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-06-12": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-06-13": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-06-14": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-06-15": {
+		"type": "rest"
+	},
+	"2026-06-16": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-06-17": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-06-18": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-06-19": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-06-20": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-06-21": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-06-22": {
+		"type": "rest"
+	},
+	"2026-06-23": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-06-24": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-06-25": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-06-26": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-06-27": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-06-28": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-06-29": {
+		"type": "rest"
+	},
+	"2026-06-30": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-07-01": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-07-02": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-07-03": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-07-04": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-07-05": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-07-06": {
+		"type": "rest"
+	},
+	"2026-07-07": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-07-08": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-07-09": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-07-10": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-07-11": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-07-12": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-07-13": {
+		"type": "rest"
+	},
+	"2026-07-14": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-07-15": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-07-16": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-07-17": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-07-18": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-07-19": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-07-20": {
+		"type": "rest"
+	},
+	"2026-07-21": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-07-22": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-07-23": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-07-24": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-07-25": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-07-26": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-07-27": {
+		"type": "rest"
+	},
+	"2026-07-28": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-07-29": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-07-30": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-07-31": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-08-01": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-08-02": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-08-03": {
+		"type": "rest"
+	},
+	"2026-08-04": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-08-05": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-08-06": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-08-07": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-08-08": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-08-09": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-08-10": {
+		"type": "rest"
+	},
+	"2026-08-11": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-08-12": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-08-13": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-08-14": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-08-15": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-08-16": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-08-17": {
+		"type": "rest"
+	},
+	"2026-08-18": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-08-19": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-08-20": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-08-21": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-08-22": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-08-23": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-08-24": {
+		"type": "rest"
+	},
+	"2026-08-25": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-08-26": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-08-27": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-08-28": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-08-29": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-08-30": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-08-31": {
+		"type": "rest"
+	},
+	"2026-09-01": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-09-02": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-09-03": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-09-04": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-09-05": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-09-06": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-09-07": {
+		"type": "rest"
+	},
+	"2026-09-08": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-09-09": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-09-10": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-09-11": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-09-12": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-09-13": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-09-14": {
+		"type": "rest"
+	},
+	"2026-09-15": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-09-16": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-09-17": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-09-18": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-09-19": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-09-20": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-09-21": {
+		"type": "rest"
+	},
+	"2026-09-22": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-09-23": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-09-24": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-09-25": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-09-26": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-09-27": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-09-28": {
+		"type": "rest"
+	},
+	"2026-09-29": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-09-30": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-10-01": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-10-02": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-10-03": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-10-04": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-10-05": {
+		"type": "rest"
+	},
+	"2026-10-06": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-10-07": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-10-08": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-10-09": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-10-10": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-10-11": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-10-12": {
+		"type": "rest"
+	},
+	"2026-10-13": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-10-14": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-10-15": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-10-16": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-10-17": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-10-18": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-10-19": {
+		"type": "rest"
+	},
+	"2026-10-20": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-10-21": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-10-22": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-10-23": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-10-24": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-10-25": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-10-26": {
+		"type": "rest"
+	},
+	"2026-10-27": {
+		"type": "legs-hamstrings",
+		"variation": "B"
+	},
+	"2026-10-28": {
+		"type": "back",
+		"variation": "B"
+	},
+	"2026-10-29": {
+		"type": "arms-triceps",
+		"variation": "B"
+	},
+	"2026-10-30": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-10-31": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-11-01": {
+		"type": "recovery",
+		"variation": "B"
+	},
+	"2026-11-02": {
+		"type": "rest"
+	},
+	"2026-11-03": {
+		"type": "legs-quads",
+		"variation": "A"
+	},
+	"2026-11-04": {
+		"type": "chest",
+		"variation": "A"
+	},
+	"2026-11-05": {
+		"type": "arms-biceps",
+		"variation": "A"
+	},
+	"2026-11-06": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-11-07": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-11-08": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-11-09": {
+		"type": "rest"
+	},
+	"2026-11-10": {
+		"type": "legs-hamstrings",
+		"variation": "A"
+	},
+	"2026-11-11": {
+		"type": "back",
+		"variation": "A"
+	},
+	"2026-11-12": {
+		"type": "arms-triceps",
+		"variation": "A"
+	},
+	"2026-11-13": {
+		"type": "shoulders",
+		"variation": "A"
+	},
+	"2026-11-14": {
+		"type": "running",
+		"variation": "A"
+	},
+	"2026-11-15": {
+		"type": "recovery",
+		"variation": "A"
+	},
+	"2026-11-16": {
+		"type": "rest"
+	},
+	"2026-11-17": {
+		"type": "legs-quads",
+		"variation": "B"
+	},
+	"2026-11-18": {
+		"type": "chest",
+		"variation": "B"
+	},
+	"2026-11-19": {
+		"type": "arms-biceps",
+		"variation": "B"
+	},
+	"2026-11-20": {
+		"type": "shoulders",
+		"variation": "B"
+	},
+	"2026-11-21": {
+		"type": "running",
+		"variation": "B"
+	},
+	"2026-11-22": {
+		"type": "recovery",
+		"variation": "B"
+	}
+}

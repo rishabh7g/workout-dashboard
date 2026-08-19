@@ -61,11 +61,12 @@ function openSwapSheet() {
 	for (let i = 1; i <= 7; i++) {
 		const dt = new Date(y, m - 1, d + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-		if (!SCHEDULE[k]) continue;
+		const entry = scheduleFor(k);
+		if (!entry) continue;
 		rows += `<button type="button" class="swap-option" onclick="doBorrow('${k}')">
       <span class="swap-option-text">
         <span class="swap-option-day">${shortDayLabel(k)}</span>
-        <span class="swap-option-label">${entryLabel(SCHEDULE[k])}</span>
+        <span class="swap-option-label">${entryLabel(entry)}</span>
       </span>
       <svg class="swap-option-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
     </button>`;
@@ -128,8 +129,8 @@ function doBorrow(targetKey) {
 	// own (same type + variation), it collapses onto today's own storage key,
 	// so a borrow entry would only make the banner assert a distinction the
 	// storage layer doesn't have. Close the sheet and change nothing.
-	const own = SCHEDULE[tk];
-	const target = SCHEDULE[targetKey];
+	const own = scheduleFor(tk);
+	const target = scheduleFor(targetKey);
 	if (own && target && stateKey(tk, own) === stateKey(tk, target)) {
 		closeSwapSheet();
 		return;
@@ -515,20 +516,12 @@ function onImportFile(input) {
 // live-tick path can inject the empty role="status" shell first and fill it in
 // a setTimeout(0) — some AT skip announce-on-insert but honour a fill (issue #77).
 function doneBannerInnerHTML() {
-	const isProgramEnd = cachedDayKey === PROGRAM_END;
-	const title = isProgramEnd
-		? t('ui.done.programCompleteTitle')
-		: t('ui.done.workoutCompleteTitle');
-	// The non-program-end .done-sub ("Great session. Hydrate and rest well.")
-	// was read-once reassurance under a title that already says the same thing
-	// — deleted (#176). The program-end sub is a keeper: it carries live data
-	// (PROGRAM_LABEL) and is shown exactly once in the program's life.
-	const subHTML = isProgramEnd
-		? `<div class="done-sub">${t('ui.done.programEndSub', { programLabel: PROGRAM_LABEL })}</div>`
-		: '';
+	// One title, no sub. The .done-sub was read-once reassurance under a title
+	// that already says the same thing (#176), and the "Program Complete!"
+	// variant went with the end date: the schedule repeats indefinitely (#194),
+	// so a completion banner could only ever be a permanent hard stop.
 	return `<svg class="done-check" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-      <div class="done-title">${title}</div>
-      ${subHTML}`;
+      <div class="done-title">${t('ui.done.workoutCompleteTitle')}</div>`;
 }
 
 // role="status" makes the banner announce its title/sub on completion. render()
@@ -737,20 +730,23 @@ function dayGroup(entry) {
 	return t; // back, chest, shoulders, recovery, rest
 }
 
-// Program-position eyebrow text, e.g. "Week 9 / 26 · Back Week · Var A".
+// Cycle-position eyebrow text, e.g. "Week 1 / 4 · Back Week · Var A".
 // CSS uppercases it. Running/recovery show the weekday instead of the week
 // type; rest days omit the Var part; outside-schedule dates show week only.
 function eyebrowLabel(entry, realKey, effectiveKey) {
 	// Week fragment reflects the REAL calendar position (realKey) so the header
-	// never disagrees with the week strip below it, never grows past the program
-	// (Outside program), and never reads week zero on day one (Opening Weekend).
+	// never disagrees with the week strip below it, and never reads week zero on
+	// day one (Opening Weekend). It counts position WITHIN the repeating
+	// four-week cycle, not weeks since the start: the program has no end to
+	// count against any more (#194), so an unbounded "Week 47 / 26" would be
+	// both meaningless and wrong.
 	const n = weekNumber(realKey);
 	const wk =
-		!entry || n > TOTAL_WEEKS || n < 0
+		!entry || n < 0
 			? t('ui.eyebrow.outsideProgram')
 			: n === 0
 				? t('ui.eyebrow.openingWeekend')
-				: t('ui.eyebrow.week', { n, total: TOTAL_WEEKS });
+				: t('ui.eyebrow.week', { n: cycleWeek(realKey), total: CYCLE_WEEKS });
 	if (!entry) return wk;
 	if (entry.type === 'rest') return `${wk} · ${t('ui.entry.restDay')}`;
 	// Single owner for the middle segment: getWeekType produces Front/Back Week
@@ -797,7 +793,7 @@ function weekStripHTML(key) {
 	for (let i = 0; i < 7; i++) {
 		const dt = new Date(y, m - 1, d + toMon + i);
 		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-		const entry = SCHEDULE[k];
+		const entry = scheduleFor(k);
 		const when = k === key ? 'today' : k < key ? 'past' : 'future';
 		const typeName = WS_GROUP_NAME[dayGroup(entry)];
 		const label = `${WS_DAY_NAMES[i]}: ${typeName}${when === 'today' ? t('ui.weekStrip.todaySuffix') : ''}`;
@@ -894,24 +890,24 @@ function insertBorrowCorruptNotice() {
 	});
 }
 
-// Self-heal a stale borrow: if the stored target is no longer a SCHEDULE key
-// (a schedule edit removed/renamed the date, or a device-clock jump), drop the
-// dangling entry and fall back to the real day rather than rendering the
-// un-undoable outside-program lock-out screen.
+// Self-heal a stale borrow: if the stored target no longer resolves (a corrupt
+// or pre-program key, or a device-clock jump), drop the dangling entry and fall
+// back to the real day rather than rendering the un-undoable outside-program
+// lock-out screen.
 function resolveEffectiveEntry(key) {
 	const borrows = loadBorrows();
 	let borrowedFrom = borrows[key] || null;
-	if (borrowedFrom && !SCHEDULE[borrowedFrom]) {
+	if (borrowedFrom && !scheduleFor(borrowedFrom)) {
 		delete borrows[key];
 		saveBorrows(borrows);
 		borrowedFrom = null;
 	}
 	const effectiveKey = borrowedFrom || key;
-	return { borrowedFrom, effectiveKey, entry: SCHEDULE[effectiveKey] };
+	return { borrowedFrom, effectiveKey, entry: scheduleFor(effectiveKey) };
 }
 
-// Assembles the three pieces of header markup that depend only on today's key
-// and the (possibly self-healed) borrow — shared across every render() path.
+// Assembles the header markup that depends only on today's key and the
+// (possibly self-healed) borrow — shared across every render() path.
 function headerBannersHTML(key, borrowedFrom) {
 	const swapBannerHTML = borrowedFrom
 		? `<div class="swap-banner"><span class="swap-banner-text">${t('ui.swap.following', { day: shortDayLabel(borrowedFrom) })}</span><button class="swap-banner-undo" onclick="undoBorrow()">${t('ui.swap.undo')}</button></div>`
@@ -919,14 +915,11 @@ function headerBannersHTML(key, borrowedFrom) {
 	// Square Modernist swap button with an inline arrows glyph (#65). The button
 	// name comes from aria-label, not the glyph, so AT announces the action.
 	const swapBtnHTML = `<button class="swap-btn" onclick="openSwapSheet()" aria-label="${t('ui.swap.sheetTitle')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></button>`;
-	const notice = programNotice(key);
-	const noticeHTML = notice
-		? `<div class="program-notice">${notice}</div>`
-		: '';
-	return { swapBannerHTML, swapBtnHTML, noticeHTML };
+	return { swapBannerHTML, swapBtnHTML };
 }
 
-// No SCHEDULE entry resolves for today (outside the current program).
+// No schedule entry resolves for today — since #194 that means only one thing:
+// a date BEFORE the program started. Every date from PROGRAM_START on resolves.
 function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
 	const app = document.getElementById('app');
 	app.innerHTML = `
@@ -951,7 +944,7 @@ function renderNoWorkout(key, effectiveKey, entry, swapBannerHTML) {
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
 
-function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML) {
+function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML) {
 	const app = document.getElementById('app');
 	app.innerHTML = `
       <header>
@@ -960,8 +953,7 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
         <h1 class="workout-title">${t('ui.entry.restDay')}</h1>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
-        ${noticeHTML}
-        <div class="header-rule"></div>
+          <div class="header-rule"></div>
        </div>
       </header>
       <main class="content">
@@ -975,11 +967,11 @@ function renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, no
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
 }
 
-// A SCHEDULE entry that doesn't resolve to a workout (e.g. a data.js typo).
+// A schedule entry that does not resolve to a workout (e.g. a data.js typo).
 // Paint a visible error instead of a blank/stale screen, and DON'T leave
 // cachedDayKey marked as today's key — otherwise refreshIfDayChanged would
 // treat the failed paint as a successful render and never retry.
-function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML) {
+function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML) {
 	cachedDayKey = null;
 	const app = document.getElementById('app');
 	app.innerHTML = `
@@ -989,8 +981,7 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
         <div class="workout-title">${t('ui.unresolved.title')}</div>
         ${weekStripHTML(key)}
         ${swapBannerHTML}
-        ${noticeHTML}
-        <div class="header-rule"></div>
+          <div class="header-rule"></div>
        </div>
       </header>
       <main class="content">
@@ -1008,7 +999,7 @@ function renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapB
 // Gym day or running day — both share the same interactive checklist path.
 // Builds the item list, loads persisted state, and paints the header/progress
 // bar/checklist along with the done-banner and definition-changed notice.
-function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML, noticeHTML) {
+function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML) {
 	// The key encodes the workout identity (via the effective entry) so a
 	// borrowed day's ticks stay separate.
 	cachedKey = stateKey(key, entry);
@@ -1029,7 +1020,6 @@ function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, 
       <h1 class="workout-title">${workout.title}</h1>
       ${weekStripHTML(key)}
       ${swapBannerHTML}
-      ${noticeHTML}
       <div class="progress-row">
         <div class="segs" id="pbar-segs">${segsHTML}</div>
         <div class="progress-text" id="pbar-txt" role="status">${done} / ${total}</div>
@@ -1076,21 +1066,21 @@ function render() {
 	const key = todayKey();
 	cachedDayKey = key; // track the plain date on every path for the midnight check
 	const { borrowedFrom, effectiveKey, entry } = resolveEffectiveEntry(key);
-	const { swapBannerHTML, swapBtnHTML, noticeHTML } = headerBannersHTML(key, borrowedFrom);
+	const { swapBannerHTML, swapBtnHTML } = headerBannersHTML(key, borrowedFrom);
 
 	if (!entry) return renderNoWorkout(key, effectiveKey, entry, swapBannerHTML);
 
 	if (entry.type === 'rest') {
-		return renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML);
+		return renderRestDay(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML);
 	}
 
 	const workout = (WORKOUTS[entry.type] || RUNNING_DAYS[entry.type])?.[
 		entry.variation
 	];
 	if (!workout) {
-		return renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML, noticeHTML);
+		return renderUnresolvedWorkout(key, effectiveKey, entry, swapBannerHTML, swapBtnHTML);
 	}
 
-	renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML, noticeHTML);
+	renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, swapBtnHTML);
 	syncHeaderHeight();
 }

@@ -17,10 +17,14 @@ const path = require('path');
 const vm = require('vm');
 const assert = require('assert');
 
-// Load data.js + workout.js in a fresh context. data.js supplies SCHEDULE /
-// WORKOUTS / RUNNING_DAYS / CORE; workout.js supplies buildItemList + splitReps.
+// Load strings.js + data.js + workout.js in a fresh context, in the same order
+// index.html loads them. strings.js supplies t(), which the data.js trees and
+// workout.js's declarative items now read their copy from (#189); data.js
+// supplies SCHEDULE / WORKOUTS / RUNNING_DAYS / CORE; workout.js supplies
+// buildItemList + splitReps.
 const ctx = { console, Date };
 vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8'), ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8'), ctx);
 // `const` declarations don't attach to the vm context object, so re-export the

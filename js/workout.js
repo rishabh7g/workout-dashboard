@@ -9,18 +9,26 @@
  * without a browser. That separation is the whole point of the refactor.
  */
 
+// ─── Node-only strings bootstrap (inert in the browser — see js/data.js) ────
+if (typeof module !== 'undefined' && module.exports && typeof t === 'undefined') {
+	Object.assign(globalThis, require('./strings.js'));
+}
+
 // Human-readable headings for each section key used in buildItemList().
+// The section KEYS are this file's own internal vocabulary; the headings read
+// from the keyed bundle (js/strings.js, #189) so ui.js and this map can never
+// drift into two different words for the same section.
 const SECTION_NAMES = {
-	warmup: 'Warm-up',
-	ex: 'Exercises',
-	core: 'Core',
-	finisher: 'Finisher',
-	ankle: 'Ankle Stability',
-	cardio: 'Cardio',
-	stretch: 'Stretching · 10 min',
-	drills: 'Drills · 30 min',
-	run: 'Run',
-	cooldown: 'Cooldown',
+	warmup: t('data.sectionNames.warmup'),
+	ex: t('data.sectionNames.ex'),
+	core: t('data.sectionNames.core'),
+	finisher: t('data.sectionNames.finisher'),
+	ankle: t('data.sectionNames.ankle'),
+	cardio: t('data.sectionNames.cardio'),
+	stretch: t('data.sectionNames.stretch'),
+	drills: t('data.sectionNames.drills'),
+	run: t('data.sectionNames.run'),
+	cooldown: t('data.sectionNames.cooldown'),
 };
 
 // Split a reps value into a bare numeral and any trailing "each …" qualifier so
@@ -59,9 +67,17 @@ function buildItemList(workout) {
 	};
 
 	if (workout.legConditioning) {
-		add('warmup', 'Leg swings', { sub: 'Front-back + side-side · 10 each' });
-		add('warmup', 'Ankle circles', { sub: 'Both directions' });
-		add('warmup', 'Reverse lunges', { sets: 3, reps: '10', sub: 'each leg' });
+		add('warmup', t('data.items.legSwings.label'), {
+			sub: t('data.items.legSwings.sub'),
+		});
+		add('warmup', t('data.items.ankleCircles.label'), {
+			sub: t('data.items.ankleCircles.sub'),
+		});
+		add('warmup', t('data.items.reverseLunges.label'), {
+			sets: 3,
+			reps: '10',
+			sub: t('data.items.reverseLunges.sub'),
+		});
 	}
 
 	for (const ex of workout.exercises || []) {
@@ -82,50 +98,59 @@ function buildItemList(workout) {
 			add('core', ex.name, { sets: ex.sets, reps: String(ex.reps), note: ex.note });
 		}
 		if (workout.coreType === 'anti-rotation')
-			add('core', 'Pallof press', {
+			add('core', t('data.items.pallofPress.label'), {
 				sets: 3,
 				reps: '12',
-				sub: 'each side',
-				note: 'Anti-rotation — stability for cutting',
+				sub: t('data.items.pallofPress.sub'),
+				note: t('data.items.pallofPress.note'),
 			});
 	}
 
 	if (workout.legConditioning) {
-		add('finisher', 'Wall sit', { sets: 3, reps: '45 sec' });
-		add('finisher', 'Single-leg RDL', {
+		add('finisher', t('data.items.wallSit.label'), {
+			sets: 3,
+			reps: t('data.items.wallSit.reps'),
+		});
+		add('finisher', t('data.items.singleLegRdl.label'), {
 			sets: 3,
 			reps: '10',
-			sub: 'Bodyweight · each leg',
-			note: 'Especially valuable on quad days',
+			sub: t('data.items.singleLegRdl.sub'),
+			note: t('data.items.singleLegRdl.note'),
 		});
 	}
 
 	// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
 	if (workout.armConditioning) {
-		add('ankle', 'Single-leg balance hold', {
+		add('ankle', t('data.items.balanceHold.label'), {
 			sets: 3,
-			reps: '30 sec',
-			sub: 'each',
-			note: 'Progress: eyes closed',
+			reps: t('data.items.balanceHold.reps'),
+			sub: t('data.items.balanceHold.sub'),
+			note: t('data.items.balanceHold.note'),
 		});
-		add('ankle', 'Single-leg calf raises', { sets: 3, reps: '15', sub: 'each' });
-		add('ankle', 'Lateral band walks', {
+		add('ankle', t('data.items.calfRaises.label'), {
 			sets: 3,
 			reps: '15',
-			sub: 'steps each direction',
+			sub: t('data.items.calfRaises.sub'),
+		});
+		add('ankle', t('data.items.bandWalks.label'), {
+			sets: 3,
+			reps: '15',
+			sub: t('data.items.bandWalks.sub'),
 		});
 	}
 
 	// Timed cardio shows its duration in the sub line (no numeral block) — the
 	// blueprint's chosen shape (design/workout-data.js:407-408).
 	if (workout.hasStairmaster) {
-		add('cardio', 'Stairmaster', { sub: '10 min · 30lb vest' });
+		add('cardio', t('data.items.stairmaster.label'), {
+			sub: t('data.items.stairmaster.sub'),
+		});
 	}
 
 	if (workout.hasInclineTreadmill) {
-		add('cardio', 'Incline treadmill', {
-			sub: '10 min · speed 4 · level 15 · 30lb vest',
-			note: 'Brace core · no holding rails',
+		add('cardio', t('data.items.inclineTreadmill.label'), {
+			sub: t('data.items.inclineTreadmill.sub'),
+			note: t('data.items.inclineTreadmill.note'),
 		});
 	}
 
@@ -141,14 +166,14 @@ function buildItemList(workout) {
 				add('drills', d.name, { sub: d.reps, note: d.note });
 			}
 		} else {
-			add('drills', 'Drills session', {
-				sub: '30 min',
-				note: 'Content TBD — your picks',
+			add('drills', t('data.items.drillsSession.label'), {
+				sub: t('data.items.drillsSession.sub'),
+				note: t('data.items.drillsSession.note'),
 			});
 		}
-		add('run', 'Run — lanes 9→4', {
-			sub: '6 lanes descending',
-			note: 'Banana before · duration = time taken',
+		add('run', t('data.items.run.label'), {
+			sub: t('data.items.run.sub'),
+			note: t('data.items.run.note'),
 		});
 	}
 
@@ -191,8 +216,12 @@ function programNotice(key) {
 		(new Date(ey, em - 1, ed) - new Date(ky, km - 1, kd)) / 86400000,
 	);
 	if (daysLeft < 0 || daysLeft > 6) return null;
-	if (daysLeft === 0) return 'Final day of the program — great work.';
-	return `Program ends ${shortDayLabel(PROGRAM_END)} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`;
+	if (daysLeft === 0) return t('data.programNotice.finalDay');
+	const noticeKey =
+		daysLeft === 1
+			? 'data.programNotice.endsOneDay'
+			: 'data.programNotice.endsManyDays';
+	return t(noticeKey, { date: shortDayLabel(PROGRAM_END), days: daysLeft });
 }
 
 // Program length in weeks, shown as "Week n / 26" in the header eyebrow.
@@ -213,12 +242,12 @@ function weekNumber(key) {
 // Front Week / Back Week label. Shoulders alternate weekly, so they're
 // computed from a known anchor date rather than hard-coded per type.
 function getWeekType(type, key) {
-	if (type === 'running') return 'Sat · 9→4';
-	if (type === 'recovery') return 'Sun · 9→4';
+	if (type === 'running') return t('data.weekType.sat');
+	if (type === 'recovery') return t('data.weekType.sun');
 	if (['chest', 'legs-quads', 'arms-biceps'].includes(type))
-		return 'Front Week';
+		return t('data.weekType.front');
 	if (['back', 'legs-hamstrings', 'arms-triceps'].includes(type))
-		return 'Back Week';
+		return t('data.weekType.back');
 	if (type === 'shoulders' && key) {
 		const [y, m, d] = key.split('-').map(Number);
 		const date = new Date(y, m - 1, d);
@@ -227,7 +256,7 @@ function getWeekType(type, key) {
 		const weekMon = new Date(y, m - 1, d + toMon);
 		const anchor = CYCLE_ANCHOR;
 		const weekNum = Math.round((weekMon - anchor) / 604800000);
-		return weekNum % 2 === 0 ? 'Back Week' : 'Front Week';
+		return weekNum % 2 === 0 ? t('data.weekType.back') : t('data.weekType.front');
 	}
 	return '';
 }

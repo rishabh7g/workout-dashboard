@@ -82,10 +82,13 @@ function makeCtx(schedule, tk) {
 // 4. Real schedule regression: the audited identical pair (2026-05-23 vs
 //    2026-05-30, both running/A) is a no-op; the different pair still borrows.
 {
+	// data.js reads its exercise copy from the strings bundle (#189), so load
+	// js/strings.js alongside it — same order index.html uses.
+	const stringsSrc = fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8');
 	const dataSrc = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
 	const dctx = { console };
 	vm.createContext(dctx);
-	vm.runInContext(dataSrc + '\nthis.__s = SCHEDULE;', dctx);
+	vm.runInContext(stringsSrc + '\n' + dataSrc + '\nthis.__s = SCHEDULE;', dctx);
 	const SCHEDULE = dctx.__s;
 
 	const same = makeCtx(SCHEDULE, '2026-05-23');

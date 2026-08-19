@@ -73,12 +73,15 @@ const composeItemLabel = ctx.__c;
 
 // 6. No raw ×, →, ·, / or SVG junk survives in any real item's label.
 {
+	// data.js and workout.js read their copy from the strings bundle (#189), so
+	// load js/strings.js first — the order index.html uses.
+	const stringsSrc = fs.readFileSync(path.join(__dirname, '../js/strings.js'), 'utf8');
 	const dataSrc = fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8');
 	const workoutSrc = fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8');
 	const c2 = { console };
 	vm.createContext(c2);
 	vm.runInContext(
-		dataSrc + '\n' + workoutSrc + '\n' + prelude + compose[0] +
+		stringsSrc + '\n' + dataSrc + '\n' + workoutSrc + '\n' + prelude + compose[0] +
 			'\nthis.__c = composeItemLabel; this.__b = buildItemList; this.__s = SCHEDULE;' +
 			'\nthis.__w = typeof WORKOUTS !== "undefined" ? WORKOUTS : {};' +
 			'\nthis.__r = typeof RUNNING_DAYS !== "undefined" ? RUNNING_DAYS : {};',

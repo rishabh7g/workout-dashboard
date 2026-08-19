@@ -12,6 +12,16 @@
  * DRILLS     — the shared running-day drill list
  */
 
+// ─── Node-only strings bootstrap (inert in the browser) ─────────────────────
+// In the browser js/strings.js is a classic <script> loaded FIRST, so t() is
+// already on the shared global scope by the time this file runs. Under Node
+// each file gets its own module scope, so pull the bundle onto globalThis
+// before the trees below evaluate their t() calls. `typeof t` on an undeclared
+// identifier is safe, so this is a no-op in the browser.
+if (typeof module !== 'undefined' && module.exports && typeof t === 'undefined') {
+	Object.assign(globalThis, require('./strings.js'));
+}
+
 // ─── Program constants ──────────────────────────────────────────────────────
 const PROGRAM_START  = '2026-05-23';
 const PROGRAM_END    = '2026-11-22';
@@ -234,307 +244,404 @@ const SCHEDULE = {
 };
 
 // ─── Exercise Database ──────────────────────────────────────────────────────
+// Every user-facing string below is a t() lookup into the keyed bundle
+// (js/strings.js, #189): the shape of these trees is unchanged, only the
+// literals moved out. `coreType` stays a literal — it is an internal branch
+// discriminator workout.js compares with ===, never rendered copy.
 const CORE = [
-	{ name: 'Hanging leg raise', sets: 3, reps: 10 },
-	{ name: 'Hanging knee raise', sets: 3, reps: 12 },
+	{ name: t('data.core.0.name'), sets: 3, reps: 10 },
+	{ name: t('data.core.1.name'), sets: 3, reps: 12 },
 	{
-		name: 'Kneeling cable crunch',
+		name: t('data.core.2.name'),
 		sets: 3,
 		reps: 15,
-		note: 'Rope behind head, hands facing down — crunch by contracting abs, not pulling with arms',
+		note: t('data.core.2.note'),
 	},
 ];
 
 const WORKOUTS = {
 	'legs-quads': {
 		A: {
-			title: 'Legs — Quads',
+			title: t('data.workouts.legsQuadsA.title'),
 			hasStairmaster: true,
 			legConditioning: true,
 			exercises: [
 				{
-					name: 'Squats',
+					name: t('data.workouts.legsQuadsA.exercises.0.name'),
 					sets: 3,
 					reps: 10,
-					weight: '15kg/side',
-					cap: '60kg total (bar + plates)',
-					warn: 'Beyond this thickens spinal erectors',
-				},
-				{ name: 'Hack squat', sets: 3, reps: 12, cap: '80kg total' },
-				{
-					name: 'Leg press',
-					sets: 3,
-					reps: 12,
-					note: 'Feet LOW = quads',
-					cap: '80kg total',
+					weight: t('data.workouts.legsQuadsA.exercises.0.weight'),
+					cap: t('data.workouts.legsQuadsA.exercises.0.cap'),
+					warn: t('data.workouts.legsQuadsA.exercises.0.warn'),
 				},
 				{
-					name: 'Leg extension',
+					name: t('data.workouts.legsQuadsA.exercises.1.name'),
 					sets: 3,
 					reps: 12,
-					weight: '20–25kg',
-					note: 'Slow lowering',
+					cap: t('data.workouts.legsQuadsA.exercises.1.cap'),
+				},
+				{
+					name: t('data.workouts.legsQuadsA.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+					note: t('data.workouts.legsQuadsA.exercises.2.note'),
+					cap: t('data.workouts.legsQuadsA.exercises.2.cap'),
+				},
+				{
+					name: t('data.workouts.legsQuadsA.exercises.3.name'),
+					sets: 3,
+					reps: 12,
+					weight: t('data.workouts.legsQuadsA.exercises.3.weight'),
+					note: t('data.workouts.legsQuadsA.exercises.3.note'),
 				},
 			],
 		},
 		B: {
-			title: 'Legs — Quads',
+			title: t('data.workouts.legsQuadsB.title'),
 			hasStairmaster: true,
 			legConditioning: true,
 			exercises: [
-				{ name: 'Goblet squat', sets: 3, reps: 12 },
 				{
-					name: 'Walking lunges',
+					name: t('data.workouts.legsQuadsB.exercises.0.name'),
 					sets: 3,
-					reps: '10 each leg',
-					note: 'With dumbbells',
-					cap: '10kg per dumbbell',
-					warn: 'Heavy lunges bulk glutes and widen hips',
+					reps: 12,
 				},
-				{ name: 'Hack squat', sets: 3, reps: 12, cap: '80kg total' },
+				{
+					name: t('data.workouts.legsQuadsB.exercises.1.name'),
+					sets: 3,
+					reps: t('data.workouts.legsQuadsB.exercises.1.reps'),
+					note: t('data.workouts.legsQuadsB.exercises.1.note'),
+					cap: t('data.workouts.legsQuadsB.exercises.1.cap'),
+					warn: t('data.workouts.legsQuadsB.exercises.1.warn'),
+				},
+				{
+					name: t('data.workouts.legsQuadsB.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+					cap: t('data.workouts.legsQuadsB.exercises.2.cap'),
+				},
 			],
 		},
 	},
 	'legs-hamstrings': {
 		A: {
-			title: 'Legs — Hamstrings',
+			title: t('data.workouts.legsHamstringsA.title'),
 			hasStairmaster: true,
 			legConditioning: true,
 			exercises: [
 				{
-					name: 'Squats',
+					name: t('data.workouts.legsHamstringsA.exercises.0.name'),
 					sets: 3,
 					reps: 10,
-					weight: '15kg/side',
-					cap: '60kg total (bar + plates)',
-					warn: 'Beyond this thickens spinal erectors',
+					weight: t('data.workouts.legsHamstringsA.exercises.0.weight'),
+					cap: t('data.workouts.legsHamstringsA.exercises.0.cap'),
+					warn: t('data.workouts.legsHamstringsA.exercises.0.warn'),
 				},
 				{
-					name: 'Romanian deadlift',
+					name: t('data.workouts.legsHamstringsA.exercises.1.name'),
 					sets: 3,
 					reps: 10,
-					cap: '20kg/side (40kg total)',
+					cap: t('data.workouts.legsHamstringsA.exercises.1.cap'),
 				},
 				{
-					name: 'Leg press',
+					name: t('data.workouts.legsHamstringsA.exercises.2.name'),
 					sets: 3,
 					reps: 12,
-					note: 'Feet HIGH = hamstrings',
-					cap: '100kg total',
+					note: t('data.workouts.legsHamstringsA.exercises.2.note'),
+					cap: t('data.workouts.legsHamstringsA.exercises.2.cap'),
 				},
 				{
-					name: 'Lying leg curl',
+					name: t('data.workouts.legsHamstringsA.exercises.3.name'),
 					sets: 3,
 					reps: 12,
-					weight: '32–40kg',
+					weight: t('data.workouts.legsHamstringsA.exercises.3.weight'),
 				},
 			],
 		},
 		B: {
-			title: 'Legs — Hamstrings',
+			title: t('data.workouts.legsHamstringsB.title'),
 			hasStairmaster: true,
 			legConditioning: true,
 			exercises: [
 				{
-					name: 'Romanian deadlift',
+					name: t('data.workouts.legsHamstringsB.exercises.0.name'),
 					sets: 3,
 					reps: 10,
-					cap: '20kg/side (40kg total)',
+					cap: t('data.workouts.legsHamstringsB.exercises.0.cap'),
 				},
 				{
-					name: 'Walking lunges',
+					name: t('data.workouts.legsHamstringsB.exercises.1.name'),
 					sets: 3,
-					reps: '10 each leg',
-					note: 'With dumbbells',
-					cap: '10kg per dumbbell',
-					warn: 'Heavy lunges bulk glutes and widen hips',
+					reps: t('data.workouts.legsHamstringsB.exercises.1.reps'),
+					note: t('data.workouts.legsHamstringsB.exercises.1.note'),
+					cap: t('data.workouts.legsHamstringsB.exercises.1.cap'),
+					warn: t('data.workouts.legsHamstringsB.exercises.1.warn'),
 				},
 				{
-					name: 'Lying leg curl',
+					name: t('data.workouts.legsHamstringsB.exercises.2.name'),
 					sets: 3,
 					reps: 12,
-					weight: '32–40kg',
+					weight: t('data.workouts.legsHamstringsB.exercises.2.weight'),
 				},
 			],
 		},
 	},
 	chest: {
 		A: {
-			title: 'Chest + Core',
+			title: t('data.workouts.chestA.title'),
 			hasCore: true,
 			coreType: 'anti-rotation',
 			hasInclineTreadmill: true,
 			exercises: [
-				{ name: 'Push-ups', sets: 3, reps: 12 },
 				{
-					name: 'Incline dumbbell press',
+					name: t('data.workouts.chestA.exercises.0.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.chestA.exercises.1.name'),
 					sets: 3,
 					reps: 10,
-					weight: '10kg',
-					cap: '14kg',
-					warn: 'Chest size is not your V-shape lever',
+					weight: t('data.workouts.chestA.exercises.1.weight'),
+					cap: t('data.workouts.chestA.exercises.1.cap'),
+					warn: t('data.workouts.chestA.exercises.1.warn'),
 				},
-				{ name: 'High cable fly', sets: 3, reps: 12 },
-				{ name: 'Mid cable fly', sets: 3, reps: 12 },
 				{
-					name: 'Side lateral raises',
+					name: t('data.workouts.chestA.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.chestA.exercises.3.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.chestA.exercises.4.name'),
 					sets: 3,
 					reps: 15,
-					weight: '5kg',
+					weight: t('data.workouts.chestA.exercises.4.weight'),
 				},
 			],
 		},
 		B: {
-			title: 'Chest + Core',
+			title: t('data.workouts.chestB.title'),
 			hasCore: true,
 			coreType: 'anti-rotation',
 			hasInclineTreadmill: true,
 			exercises: [
-				{ name: 'Push-ups', sets: 3, reps: 15 },
-				{ name: 'Flat dumbbell press', sets: 3, reps: 10, cap: '14kg' },
-				{ name: 'Incline cable fly', sets: 3, reps: 12 },
 				{
-					name: 'Incline dumbbell fly',
-					sets: 3,
-					reps: 12,
-					cap: '12kg',
-				},
-				{
-					name: 'Side lateral raises',
+					name: t('data.workouts.chestB.exercises.0.name'),
 					sets: 3,
 					reps: 15,
-					weight: '5kg',
+				},
+				{
+					name: t('data.workouts.chestB.exercises.1.name'),
+					sets: 3,
+					reps: 10,
+					cap: t('data.workouts.chestB.exercises.1.cap'),
+				},
+				{
+					name: t('data.workouts.chestB.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.chestB.exercises.3.name'),
+					sets: 3,
+					reps: 12,
+					cap: t('data.workouts.chestB.exercises.3.cap'),
+				},
+				{
+					name: t('data.workouts.chestB.exercises.4.name'),
+					sets: 3,
+					reps: 15,
+					weight: t('data.workouts.chestB.exercises.4.weight'),
 				},
 			],
 		},
 	},
 	back: {
 		A: {
-			title: 'Back + Core',
+			title: t('data.workouts.backA.title'),
 			hasCore: true,
 			coreType: 'anti-rotation',
 			hasInclineTreadmill: true,
 			exercises: [
 				{
-					name: 'Pull-ups',
+					name: t('data.workouts.backA.exercises.0.name'),
 					sets: 3,
-					reps: '7→10',
-					note: 'No cap — add weight progressively. Primary lat width builder.',
+					reps: t('data.workouts.backA.exercises.0.reps'),
+					note: t('data.workouts.backA.exercises.0.note'),
 				},
-				{ name: 'Straight-arm pulldown', sets: 3, reps: 12 },
-				{ name: 'Reverse pec deck', sets: 3, reps: 12 },
 				{
-					name: 'Seated cable row',
+					name: t('data.workouts.backA.exercises.1.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.backA.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.backA.exercises.3.name'),
 					sets: 3,
 					reps: 10,
-					weight: '25–30kg',
-					cap: '40kg',
-					warn: 'Beyond this recruits traps for thickness, not lats for width',
+					weight: t('data.workouts.backA.exercises.3.weight'),
+					cap: t('data.workouts.backA.exercises.3.cap'),
+					warn: t('data.workouts.backA.exercises.3.warn'),
 				},
 				{
-					name: 'Side lateral raises',
+					name: t('data.workouts.backA.exercises.4.name'),
 					sets: 3,
 					reps: 15,
-					weight: '5kg',
+					weight: t('data.workouts.backA.exercises.4.weight'),
 				},
 			],
 		},
 		B: {
-			title: 'Back + Core',
+			title: t('data.workouts.backB.title'),
 			hasCore: true,
 			coreType: 'anti-rotation',
 			hasInclineTreadmill: true,
 			exercises: [
 				{
-					name: 'Lat pulldown (wide grip)',
+					name: t('data.workouts.backB.exercises.0.name'),
 					sets: 3,
 					reps: 10,
-					note: 'No cap — progress freely. Builds lat width.',
+					note: t('data.workouts.backB.exercises.0.note'),
 				},
 				{
-					name: 'Single-arm cable row',
+					name: t('data.workouts.backB.exercises.1.name'),
 					sets: 3,
-					reps: '10 each side',
-					note: 'Cable at low position, elbow back, squeeze lat at contraction',
-					cap: '40kg',
-				},
-				{ name: 'Cable face pull', sets: 3, reps: 15 },
-				{
-					name: 'Wide grip seated cable row',
-					sets: 3,
-					reps: 10,
-					cap: '40kg',
-					warn: 'Beyond this recruits traps for thickness, not lats for width',
+					reps: t('data.workouts.backB.exercises.1.reps'),
+					note: t('data.workouts.backB.exercises.1.note'),
+					cap: t('data.workouts.backB.exercises.1.cap'),
 				},
 				{
-					name: 'Side lateral raises',
+					name: t('data.workouts.backB.exercises.2.name'),
 					sets: 3,
 					reps: 15,
-					weight: '5kg',
+				},
+				{
+					name: t('data.workouts.backB.exercises.3.name'),
+					sets: 3,
+					reps: 10,
+					cap: t('data.workouts.backB.exercises.3.cap'),
+					warn: t('data.workouts.backB.exercises.3.warn'),
+				},
+				{
+					name: t('data.workouts.backB.exercises.4.name'),
+					sets: 3,
+					reps: 15,
+					weight: t('data.workouts.backB.exercises.4.weight'),
 				},
 			],
 		},
 	},
 	'arms-biceps': {
 		A: {
-			title: 'Arms — Biceps',
+			title: t('data.workouts.armsBicepsA.title'),
 			hasStairmaster: true,
 			// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
 			armConditioning: true,
 			exercises: [
-				{ name: 'Pull-ups', sets: 3, reps: 'max' },
-				{ name: 'Cable curl', sets: 3, reps: 12, weight: '15kg' },
 				{
-					name: 'Reverse cable curl',
+					name: t('data.workouts.armsBicepsA.exercises.0.name'),
 					sets: 3,
-					reps: 12,
-					weight: '10kg',
+					reps: t('data.workouts.armsBicepsA.exercises.0.reps'),
 				},
 				{
-					name: 'Incline dumbbell curl',
+					name: t('data.workouts.armsBicepsA.exercises.1.name'),
+					sets: 3,
+					reps: 12,
+					weight: t('data.workouts.armsBicepsA.exercises.1.weight'),
+				},
+				{
+					name: t('data.workouts.armsBicepsA.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+					weight: t('data.workouts.armsBicepsA.exercises.2.weight'),
+				},
+				{
+					name: t('data.workouts.armsBicepsA.exercises.3.name'),
 					sets: 3,
 					reps: 10,
-					weight: '7–8kg',
+					weight: t('data.workouts.armsBicepsA.exercises.3.weight'),
 				},
 			],
 		},
 		B: {
-			title: 'Arms — Biceps',
+			title: t('data.workouts.armsBicepsB.title'),
 			hasStairmaster: true,
 			armConditioning: true,
 			exercises: [
-				{ name: 'Hammer curl', sets: 3, reps: 12, weight: '8–10kg' },
-				{ name: 'Preacher curl', sets: 3, reps: 12 },
 				{
-					name: 'Concentration curl',
+					name: t('data.workouts.armsBicepsB.exercises.0.name'),
 					sets: 3,
 					reps: 12,
-					weight: '6–8kg',
+					weight: t('data.workouts.armsBicepsB.exercises.0.weight'),
 				},
-				{ name: 'Cable curl (rope attachment)', sets: 3, reps: 12 },
+				{
+					name: t('data.workouts.armsBicepsB.exercises.1.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.armsBicepsB.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+					weight: t('data.workouts.armsBicepsB.exercises.2.weight'),
+				},
+				{
+					name: t('data.workouts.armsBicepsB.exercises.3.name'),
+					sets: 3,
+					reps: 12,
+				},
 			],
 		},
 	},
 	'arms-triceps': {
 		A: {
-			title: 'Arms — Triceps',
+			title: t('data.workouts.armsTricepsA.title'),
 			hasStairmaster: true,
 			armConditioning: true,
 			exercises: [
-				{ name: 'Cable pushdown', sets: 3, reps: 12 },
-				{ name: 'Single-hand pushdown', sets: 3, reps: 12 },
-				{ name: 'Overhead cable extension', sets: 3, reps: 12 },
+				{
+					name: t('data.workouts.armsTricepsA.exercises.0.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.armsTricepsA.exercises.1.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.armsTricepsA.exercises.2.name'),
+					sets: 3,
+					reps: 12,
+				},
 			],
 		},
 		B: {
-			title: 'Arms — Triceps',
+			title: t('data.workouts.armsTricepsB.title'),
 			hasStairmaster: true,
 			armConditioning: true,
 			exercises: [
-				{ name: 'Skull crushers (EZ bar)', sets: 3, reps: 12 },
-				{ name: 'Close grip push-ups', sets: 3, reps: 15 },
 				{
-					name: 'Dumbbell overhead tricep extension',
+					name: t('data.workouts.armsTricepsB.exercises.0.name'),
+					sets: 3,
+					reps: 12,
+				},
+				{
+					name: t('data.workouts.armsTricepsB.exercises.1.name'),
+					sets: 3,
+					reps: 15,
+				},
+				{
+					name: t('data.workouts.armsTricepsB.exercises.2.name'),
 					sets: 3,
 					reps: 12,
 				},
@@ -543,74 +650,74 @@ const WORKOUTS = {
 	},
 	shoulders: {
 		A: {
-			title: 'Shoulders + Core',
+			title: t('data.workouts.shouldersA.title'),
 			hasCore: true,
 			hasInclineTreadmill: true,
 			exercises: [
 				{
-					name: 'Side lateral raises ⭐ FIRST',
+					name: t('data.workouts.shouldersA.exercises.0.name'),
 					sets: 4,
 					reps: 15,
-					weight: '5kg',
-					note: 'Strict form — do NOT increase weight',
+					weight: t('data.workouts.shouldersA.exercises.0.weight'),
+					note: t('data.workouts.shouldersA.exercises.0.note'),
 				},
 				{
-					name: 'Dumbbell shoulder press',
+					name: t('data.workouts.shouldersA.exercises.1.name'),
 					sets: 3,
 					reps: 10,
-					weight: '8–10kg',
-					cap: '12kg',
-					warn: 'Heavier shifts load to front delts and traps',
+					weight: t('data.workouts.shouldersA.exercises.1.weight'),
+					cap: t('data.workouts.shouldersA.exercises.1.cap'),
+					warn: t('data.workouts.shouldersA.exercises.1.warn'),
 				},
 				{
-					name: 'Lying cable face pull',
+					name: t('data.workouts.shouldersA.exercises.2.name'),
 					sets: 3,
 					reps: 15,
-					note: 'Rope. Lie on floor/bench, head close to stack, pull toward face with elbows flaring wide',
+					note: t('data.workouts.shouldersA.exercises.2.note'),
 				},
 				{
-					name: 'Side lateral raises (burnout)',
+					name: t('data.workouts.shouldersA.exercises.3.name'),
 					sets: 2,
 					reps: 20,
-					weight: '3–4kg',
+					weight: t('data.workouts.shouldersA.exercises.3.weight'),
 				},
 			],
 		},
 		B: {
-			title: 'Shoulders + Core',
+			title: t('data.workouts.shouldersB.title'),
 			hasCore: true,
 			hasInclineTreadmill: true,
 			exercises: [
 				{
-					name: 'Side lateral raises ⭐ FIRST',
+					name: t('data.workouts.shouldersB.exercises.0.name'),
 					sets: 4,
 					reps: 15,
-					weight: '5kg',
-					note: 'Strict form — do NOT increase weight',
+					weight: t('data.workouts.shouldersB.exercises.0.weight'),
+					note: t('data.workouts.shouldersB.exercises.0.note'),
 				},
 				{
-					name: 'Seated dumbbell lateral raise',
+					name: t('data.workouts.shouldersB.exercises.1.name'),
 					sets: 3,
 					reps: 12,
-					cap: '6kg',
-					note: 'Strict isolation, zero trap involvement',
+					cap: t('data.workouts.shouldersB.exercises.1.cap'),
+					note: t('data.workouts.shouldersB.exercises.1.note'),
 				},
 				{
-					name: 'Unilateral cable lateral raise',
+					name: t('data.workouts.shouldersB.exercises.2.name'),
 					sets: 3,
-					reps: '12 each side',
+					reps: t('data.workouts.shouldersB.exercises.2.reps'),
 				},
 				{
-					name: 'Reverse pec deck',
+					name: t('data.workouts.shouldersB.exercises.3.name'),
 					sets: 3,
 					reps: 15,
-					note: 'Sit facing machine, chest against pad, squeeze at widest point, slow return',
+					note: t('data.workouts.shouldersB.exercises.3.note'),
 				},
 				{
-					name: 'Side lateral raises (burnout)',
+					name: t('data.workouts.shouldersB.exercises.4.name'),
 					sets: 2,
 					reps: 20,
-					weight: '3–4kg',
+					weight: t('data.workouts.shouldersB.exercises.4.weight'),
 				},
 			],
 		},
@@ -619,176 +726,315 @@ const WORKOUTS = {
 
 // Shared drill list — referenced by every running-day variation below.
 const DRILLS = [
-	{ name: 'High knees', reps: '1 length' },
-	{ name: 'Walk → back kicks (cone to cone)', reps: '1 length' },
-	{ name: 'Sideways walk left + right → back', reps: '1 length' },
-	{ name: 'Backward walk + Frankenstein leg swing', reps: '1 length' },
-	{ name: 'Hip circles (light jog outside)', reps: '1 length' },
-	{ name: 'Side ankle touch outside', reps: '1 length' },
-	{ name: 'Side frog jumps', reps: '1 length' },
-	{ name: 'Suicide runs', reps: '30m → 20m → 10m', note: '3 rounds' },
-	{ name: 'Sideways shuffles', reps: '1 length' },
+	{ name: t('data.drills.0.name'), reps: t('data.drills.0.reps') },
+	{ name: t('data.drills.1.name'), reps: t('data.drills.1.reps') },
+	{ name: t('data.drills.2.name'), reps: t('data.drills.2.reps') },
+	{ name: t('data.drills.3.name'), reps: t('data.drills.3.reps') },
+	{ name: t('data.drills.4.name'), reps: t('data.drills.4.reps') },
+	{ name: t('data.drills.5.name'), reps: t('data.drills.5.reps') },
+	{ name: t('data.drills.6.name'), reps: t('data.drills.6.reps') },
+	{
+		name: t('data.drills.7.name'),
+		reps: t('data.drills.7.reps'),
+		note: t('data.drills.7.note'),
+	},
+	{ name: t('data.drills.8.name'), reps: t('data.drills.8.reps') },
 ];
 
 const RUNNING_DAYS = {
 	running: {
 		A: {
-			title: 'Running Day — Saturday',
+			title: t('data.runningDays.runningA.title'),
 			hasRun: true,
 			drills: DRILLS,
 			stretching: [
-				{ name: 'Light jog / shuttle jog', reps: '1 min' },
 				{
-					name: 'Ankle circles, both directions',
-					reps: '10 each foot',
+					name: t('data.runningDays.runningA.stretching.0.name'),
+					reps: t('data.runningDays.runningA.stretching.0.reps'),
 				},
-				{ name: 'Leg swings front-to-back', reps: '10 each leg' },
-				{ name: 'Leg swings side-to-side', reps: '10 each leg' },
-				{ name: 'Walking knee hugs', reps: '10 steps' },
-				{ name: 'Walking heel-to-glute pulls', reps: '10 steps' },
-				{ name: 'Hip circles (standing)', reps: '10 each direction' },
-				{ name: 'Lateral lunges with reach', reps: '8 each side' },
+				{
+					name: t('data.runningDays.runningA.stretching.1.name'),
+					reps: t('data.runningDays.runningA.stretching.1.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.2.name'),
+					reps: t('data.runningDays.runningA.stretching.2.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.3.name'),
+					reps: t('data.runningDays.runningA.stretching.3.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.4.name'),
+					reps: t('data.runningDays.runningA.stretching.4.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.5.name'),
+					reps: t('data.runningDays.runningA.stretching.5.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.6.name'),
+					reps: t('data.runningDays.runningA.stretching.6.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.stretching.7.name'),
+					reps: t('data.runningDays.runningA.stretching.7.reps'),
+				},
 			],
 			cooldown: [
-				{ name: 'Standing quad stretch', reps: '30 sec each leg' },
 				{
-					name: 'Kneeling hip flexor stretch',
-					reps: '30 sec each side',
+					name: t('data.runningDays.runningA.cooldown.0.name'),
+					reps: t('data.runningDays.runningA.cooldown.0.reps'),
 				},
-				{ name: 'Seated butterfly / adductor stretch', reps: '30 sec' },
-				{ name: 'Figure-4 glute stretch', reps: '30 sec each side' },
 				{
-					name: 'Standing IT band stretch (cross-leg side bend)',
-					reps: '30 sec each side',
+					name: t('data.runningDays.runningA.cooldown.1.name'),
+					reps: t('data.runningDays.runningA.cooldown.1.reps'),
 				},
-				{ name: 'Calf stretch against wall', reps: '30 sec each leg' },
 				{
-					name: 'Foam roll: quads, IT band, calves',
-					reps: '1 min each',
+					name: t('data.runningDays.runningA.cooldown.2.name'),
+					reps: t('data.runningDays.runningA.cooldown.2.reps'),
 				},
-				{ name: 'Deep breathing', reps: '1–2 min' },
+				{
+					name: t('data.runningDays.runningA.cooldown.3.name'),
+					reps: t('data.runningDays.runningA.cooldown.3.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.cooldown.4.name'),
+					reps: t('data.runningDays.runningA.cooldown.4.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.cooldown.5.name'),
+					reps: t('data.runningDays.runningA.cooldown.5.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.cooldown.6.name'),
+					reps: t('data.runningDays.runningA.cooldown.6.reps'),
+				},
+				{
+					name: t('data.runningDays.runningA.cooldown.7.name'),
+					reps: t('data.runningDays.runningA.cooldown.7.reps'),
+				},
 			],
 		},
 		B: {
-			title: 'Running Day — Saturday',
+			title: t('data.runningDays.runningB.title'),
 			hasRun: true,
 			drills: DRILLS,
 			stretching: [
-				{ name: 'Light jog', reps: '1 min' },
-				{ name: 'Inchworm walkouts', reps: '5 reps' },
 				{
-					name: "World's greatest stretch (lunge + rotation)",
-					reps: '5 each side',
+					name: t('data.runningDays.runningB.stretching.0.name'),
+					reps: t('data.runningDays.runningB.stretching.0.reps'),
 				},
-				{ name: 'High knee march with arm drive', reps: '10 steps' },
-				{ name: 'Butt kick march', reps: '10 steps' },
 				{
-					name: 'Lateral shuffle (light)',
-					reps: '20 sec each direction',
+					name: t('data.runningDays.runningB.stretching.1.name'),
+					reps: t('data.runningDays.runningB.stretching.1.reps'),
 				},
-				{ name: 'Standing dynamic figure-4', reps: '5 each side' },
-				{ name: 'Calf raises with march', reps: '10 reps' },
+				{
+					name: t('data.runningDays.runningB.stretching.2.name'),
+					reps: t('data.runningDays.runningB.stretching.2.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.stretching.3.name'),
+					reps: t('data.runningDays.runningB.stretching.3.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.stretching.4.name'),
+					reps: t('data.runningDays.runningB.stretching.4.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.stretching.5.name'),
+					reps: t('data.runningDays.runningB.stretching.5.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.stretching.6.name'),
+					reps: t('data.runningDays.runningB.stretching.6.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.stretching.7.name'),
+					reps: t('data.runningDays.runningB.stretching.7.reps'),
+				},
 			],
 			cooldown: [
 				{
-					name: 'Lying hamstring stretch (strap/towel)',
-					reps: '30 sec each leg',
-				},
-				{ name: 'Pigeon pose', reps: '30 sec each side' },
-				{ name: 'Lying figure-4 stretch', reps: '30 sec each side' },
-				{
-					name: 'Standing calf stretch, bent knee (soleus)',
-					reps: '30 sec each leg',
+					name: t('data.runningDays.runningB.cooldown.0.name'),
+					reps: t('data.runningDays.runningB.cooldown.0.reps'),
 				},
 				{
-					name: 'Hip flexor stretch with overhead reach',
-					reps: '30 sec each side',
+					name: t('data.runningDays.runningB.cooldown.1.name'),
+					reps: t('data.runningDays.runningB.cooldown.1.reps'),
 				},
-				{ name: 'Lying spinal twist', reps: '30 sec each side' },
 				{
-					name: 'Foam roll: hamstrings, glutes, lower back',
-					reps: '1 min each',
+					name: t('data.runningDays.runningB.cooldown.2.name'),
+					reps: t('data.runningDays.runningB.cooldown.2.reps'),
 				},
-				{ name: 'Deep breathing', reps: '1–2 min' },
+				{
+					name: t('data.runningDays.runningB.cooldown.3.name'),
+					reps: t('data.runningDays.runningB.cooldown.3.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.cooldown.4.name'),
+					reps: t('data.runningDays.runningB.cooldown.4.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.cooldown.5.name'),
+					reps: t('data.runningDays.runningB.cooldown.5.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.cooldown.6.name'),
+					reps: t('data.runningDays.runningB.cooldown.6.reps'),
+				},
+				{
+					name: t('data.runningDays.runningB.cooldown.7.name'),
+					reps: t('data.runningDays.runningB.cooldown.7.reps'),
+				},
 			],
 		},
 	},
 	recovery: {
 		A: {
-			title: 'Running Day — Sunday',
+			title: t('data.runningDays.recoveryA.title'),
 			hasRun: true,
 			drills: DRILLS,
 			stretching: [
-				{ name: 'Brisk walk / light jog', reps: '1–2 min' },
 				{
-					name: 'Arm circles, forward/backward',
-					reps: '10 each direction',
+					name: t('data.runningDays.recoveryA.stretching.0.name'),
+					reps: t('data.runningDays.recoveryA.stretching.0.reps'),
 				},
-				{ name: 'Standing torso twists', reps: '10 each side' },
-				{ name: 'Leg swings front-to-back', reps: '10 each leg' },
-				{ name: 'Standing cat-cow', reps: '8 reps' },
-				{ name: 'Standing hamstring scoop/reach', reps: '8 each leg' },
-				{ name: 'Ankle alphabet', reps: 'one pass each foot' },
-				{ name: 'Walking lunges (no rotation)', reps: '6 each leg' },
+				{
+					name: t('data.runningDays.recoveryA.stretching.1.name'),
+					reps: t('data.runningDays.recoveryA.stretching.1.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.2.name'),
+					reps: t('data.runningDays.recoveryA.stretching.2.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.3.name'),
+					reps: t('data.runningDays.recoveryA.stretching.3.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.4.name'),
+					reps: t('data.runningDays.recoveryA.stretching.4.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.5.name'),
+					reps: t('data.runningDays.recoveryA.stretching.5.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.6.name'),
+					reps: t('data.runningDays.recoveryA.stretching.6.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.stretching.7.name'),
+					reps: t('data.runningDays.recoveryA.stretching.7.reps'),
+				},
 			],
 			cooldown: [
-				{ name: 'Cat-cow stretch', reps: '8 reps' },
-				{ name: "Child's pose", reps: '1 min' },
 				{
-					name: 'Seated forward fold (hamstrings + lower back)',
-					reps: '1 min',
+					name: t('data.runningDays.recoveryA.cooldown.0.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.0.reps'),
 				},
 				{
-					name: 'Cross-body shoulder stretch',
-					reps: '30 sec each arm',
-				},
-				{ name: 'Standing quad stretch', reps: '30 sec each leg' },
-				{
-					name: 'Lying knee-to-chest stretch',
-					reps: '30 sec each leg',
+					name: t('data.runningDays.recoveryA.cooldown.1.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.1.reps'),
 				},
 				{
-					name: 'Foam roll: full body (calves, quads, hamstrings, lats, upper back)',
-					reps: '1 min each',
+					name: t('data.runningDays.recoveryA.cooldown.2.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.2.reps'),
 				},
-				{ name: 'Deep breathing / relaxation', reps: '2–3 min' },
+				{
+					name: t('data.runningDays.recoveryA.cooldown.3.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.3.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.cooldown.4.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.4.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.cooldown.5.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.5.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.cooldown.6.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.6.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryA.cooldown.7.name'),
+					reps: t('data.runningDays.recoveryA.cooldown.7.reps'),
+				},
 			],
 		},
 		B: {
-			title: 'Running Day — Sunday',
+			title: t('data.runningDays.recoveryB.title'),
 			hasRun: true,
 			drills: DRILLS,
 			stretching: [
-				{ name: 'Brisk walk / light jog', reps: '1–2 min' },
-				{ name: 'Shoulder rolls + arm swings', reps: '10 reps' },
-				{ name: 'Standing dynamic side bend', reps: '8 each side' },
-				{ name: 'Hip circles', reps: '10 each direction' },
-				{ name: 'Leg swings side-to-side', reps: '10 each leg' },
 				{
-					name: 'Frankenstein walk (straight leg kicks to opposite hand)',
-					reps: '8 each leg',
+					name: t('data.runningDays.recoveryB.stretching.0.name'),
+					reps: t('data.runningDays.recoveryB.stretching.0.reps'),
 				},
 				{
-					name: 'Deep squat hold with reach (dynamic)',
-					reps: '5 reps',
+					name: t('data.runningDays.recoveryB.stretching.1.name'),
+					reps: t('data.runningDays.recoveryB.stretching.1.reps'),
 				},
-				{ name: 'Toe walks + heel walks', reps: '10 steps each' },
+				{
+					name: t('data.runningDays.recoveryB.stretching.2.name'),
+					reps: t('data.runningDays.recoveryB.stretching.2.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.stretching.3.name'),
+					reps: t('data.runningDays.recoveryB.stretching.3.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.stretching.4.name'),
+					reps: t('data.runningDays.recoveryB.stretching.4.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.stretching.5.name'),
+					reps: t('data.runningDays.recoveryB.stretching.5.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.stretching.6.name'),
+					reps: t('data.runningDays.recoveryB.stretching.6.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.stretching.7.name'),
+					reps: t('data.runningDays.recoveryB.stretching.7.reps'),
+				},
 			],
 			cooldown: [
-				{ name: 'Downward dog', reps: '1 min' },
-				{ name: 'Lying spinal twist', reps: '30 sec each side' },
-				{ name: 'Seated butterfly stretch', reps: '1 min' },
 				{
-					name: 'Standing side bend (static hold)',
-					reps: '30 sec each side',
+					name: t('data.runningDays.recoveryB.cooldown.0.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.0.reps'),
 				},
-				{ name: 'Wrist/forearm stretches', reps: '30 sec each' },
 				{
-					name: 'Thread the needle (thoracic mobility)',
-					reps: '30 sec each side',
+					name: t('data.runningDays.recoveryB.cooldown.1.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.1.reps'),
 				},
-				{ name: 'Foam roll: full body', reps: '1 min each area' },
-				{ name: 'Deep breathing / relaxation', reps: '2–3 min' },
+				{
+					name: t('data.runningDays.recoveryB.cooldown.2.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.2.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.cooldown.3.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.3.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.cooldown.4.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.4.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.cooldown.5.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.5.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.cooldown.6.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.6.reps'),
+				},
+				{
+					name: t('data.runningDays.recoveryB.cooldown.7.name'),
+					reps: t('data.runningDays.recoveryB.cooldown.7.reps'),
+				},
 			],
 		},
 	},

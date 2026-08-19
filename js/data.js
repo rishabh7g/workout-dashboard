@@ -1,11 +1,13 @@
 /*
  * data.js — The "database" of the app.
  *
- * Pure data only: no DOM, no functions, no localStorage. Just the constants
- * that describe the program. Loading this first means every other file can
- * read SCHEDULE / WORKOUTS / RUNNING_DAYS without caring how they were built.
+ * No DOM and no localStorage — just the constants that describe the program,
+ * plus the one pure resolver that turns a date into a day of it. Loading this
+ * first means every other file can call scheduleFor() and read WORKOUTS /
+ * RUNNING_DAYS without caring how they were built.
  *
- * SCHEDULE   — maps a date string -> { type, variation }
+ * scheduleFor(key) — 'YYYY-MM-DD' -> { type, variation }, generated from
+ *              CYCLE_ANCHOR so the program repeats indefinitely (#194)
  * WORKOUTS   — gym workouts, looked up as WORKOUTS[type][variation]
  * RUNNING_DAYS — Sat/Sun running days, same [type][variation] shape
  * CORE       — the shared core block reused across several gym days
@@ -23,225 +25,70 @@ if (typeof module !== 'undefined' && module.exports && typeof t === 'undefined')
 }
 
 // ─── Program constants ──────────────────────────────────────────────────────
+// The program has a START but deliberately NO END (#194): it repeats the same
+// four-week cycle for as long as the user keeps training. PROGRAM_LABEL is the
+// start date in prose, for the one screen that explains a pre-start date.
 const PROGRAM_START  = '2026-05-23';
-const PROGRAM_END    = '2026-11-22';
-const PROGRAM_LABEL  = 'May 23 – Nov 22, 2026';
-const CYCLE_ANCHOR   = new Date(2026, 4, 25); // Mon May 25 — cycle anchor. Displayed as Week 1/26 by weekNumber(); getWeekType's internal parity index 0 = Back Week.
+const PROGRAM_LABEL  = t('data.programLabel');
+const CYCLE_ANCHOR   = new Date(2026, 4, 25); // Mon May 25 — cycle week 1. weekNumber() counts Mondays from here; getWeekType's internal parity index 0 = Back Week.
+const CYCLE_WEEKS    = 4;
 
 // ─── Schedule ──────────────────────────────────────────────────────────────
-const SCHEDULE = {
-	// Week of May 18 (partial) — Cycle 1 · Var A
-	'2026-05-23': { type: 'running', variation: 'A' },
-	'2026-05-24': { type: 'recovery', variation: 'A' },
-	// Week of May 25 — Back Week · Var A
-	'2026-05-25': { type: 'rest' },
-	'2026-05-26': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-05-27': { type: 'back', variation: 'A' },
-	'2026-05-28': { type: 'arms-triceps', variation: 'A' },
-	'2026-05-29': { type: 'shoulders', variation: 'A' },
-	'2026-05-30': { type: 'running', variation: 'A' },
-	'2026-05-31': { type: 'recovery', variation: 'A' },
-	// Week of Jun 01 — Front Week · Var B
-	'2026-06-01': { type: 'rest' },
-	'2026-06-02': { type: 'legs-quads', variation: 'B' },
-	'2026-06-03': { type: 'chest', variation: 'B' },
-	'2026-06-04': { type: 'arms-biceps', variation: 'B' },
-	'2026-06-05': { type: 'shoulders', variation: 'B' },
-	'2026-06-06': { type: 'running', variation: 'B' },
-	'2026-06-07': { type: 'recovery', variation: 'B' },
-	// Week of Jun 08 — Back Week · Var B
-	'2026-06-08': { type: 'rest' },
-	'2026-06-09': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-06-10': { type: 'back', variation: 'B' },
-	'2026-06-11': { type: 'arms-triceps', variation: 'B' },
-	'2026-06-12': { type: 'shoulders', variation: 'B' },
-	'2026-06-13': { type: 'running', variation: 'B' },
-	'2026-06-14': { type: 'recovery', variation: 'B' },
-	// Week of Jun 15 — Front Week · Var A
-	'2026-06-15': { type: 'rest' },
-	'2026-06-16': { type: 'legs-quads', variation: 'A' },
-	'2026-06-17': { type: 'chest', variation: 'A' },
-	'2026-06-18': { type: 'arms-biceps', variation: 'A' },
-	'2026-06-19': { type: 'shoulders', variation: 'A' },
-	'2026-06-20': { type: 'running', variation: 'A' },
-	'2026-06-21': { type: 'recovery', variation: 'A' },
-	// Week of Jun 22 — Back Week · Var A
-	'2026-06-22': { type: 'rest' },
-	'2026-06-23': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-06-24': { type: 'back', variation: 'A' },
-	'2026-06-25': { type: 'arms-triceps', variation: 'A' },
-	'2026-06-26': { type: 'shoulders', variation: 'A' },
-	'2026-06-27': { type: 'running', variation: 'A' },
-	'2026-06-28': { type: 'recovery', variation: 'A' },
-	// Week of Jun 29 — Front Week · Var B
-	'2026-06-29': { type: 'rest' },
-	'2026-06-30': { type: 'legs-quads', variation: 'B' },
-	'2026-07-01': { type: 'chest', variation: 'B' },
-	'2026-07-02': { type: 'arms-biceps', variation: 'B' },
-	'2026-07-03': { type: 'shoulders', variation: 'B' },
-	'2026-07-04': { type: 'running', variation: 'B' },
-	'2026-07-05': { type: 'recovery', variation: 'B' },
-	// Week of Jul 06 — Back Week · Var B
-	'2026-07-06': { type: 'rest' },
-	'2026-07-07': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-07-08': { type: 'back', variation: 'B' },
-	'2026-07-09': { type: 'arms-triceps', variation: 'B' },
-	'2026-07-10': { type: 'shoulders', variation: 'B' },
-	'2026-07-11': { type: 'running', variation: 'B' },
-	'2026-07-12': { type: 'recovery', variation: 'B' },
-	// Week of Jul 13 — Front Week · Var A
-	'2026-07-13': { type: 'rest' },
-	'2026-07-14': { type: 'legs-quads', variation: 'A' },
-	'2026-07-15': { type: 'chest', variation: 'A' },
-	'2026-07-16': { type: 'arms-biceps', variation: 'A' },
-	'2026-07-17': { type: 'shoulders', variation: 'A' },
-	'2026-07-18': { type: 'running', variation: 'A' },
-	'2026-07-19': { type: 'recovery', variation: 'A' },
-	// Week of Jul 20 — Back Week · Var A
-	'2026-07-20': { type: 'rest' },
-	'2026-07-21': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-07-22': { type: 'back', variation: 'A' },
-	'2026-07-23': { type: 'arms-triceps', variation: 'A' },
-	'2026-07-24': { type: 'shoulders', variation: 'A' },
-	'2026-07-25': { type: 'running', variation: 'A' },
-	'2026-07-26': { type: 'recovery', variation: 'A' },
-	// Week of Jul 27 — Front Week · Var B
-	'2026-07-27': { type: 'rest' },
-	'2026-07-28': { type: 'legs-quads', variation: 'B' },
-	'2026-07-29': { type: 'chest', variation: 'B' },
-	'2026-07-30': { type: 'arms-biceps', variation: 'B' },
-	'2026-07-31': { type: 'shoulders', variation: 'B' },
-	'2026-08-01': { type: 'running', variation: 'B' },
-	'2026-08-02': { type: 'recovery', variation: 'B' },
-	// Week of Aug 03 — Back Week · Var B
-	'2026-08-03': { type: 'rest' },
-	'2026-08-04': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-08-05': { type: 'back', variation: 'B' },
-	'2026-08-06': { type: 'arms-triceps', variation: 'B' },
-	'2026-08-07': { type: 'shoulders', variation: 'B' },
-	'2026-08-08': { type: 'running', variation: 'B' },
-	'2026-08-09': { type: 'recovery', variation: 'B' },
-	// Week of Aug 10 — Front Week · Var A
-	'2026-08-10': { type: 'rest' },
-	'2026-08-11': { type: 'legs-quads', variation: 'A' },
-	'2026-08-12': { type: 'chest', variation: 'A' },
-	'2026-08-13': { type: 'arms-biceps', variation: 'A' },
-	'2026-08-14': { type: 'shoulders', variation: 'A' },
-	'2026-08-15': { type: 'running', variation: 'A' },
-	'2026-08-16': { type: 'recovery', variation: 'A' },
-	// Week of Aug 17 — Back Week · Var A
-	'2026-08-17': { type: 'rest' },
-	'2026-08-18': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-08-19': { type: 'back', variation: 'A' },
-	'2026-08-20': { type: 'arms-triceps', variation: 'A' },
-	'2026-08-21': { type: 'shoulders', variation: 'A' },
-	'2026-08-22': { type: 'running', variation: 'A' },
-	'2026-08-23': { type: 'recovery', variation: 'A' },
-	// Week of Aug 24 — Front Week · Var B
-	'2026-08-24': { type: 'rest' },
-	'2026-08-25': { type: 'legs-quads', variation: 'B' },
-	'2026-08-26': { type: 'chest', variation: 'B' },
-	'2026-08-27': { type: 'arms-biceps', variation: 'B' },
-	'2026-08-28': { type: 'shoulders', variation: 'B' },
-	'2026-08-29': { type: 'running', variation: 'B' },
-	'2026-08-30': { type: 'recovery', variation: 'B' },
-	// Week of Aug 31 — Back Week · Var B
-	'2026-08-31': { type: 'rest' },
-	'2026-09-01': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-09-02': { type: 'back', variation: 'B' },
-	'2026-09-03': { type: 'arms-triceps', variation: 'B' },
-	'2026-09-04': { type: 'shoulders', variation: 'B' },
-	'2026-09-05': { type: 'running', variation: 'B' },
-	'2026-09-06': { type: 'recovery', variation: 'B' },
-	// Week of Sep 07 — Front Week · Var A
-	'2026-09-07': { type: 'rest' },
-	'2026-09-08': { type: 'legs-quads', variation: 'A' },
-	'2026-09-09': { type: 'chest', variation: 'A' },
-	'2026-09-10': { type: 'arms-biceps', variation: 'A' },
-	'2026-09-11': { type: 'shoulders', variation: 'A' },
-	'2026-09-12': { type: 'running', variation: 'A' },
-	'2026-09-13': { type: 'recovery', variation: 'A' },
-	// Week of Sep 14 — Back Week · Var A
-	'2026-09-14': { type: 'rest' },
-	'2026-09-15': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-09-16': { type: 'back', variation: 'A' },
-	'2026-09-17': { type: 'arms-triceps', variation: 'A' },
-	'2026-09-18': { type: 'shoulders', variation: 'A' },
-	'2026-09-19': { type: 'running', variation: 'A' },
-	'2026-09-20': { type: 'recovery', variation: 'A' },
-	// Week of Sep 21 — Front Week · Var B
-	'2026-09-21': { type: 'rest' },
-	'2026-09-22': { type: 'legs-quads', variation: 'B' },
-	'2026-09-23': { type: 'chest', variation: 'B' },
-	'2026-09-24': { type: 'arms-biceps', variation: 'B' },
-	'2026-09-25': { type: 'shoulders', variation: 'B' },
-	'2026-09-26': { type: 'running', variation: 'B' },
-	'2026-09-27': { type: 'recovery', variation: 'B' },
-	// Week of Sep 28 — Back Week · Var B
-	'2026-09-28': { type: 'rest' },
-	'2026-09-29': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-09-30': { type: 'back', variation: 'B' },
-	'2026-10-01': { type: 'arms-triceps', variation: 'B' },
-	'2026-10-02': { type: 'shoulders', variation: 'B' },
-	'2026-10-03': { type: 'running', variation: 'B' },
-	'2026-10-04': { type: 'recovery', variation: 'B' },
-	// Week of Oct 05 — Front Week · Var A
-	'2026-10-05': { type: 'rest' },
-	'2026-10-06': { type: 'legs-quads', variation: 'A' },
-	'2026-10-07': { type: 'chest', variation: 'A' },
-	'2026-10-08': { type: 'arms-biceps', variation: 'A' },
-	'2026-10-09': { type: 'shoulders', variation: 'A' },
-	'2026-10-10': { type: 'running', variation: 'A' },
-	'2026-10-11': { type: 'recovery', variation: 'A' },
-	// Week of Oct 12 — Back Week · Var A
-	'2026-10-12': { type: 'rest' },
-	'2026-10-13': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-10-14': { type: 'back', variation: 'A' },
-	'2026-10-15': { type: 'arms-triceps', variation: 'A' },
-	'2026-10-16': { type: 'shoulders', variation: 'A' },
-	'2026-10-17': { type: 'running', variation: 'A' },
-	'2026-10-18': { type: 'recovery', variation: 'A' },
-	// Week of Oct 19 — Front Week · Var B
-	'2026-10-19': { type: 'rest' },
-	'2026-10-20': { type: 'legs-quads', variation: 'B' },
-	'2026-10-21': { type: 'chest', variation: 'B' },
-	'2026-10-22': { type: 'arms-biceps', variation: 'B' },
-	'2026-10-23': { type: 'shoulders', variation: 'B' },
-	'2026-10-24': { type: 'running', variation: 'B' },
-	'2026-10-25': { type: 'recovery', variation: 'B' },
-	// Week of Oct 26 — Back Week · Var B
-	'2026-10-26': { type: 'rest' },
-	'2026-10-27': { type: 'legs-hamstrings', variation: 'B' },
-	'2026-10-28': { type: 'back', variation: 'B' },
-	'2026-10-29': { type: 'arms-triceps', variation: 'B' },
-	'2026-10-30': { type: 'shoulders', variation: 'B' },
-	'2026-10-31': { type: 'running', variation: 'B' },
-	'2026-11-01': { type: 'recovery', variation: 'B' },
-	// Week of Nov 02 — Front Week · Var A
-	'2026-11-02': { type: 'rest' },
-	'2026-11-03': { type: 'legs-quads', variation: 'A' },
-	'2026-11-04': { type: 'chest', variation: 'A' },
-	'2026-11-05': { type: 'arms-biceps', variation: 'A' },
-	'2026-11-06': { type: 'shoulders', variation: 'A' },
-	'2026-11-07': { type: 'running', variation: 'A' },
-	'2026-11-08': { type: 'recovery', variation: 'A' },
-	// Week of Nov 09 — Back Week · Var A
-	'2026-11-09': { type: 'rest' },
-	'2026-11-10': { type: 'legs-hamstrings', variation: 'A' },
-	'2026-11-11': { type: 'back', variation: 'A' },
-	'2026-11-12': { type: 'arms-triceps', variation: 'A' },
-	'2026-11-13': { type: 'shoulders', variation: 'A' },
-	'2026-11-14': { type: 'running', variation: 'A' },
-	'2026-11-15': { type: 'recovery', variation: 'A' },
-	// Week of Nov 16 — Front Week · Var B
-	'2026-11-16': { type: 'rest' },
-	'2026-11-17': { type: 'legs-quads', variation: 'B' },
-	'2026-11-18': { type: 'chest', variation: 'B' },
-	'2026-11-19': { type: 'arms-biceps', variation: 'B' },
-	'2026-11-20': { type: 'shoulders', variation: 'B' },
-	'2026-11-21': { type: 'running', variation: 'B' },
-	'2026-11-22': { type: 'recovery', variation: 'B' },
-};
+// A GENERATED map, not a literal one. Until #194 this was 184 hand-written
+// date keys ending on 2026-11-22, and the day after the last key the app had
+// nothing to render — the program simply stopped. The 184 entries were never
+// bespoke, though: every one of them is a pure function of the date's offset
+// from CYCLE_ANCHOR, so the table below IS those entries, folded into the one
+// four-week cycle they always repeated. scheduleFor() replays it forever.
+//
+// Rows are the four cycle weeks; columns are Mon–Sun (index 0 = Monday, which
+// is why CYCLE_ANCHOR must stay a Monday). Var A/B alternates A-B-B-A across
+// the four weeks, so a given workout variant recurs every 28 days — the
+// interval the "add 2.5 kg when 12 reps feels easy" progression assumes.
+const CYCLE_TYPES = [
+	['rest', 'legs-hamstrings', 'back',  'arms-triceps', 'shoulders', 'running', 'recovery'],
+	['rest', 'legs-quads',      'chest', 'arms-biceps',  'shoulders', 'running', 'recovery'],
+	['rest', 'legs-hamstrings', 'back',  'arms-triceps', 'shoulders', 'running', 'recovery'],
+	['rest', 'legs-quads',      'chest', 'arms-biceps',  'shoulders', 'running', 'recovery'],
+];
+const CYCLE_VARIATIONS = ['A', 'B', 'B', 'A'];
+
+// The one schedule lookup: a 'YYYY-MM-DD' key -> { type, variation }, or
+// undefined for anything before PROGRAM_START or not a real calendar date.
+// Replaces every former `SCHEDULE[key]` index, and never returns undefined for
+// a valid date on or after the start — that is the whole point of #194.
+//
+// Rest days carry NO variation, exactly as the old literal wrote them: the
+// storage key is `ws-<date>-<type>-<variation||'x'>` (js/storage.js), so
+// adding one would silently orphan every saved rest-day record.
+function scheduleFor(key) {
+	if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return undefined;
+	if (key < PROGRAM_START) return undefined;
+	const [y, m, d] = key.split('-').map(Number);
+	const date = new Date(y, m - 1, d);
+	// Reject a rolled-over date ('2026-02-31' → Mar 3) so a corrupt stored key
+	// still fails the lookup instead of resolving to some other day's workout.
+	if (fmtDayKey(date) !== key) return undefined;
+	// Math.round, not a floor divide: a DST boundary between the anchor and the
+	// date makes the difference 23 or 25 hours, and rounding absorbs it. Same
+	// idiom weekNumber() (js/workout.js) uses.
+	const days = Math.round((date - CYCLE_ANCHOR) / 86400000);
+	const cycleDays = CYCLE_WEEKS * 7;
+	const i = ((days % cycleDays) + cycleDays) % cycleDays; // negative-safe (opening weekend precedes the anchor)
+	const week = Math.floor(i / 7);
+	const type = CYCLE_TYPES[week][i % 7];
+	return type === 'rest' ? { type } : { type, variation: CYCLE_VARIATIONS[week] };
+}
+
+// A Date -> 'YYYY-MM-DD' in LOCAL time (toISOString would shift the day for
+// anyone east or west of UTC). workout.js's todayKey() is the same formatter
+// over `new Date()`; this one exists here because scheduleFor() loads first.
+function fmtDayKey(date) {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, '0');
+	const d = String(date.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}
 
 // ─── Exercise Database ──────────────────────────────────────────────────────
 // Every user-facing string below is a t() lookup into the keyed bundle
@@ -1046,15 +893,18 @@ const RUNNING_DAYS = {
 // Under Node's require() each file gets its own module scope instead of the
 // one shared global scope classic <script> tags give us — so besides exporting,
 // re-create that shared scope by copying the consts onto globalThis. That lets
-// workout.js resolve CORE / PROGRAM_END / CYCLE_ANCHOR at call time, exactly
+// workout.js resolve CORE / CYCLE_WEEKS / CYCLE_ANCHOR at call time, exactly
 // like it does in the browser.
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = {
 		PROGRAM_START,
-		PROGRAM_END,
 		PROGRAM_LABEL,
 		CYCLE_ANCHOR,
-		SCHEDULE,
+		CYCLE_WEEKS,
+		CYCLE_TYPES,
+		CYCLE_VARIATIONS,
+		scheduleFor,
+		fmtDayKey,
 		CORE,
 		WORKOUTS,
 		DRILLS,

@@ -666,12 +666,6 @@ header {
 	text-transform: uppercase;
 }
 
-.done-sub {
-	/* bg-on-ink ≈ 12:1 even at 0.75 */
-	font-size: var(--text-body-min);
-	opacity: 0.75;
-}
-
 /* ── Day swap ── */
 /* Square 30×30 Modernist swap button (no radius). Padding + negative margin
    grow the tap target to ≥44px without enlarging the visual square (#65). */
@@ -745,20 +739,6 @@ header {
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 	user-select: none;
-}
-
-/* Final-week countdown strip — flat accent-100 wash in the Modernist language,
-   square corners, no border (matches .swap-banner). */
-.program-notice {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 7px 12px;
-	background: var(--color-accent-100);
-	margin-top: 8px;
-	font-size: var(--text-body-min);
-	color: var(--color-accent-800);
-	font-weight: 600;
 }
 
 /* The one raised notice (#172) — role="alert" panel shared by every

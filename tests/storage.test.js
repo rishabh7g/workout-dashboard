@@ -20,14 +20,25 @@ function makeStore(seed = {}) {
 }
 
 // Load storage.js in a fresh context and expose its top-level functions/lets.
-function load(store, today = '2026-07-14') {
+// `now` (optional) freezes the clock pruneOldState reads — it dates its cutoff
+// off `new Date()`, not todayKey(), so the window is only testable with a fixed
+// wall clock.
+function load(store, today = '2026-07-14', now = null) {
 	// todayKey lives in workout.js at runtime (loaded before main.js calls
 	// pruneOldBorrows); inject a stub so storage.js can resolve it here.
 	const ctx = { localStorage: store, console, todayKey: () => today };
+	if (now) {
+		const Real = Date;
+		ctx.Date = class extends Real {
+			constructor(...args) {
+				super(...(args.length ? args : [now]));
+			}
+		};
+	}
 	vm.createContext(ctx);
 	vm.runInContext(
 		src +
-			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, serializeBackup, get definitionChanged(){return definitionChanged;}, get stateCorrupted(){return stateCorrupted;}, get quarantineFailed(){return quarantineFailed;}, get borrowsCorrupted(){return borrowsCorrupted;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
+			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, pruneOldState, STATE_RETENTION_DAYS, serializeBackup, get definitionChanged(){return definitionChanged;}, get stateCorrupted(){return stateCorrupted;}, get quarantineFailed(){return quarantineFailed;}, get borrowsCorrupted(){return borrowsCorrupted;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
 		ctx
 	);
 	return ctx.__api;
@@ -282,6 +293,38 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	assert.strictEqual(backup.truncated, true, 'a mid-iteration throw marks the backup truncated (#173)');
 	assert.ok(backup.error, 'the throw is carried for the caller to describe (#173)');
 	console.log('PASS 11: serializeBackup marks a mid-iteration failure truncated, never a clean backup (#173)');
+}
+
+// 12. pruneOldState (#194): it used to run only once the program was over
+//     (`todayKey() > PROGRAM_END` in main.js). With an open-ended schedule that
+//     gate never fires, so it now runs EVERY boot against a rolling window.
+//     Two things must hold: it still deletes genuinely old day records, and the
+//     window is long enough that a workout variation's last session — 28 days
+//     back at most — is never the thing it deletes.
+{
+	const NOW = '2027-06-15T09:00:00';
+	const store = makeStore({
+		'ws-2026-05-25-rest-x': JSON.stringify({ v: 1, n: 1, done: [] }),      // >1y old — goes
+		'ws-2026-06-01-legs-quads-B': JSON.stringify({ v: 1, n: 1, done: [] }), // >1y old — goes
+		'ws-2027-06-01-back-A': JSON.stringify({ v: 1, n: 1, done: ['ex-1'] }), // 14 days ago — MUST survive
+		'ws-2027-05-18-chest-B': JSON.stringify({ v: 1, n: 1, done: ['ex-2'] }), // 28 days ago — MUST survive
+		'ws-corrupt-2026-06-02-back-A': '{bad',   // quarantined — never pruned
+		'day-borrow': JSON.stringify({ '2027-06-15': '2027-06-18' }),
+	});
+	const api = load(store, '2027-06-15', NOW);
+	// Seeded AFTER load: storage.js writes and clears its own ws-probe at boot.
+	store.setItem('ws-probe', '1');
+	assert.strictEqual(api.STATE_RETENTION_DAYS, 365, 'retention window is a year');
+	assert.ok(api.STATE_RETENTION_DAYS > 28, 'the window must exceed the 28-day variation cycle');
+	api.pruneOldState();
+	assert.strictEqual(store.getItem('ws-2026-05-25-rest-x'), null, 'a record older than the window is pruned');
+	assert.strictEqual(store.getItem('ws-2026-06-01-legs-quads-B'), null, 'a record older than the window is pruned');
+	assert.ok(store.getItem('ws-2027-06-01-back-A'), 'last fortnight survives');
+	assert.ok(store.getItem('ws-2027-05-18-chest-B'), 'the previous run of this variation (28d) survives — progression reads it');
+	assert.strictEqual(store.getItem('ws-probe'), '1', 'the boot probe is not a day key');
+	assert.strictEqual(store.getItem('ws-corrupt-2026-06-02-back-A'), '{bad', 'quarantined records are never pruned');
+	assert.ok(store.getItem('day-borrow'), 'the borrow map is not a ws- day record');
+	console.log('PASS 12: pruneOldState keeps a year rolling window, sparing the 28-day cycle (#194)');
 }
 
 console.log('\nALL TESTS PASSED');

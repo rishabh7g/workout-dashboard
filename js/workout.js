@@ -187,7 +187,7 @@ function buildItemList(workout) {
 }
 
 // ─── Date helpers ────────────────────────────────────────────────────────────
-// "Today" as a YYYY-MM-DD key — the same format SCHEDULE is keyed by.
+// "Today" as a YYYY-MM-DD key — the format scheduleFor() (js/data.js) takes.
 function todayKey() {
 	const d = new Date();
 	const y = d.getFullYear();
@@ -205,30 +205,10 @@ function shortDayLabel(key) {
 	});
 }
 
-// A heads-up as the program winds down, so the end isn't a surprise the day
-// the schedule simply runs out. Returns a short message for the final week, or
-// null on any other day. Dates are ISO YYYY-MM-DD, so string ops are safe.
-function programNotice(key) {
-	if (key > PROGRAM_END) return null; // past the end — the "no workout" screen covers it
-	const [ey, em, ed] = PROGRAM_END.split('-').map(Number);
-	const [ky, km, kd] = key.split('-').map(Number);
-	const daysLeft = Math.round(
-		(new Date(ey, em - 1, ed) - new Date(ky, km - 1, kd)) / 86400000,
-	);
-	if (daysLeft < 0 || daysLeft > 6) return null;
-	if (daysLeft === 0) return t('data.programNotice.finalDay');
-	const noticeKey =
-		daysLeft === 1
-			? 'data.programNotice.endsOneDay'
-			: 'data.programNotice.endsManyDays';
-	return t(noticeKey, { date: shortDayLabel(PROGRAM_END), days: daysLeft });
-}
-
-// Program length in weeks, shown as "Week n / 26" in the header eyebrow.
-const TOTAL_WEEKS = 26;
-
 // Program-position week number for a date key. Week 1 starts Monday
 // 2026-05-25 (CYCLE_ANCHOR); the opening weekend (May 23–24) is week 0.
+// Unbounded by design — it keeps counting for as long as the user trains, so
+// it is the right input for cycle position but NOT something to display raw.
 function weekNumber(key) {
 	const [y, m, d] = key.split('-').map(Number);
 	const date = new Date(y, m - 1, d);
@@ -237,6 +217,16 @@ function weekNumber(key) {
 	const monday = new Date(y, m - 1, d + toMon);
 	const days = Math.round((monday - CYCLE_ANCHOR) / 86400000);
 	return Math.floor(days / 7) + 1;
+}
+
+// Position inside the repeating four-week cycle: 1..CYCLE_WEEKS, the number
+// the header eyebrow shows as "Week n / 4". weekNumber() alone would read
+// "Week 47 / 26" a year in — an unbounded count against a length the program
+// no longer has (#194). Week 0 (the opening weekend, before CYCLE_ANCHOR) has
+// no cycle position; the eyebrow labels it separately and never calls this.
+function cycleWeek(key) {
+	const n = weekNumber(key);
+	return (((n - 1) % CYCLE_WEEKS) + CYCLE_WEEKS) % CYCLE_WEEKS + 1;
 }
 
 // Front Week / Back Week label. Shoulders alternate weekly, so they're
@@ -269,9 +259,8 @@ if (typeof module !== 'undefined' && module.exports) {
 		buildItemList,
 		todayKey,
 		shortDayLabel,
-		programNotice,
-		TOTAL_WEEKS,
 		weekNumber,
+		cycleWeek,
 		getWeekType,
 	};
 }

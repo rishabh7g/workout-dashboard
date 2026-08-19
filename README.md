@@ -1,14 +1,17 @@
 # workout-dashboard
 
-A personal 26-week workout-program dashboard — a vanilla-JS static PWA. No build
+A personal workout-program dashboard — a vanilla-JS static PWA. No build
 step, no dependencies, no framework, single user, offline-first.
 Live: https://rishabh7g.github.io/workout-dashboard/
 
 ## What it does
 
-Renders each day of a fixed 26-week program (May 23 – Nov 22, 2026) as a tickable
-checklist — gym, running, or rest — and keeps your progress on the device. It is
-deliberately small and single-purpose:
+Renders each day of an open-ended training program as a tickable checklist —
+gym, running, or rest — and keeps your progress on the device. The program
+started 23 May 2026 and repeats a four-week cycle indefinitely: every date from
+then on resolves to a workout, generated from `CYCLE_ANCHOR` rather than stored
+as a date list (`scheduleFor()` in `js/data.js`). It is deliberately small and
+single-purpose:
 
 - **Offline-first PWA** — a service worker precaches the shell so it opens and
   works with no network; installs to the home screen (`manifest.json`).

@@ -71,6 +71,18 @@ const composeItemLabel = ctx.__c;
 	console.log('PASS 5: no done/active state leaks into the name');
 }
 
+// Consecutive 'YYYY-MM-DD' keys starting at `start` — the generated schedule
+// (#194) has no key list to enumerate, so tests walk a date span instead.
+function dayKeysFrom(start, count) {
+	const [y, m, d] = start.split('-').map(Number);
+	const keys = [];
+	for (let i = 0; i < count; i++) {
+		const dt = new Date(y, m - 1, d + i);
+		keys.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`);
+	}
+	return keys;
+}
+
 // 6. No raw ×, →, ·, / or SVG junk survives in any real item's label.
 {
 	// data.js and workout.js read their copy from the strings bundle (#189), so
@@ -82,14 +94,17 @@ const composeItemLabel = ctx.__c;
 	vm.createContext(c2);
 	vm.runInContext(
 		stringsSrc + '\n' + dataSrc + '\n' + workoutSrc + '\n' + prelude + compose[0] +
-			'\nthis.__c = composeItemLabel; this.__b = buildItemList; this.__s = SCHEDULE;' +
+			'\nthis.__c = composeItemLabel; this.__b = buildItemList; this.__s = scheduleFor;' +
 			'\nthis.__w = typeof WORKOUTS !== "undefined" ? WORKOUTS : {};' +
 			'\nthis.__r = typeof RUNNING_DAYS !== "undefined" ? RUNNING_DAYS : {};',
 		c2
 	);
+	// The schedule is generated, not a literal map (#194), so walk a concrete
+	// span of dates instead of Object.keys(): one full four-week cycle past the
+	// old hard-coded end date, which covers every workout signature twice.
 	let checked = 0;
-	for (const key of Object.keys(c2.__s)) {
-		const entry = c2.__s[key];
+	for (const key of dayKeysFrom('2026-05-23', 240)) {
+		const entry = c2.__s(key);
 		if (!entry) continue;
 		const workout = (c2.__w[entry.type] || c2.__r[entry.type])?.[entry.variation];
 		if (!workout) continue;

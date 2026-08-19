@@ -54,10 +54,12 @@ const STRINGS = {
 			btn: 'Reset progress',
 			arm: 'Tap again to reset',
 		},
+		// One title, always: the program repeats indefinitely (#194), so there
+		// is no "Program Complete!" moment to announce and no end-date sub.
+		// The non-program-end .done-sub was already deleted as read-once
+		// reassurance under a title that says the same thing (#176).
 		done: {
-			programCompleteTitle: 'Program Complete!',
 			workoutCompleteTitle: 'Workout complete',
-			programEndSub: 'You finished the full {programLabel} program. Outstanding work.',
 		},
 		principles: {
 			heading: 'Principles',
@@ -106,7 +108,7 @@ const STRINGS = {
 		// text on these two screens, so one key each covers all three sites.
 		noWorkout: {
 			title: 'No workout today',
-			sub: 'This date is outside the current program ({programLabel}).',
+			sub: 'The program starts {programLabel}.',
 		},
 		// No .sub here (#176): "Sleep well. Let the muscles rebuild." was
 		// read-once reassurance under a title that already says the same thing.
@@ -196,15 +198,12 @@ const STRINGS = {
 			front: 'Front Week',
 			back: 'Back Week',
 		},
-		// programNotice() (js/workout.js) — the end-of-program heads-up shown
-		// through the final week. Singular and plural are separate keys rather
-		// than one string with a {plural} fragment, so each reads as a whole
-		// sentence.
-		programNotice: {
-			finalDay: 'Final day of the program — great work.',
-			endsOneDay: 'Program ends {date} · {days} day left',
-			endsManyDays: 'Program ends {date} · {days} days left',
-		},
+		// PROGRAM_LABEL (js/data.js) — the program's start date in prose. Read
+		// by the one screen a date can still fail to resolve on: a date BEFORE
+		// the program began. There is no end-date copy any more; the schedule
+		// repeats indefinitely (#194), so the old programNotice() wind-down
+		// ("Program ends …") was deleted rather than made permanent.
+		programLabel: 'Saturday 23 May 2026',
 		// ─── js/data.js exercise database (#189) ─────────────────────────
 		// A mechanical move of the trees in js/data.js: same shape, same
 		// order, same strings — the literals just live here now and the data
@@ -661,9 +660,7 @@ const STRINGS_KEYS = [
 	'ui.backup.armImport',
 	'ui.reset.btn',
 	'ui.reset.arm',
-	'ui.done.programCompleteTitle',
 	'ui.done.workoutCompleteTitle',
-	'ui.done.programEndSub',
 	'ui.principles.heading',
 	'ui.principles.weight',
 	'ui.principles.rest',
@@ -750,9 +747,7 @@ const STRINGS_KEYS = [
 	'data.weekType.sun',
 	'data.weekType.front',
 	'data.weekType.back',
-	'data.programNotice.finalDay',
-	'data.programNotice.endsOneDay',
-	'data.programNotice.endsManyDays',
+	'data.programLabel',
 	'data.core.0.name',
 	'data.core.1.name',
 	'data.core.2.name',
@@ -1055,13 +1050,10 @@ const STRINGS_PLACEHOLDERS = {
 	'ui.entry.runningSun': ['variation'],
 	'ui.swap.following': ['day'],
 	'ui.backup.lastBackup': ['date'],
-	'ui.done.programEndSub': ['programLabel'],
 	'ui.eyebrow.week': ['n', 'total'],
 	'ui.notice.quarantineFailed': ['detail'],
 	'ui.noWorkout.sub': ['programLabel'],
 	'ui.unresolved.sub': ['type', 'variation'],
-	'data.programNotice.endsOneDay': ['date', 'days'],
-	'data.programNotice.endsManyDays': ['date', 'days'],
 };
 
 // Look up a dot-path in STRINGS, returning undefined (never a fallback

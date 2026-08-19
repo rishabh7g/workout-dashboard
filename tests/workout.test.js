@@ -20,7 +20,7 @@ const assert = require('assert');
 // Load strings.js + data.js + workout.js in a fresh context, in the same order
 // index.html loads them. strings.js supplies t(), which the data.js trees and
 // workout.js's declarative items now read their copy from (#189); data.js
-// supplies SCHEDULE / WORKOUTS / RUNNING_DAYS / CORE; workout.js supplies
+// supplies scheduleFor() / WORKOUTS / RUNNING_DAYS / CORE; workout.js supplies
 // buildItemList + splitReps.
 const ctx = { console, Date };
 vm.createContext(ctx);
@@ -31,23 +31,37 @@ vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/workout.js'), 'utf8'
 // globals we need onto `this` from inside the context.
 vm.runInContext(
 	'this.__splitReps = splitReps; this.__buildItemList = buildItemList;' +
-		'this.__SCHEDULE = SCHEDULE; this.__WORKOUTS = WORKOUTS; this.__RUNNING_DAYS = RUNNING_DAYS;' +
-		'this.__weekNumber = weekNumber; this.__getWeekType = getWeekType; this.__programNotice = programNotice;',
+		'this.__scheduleFor = scheduleFor; this.__WORKOUTS = WORKOUTS; this.__RUNNING_DAYS = RUNNING_DAYS;' +
+		'this.__weekNumber = weekNumber; this.__getWeekType = getWeekType; this.__cycleWeek = cycleWeek;' +
+		'this.__CYCLE_WEEKS = CYCLE_WEEKS;',
 	ctx,
 );
 const splitReps = ctx.__splitReps;
 const buildItemList = ctx.__buildItemList;
-const SCHEDULE = ctx.__SCHEDULE;
+const scheduleFor = ctx.__scheduleFor;
 const WORKOUTS = ctx.__WORKOUTS;
 const RUNNING_DAYS = ctx.__RUNNING_DAYS;
 const weekNumber = ctx.__weekNumber;
 const getWeekType = ctx.__getWeekType;
-const programNotice = ctx.__programNotice;
+const cycleWeek = ctx.__cycleWeek;
+const CYCLE_WEEKS = ctx.__CYCLE_WEEKS;
+
+// Consecutive 'YYYY-MM-DD' keys starting at `start` — the schedule is generated
+// from CYCLE_ANCHOR (#194), so there is no key list to enumerate.
+function dayKeysFrom(start, count) {
+	const [y, m, d] = start.split('-').map(Number);
+	const keys = [];
+	for (let i = 0; i < count; i++) {
+		const dt = new Date(y, m - 1, d + i);
+		keys.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`);
+	}
+	return keys;
+}
 assert.strictEqual(typeof splitReps, 'function', 'splitReps must exist in js/workout.js');
 assert.strictEqual(typeof buildItemList, 'function', 'buildItemList must exist in js/workout.js');
 assert.strictEqual(typeof weekNumber, 'function', 'weekNumber must exist in js/workout.js');
 assert.strictEqual(typeof getWeekType, 'function', 'getWeekType must exist in js/workout.js');
-assert.strictEqual(typeof programNotice, 'function', 'programNotice must exist in js/workout.js');
+assert.strictEqual(typeof cycleWeek, 'function', 'cycleWeek must exist in js/workout.js');
 
 // ─── 1. splitReps contract (#64) ─────────────────────────────────────────────
 // New contract: splitReps only peels a trailing "each …" qualifier off a bare
@@ -161,8 +175,12 @@ const SIG_GOLDEN = {
 let resolved = 0;
 let restDays = 0;
 const seenSigs = new Set();
-for (const dayKey of Object.keys(SCHEDULE)) {
-	const e = SCHEDULE[dayKey];
+// The original 184 program days (2026-05-23 … 2026-11-22), now generated
+// rather than listed (#194) — walked as a date span so the counts below still
+// pin exactly the schedule this golden table was built against.
+const PROGRAM_DAYS = dayKeysFrom('2026-05-23', 184);
+for (const dayKey of PROGRAM_DAYS) {
+	const e = scheduleFor(dayKey);
 	const sig = `${e.type}|${e.variation || 'x'}`;
 	const table = WORKOUTS[e.type] || RUNNING_DAYS[e.type];
 	const workout = table ? table[e.variation] : null;
@@ -187,6 +205,32 @@ assert.strictEqual(resolved + restDays, 184, 'expected 184 total schedule days')
 assert.strictEqual(seenSigs.size, 18, `expected 18 unique non-rest workout signatures, saw ${seenSigs.size}`);
 console.log(`PASS 3: id sequences byte-identical across all ${resolved} non-rest schedule days (${seenSigs.size} signatures)`);
 
+// ─── 3b. The same guarantee, forever (#194) ──────────────────────────────────
+// The schedule no longer stops, so the id-stability contract has to hold for
+// dates the golden table was never written against. Walk ten years past the
+// old end date: every day must still resolve to one of the 18 pinned
+// signatures with a byte-identical id sequence.
+{
+	let future = 0;
+	for (const dayKey of dayKeysFrom('2026-11-23', 3653)) {
+		const e = scheduleFor(dayKey);
+		assert.ok(e, `${dayKey}: schedule ran out — the program must never stop`);
+		const table = WORKOUTS[e.type] || RUNNING_DAYS[e.type];
+		const workout = table ? table[e.variation] : null;
+		if (!workout) continue; // rest day
+		const sig = `${e.type}|${e.variation || 'x'}`;
+		const golden = SIG_GOLDEN[sig];
+		assert.ok(golden, `${dayKey}: unpinned signature ${sig}`);
+		assert.strictEqual(
+			JSON.stringify(buildItemList(workout).map((i) => i.id)),
+			JSON.stringify(golden),
+			`${dayKey} (${sig}): id sequence drifted past the old program end`,
+		);
+		future++;
+	}
+	console.log(`PASS 3b: ${future} generated days past 2026-11-22 resolve to the same pinned id sequences`);
+}
+
 // ─── 4. weekNumber across the anchor boundary (#32) ──────────────────────────
 // Week 1 starts Monday 2026-05-25 (CYCLE_ANCHOR); the opening weekend is week 0,
 // and the whole Mon–Sun span shares one number. Pins the anchor so a moved
@@ -199,18 +243,23 @@ console.log(`PASS 3: id sequences byte-identical across all ${resolved} non-rest
 	console.log('PASS 4: weekNumber pins the anchor and week boundaries');
 }
 
-// ─── 5. programNotice text through the final week (#32) ──────────────────────
-// The wind-down heads-up fires only inside the final 7 days (PROGRAM_END
-// 2026-11-22). Pins the exact copy — "Final day", singular/plural "day(s) left"
-// — and the silence past the end and >6 days out. Locale-safe: match substrings,
-// never the ICU-dependent full date.
+// ─── 5. cycleWeek stays inside the cycle forever (#194) ──────────────────────
+// weekNumber() is unbounded by design; cycleWeek() folds it onto 1..CYCLE_WEEKS
+// so the header can never read "Week 47 / 26". Pins the fold for the first
+// cycle and proves it holds a decade out — the old programNotice() wind-down
+// this replaced ("Program ends …") was deleted along with the end date.
 {
-	assert.strictEqual(programNotice('2026-11-23'), null, 'past the end is silent');
-	assert.match(programNotice('2026-11-22'), /Final day/, 'final day copy');
-	assert.match(programNotice('2026-11-19'), /3 days left/, 'plural days-left copy');
-	assert.match(programNotice('2026-11-21'), /1 day left/, 'singular day-left copy');
-	assert.strictEqual(programNotice('2026-11-15'), null, '7 days out is silent');
-	console.log('PASS 5: programNotice text fires only inside the final week');
+	assert.strictEqual(CYCLE_WEEKS, 4, 'the program repeats on a four-week cycle');
+	assert.strictEqual(cycleWeek('2026-05-25'), 1, 'anchor Monday is cycle week 1');
+	assert.strictEqual(cycleWeek('2026-06-01'), 2);
+	assert.strictEqual(cycleWeek('2026-06-08'), 3);
+	assert.strictEqual(cycleWeek('2026-06-15'), 4);
+	assert.strictEqual(cycleWeek('2026-06-22'), 1, 'the fifth week wraps back to cycle week 1');
+	for (const k of dayKeysFrom('2026-05-25', 3653)) {
+		const n = cycleWeek(k);
+		assert.ok(n >= 1 && n <= CYCLE_WEEKS, `${k}: cycleWeek ${n} outside 1..${CYCLE_WEEKS}`);
+	}
+	console.log('PASS 5: cycleWeek folds the unbounded week count onto 1..4, a decade out');
 }
 
 // ─── 6. getWeekType parity (#32) ─────────────────────────────────────────────

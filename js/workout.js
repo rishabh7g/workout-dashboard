@@ -45,145 +45,200 @@ function splitReps(reps) {
 	return { reps: String(reps), sub: null };
 }
 
-// Flatten a declarative workout object into an ordered list of items.
-// Each item gets a stable id like "ex-3" so the UI and localStorage agree —
-// the id scheme (`${sec}-${counts[sec]}`) and item ORDER are load-bearing:
-// they are the localStorage tick keys (js/storage.js v1 envelope), so a
-// reorder would silently re-bind saved ticks to different exercises.
-// Items expose `sets` and `reps` SEPARATELY (WD blueprint) so the UI can build
-// the numeral block from them; `sub` carries weight + qualifier joined with
-// ' · '; scheme-less items (stretches, drills, timed cardio) use `sub` alone.
-function buildItemList(workout) {
-	const items = [];
-	const counts = {};
-	const add = (sec, label, extra = {}) => {
-		counts[sec] = (counts[sec] || 0) + 1;
-		items.push({
-			id: `${sec}-${counts[sec]}`,
-			section: sec,
-			label,
-			...extra,
-		});
-	};
+// ─── Item builders ───────────────────────────────────────────────────────────
+// buildItemList() flattens a declarative workout object into an ordered list
+// of items. Each item gets a stable id like "ex-3" so the UI and localStorage
+// agree — the id scheme (`${sec}-${n}`, n counting per section) and item ORDER
+// are load-bearing: they are the localStorage tick keys (js/storage.js v1
+// envelope), so a reorder would silently re-bind saved ticks to different
+// exercises. Items expose `sets` and `reps` SEPARATELY (WD blueprint) so the
+// UI can build the numeral block from them; `sub` carries weight + qualifier
+// joined with ' · '; scheme-less items (stretches, drills, timed cardio) use
+// `sub` alone.
+//
+// One helper per section below; each returns that section's items WITHOUT an
+// id (or [] when the workout does not declare the section). numberItems()
+// assigns the ids once, positionally, over the concatenated list.
+function item(section, label, extra = {}) {
+	return { section, label, ...extra };
+}
 
-	if (workout.legConditioning) {
-		add('warmup', t('data.items.legSwings.label'), {
+// Stretches, drills and cool-down entries carry free-text reps in `sub`.
+function freeTextItem(section, ex) {
+	return item(section, ex.name, { sub: ex.reps, note: ex.note });
+}
+
+// Leg-day warm-up (legConditioning days only).
+function warmupItems(workout) {
+	if (!workout.legConditioning) return [];
+	return [
+		item('warmup', t('data.items.legSwings.label'), {
 			sub: t('data.items.legSwings.sub'),
-		});
-		add('warmup', t('data.items.ankleCircles.label'), {
+		}),
+		item('warmup', t('data.items.ankleCircles.label'), {
 			sub: t('data.items.ankleCircles.sub'),
-		});
-		add('warmup', t('data.items.reverseLunges.label'), {
+		}),
+		item('warmup', t('data.items.reverseLunges.label'), {
 			sets: 3,
 			reps: '10',
 			sub: t('data.items.reverseLunges.sub'),
-		});
-	}
+		}),
+	];
+}
 
-	for (const ex of workout.exercises || []) {
-		const r = splitReps(ex.reps);
-		const sub = [ex.weight, r.sub].filter(Boolean).join(' · ') || null;
-		add('ex', ex.name, {
-			sets: ex.sets,
-			reps: r.reps,
-			sub,
-			note: ex.note,
-			cap: ex.cap,
-			warn: ex.warn,
-		});
-	}
+// The workout's own strength exercises.
+function exerciseItems(workout) {
+	return (workout.exercises || []).map(exerciseItem);
+}
 
-	if (workout.hasCore) {
-		for (const ex of CORE) {
-			add('core', ex.name, { sets: ex.sets, reps: String(ex.reps), note: ex.note });
-		}
-		if (workout.coreType === 'anti-rotation')
-			add('core', t('data.items.pallofPress.label'), {
+function exerciseItem(ex) {
+	const r = splitReps(ex.reps);
+	const sub = [ex.weight, r.sub].filter(Boolean).join(' · ') || null;
+	return item('ex', ex.name, {
+		sets: ex.sets,
+		reps: r.reps,
+		sub,
+		note: ex.note,
+		cap: ex.cap,
+		warn: ex.warn,
+	});
+}
+
+// The shared CORE block, plus Pallof press on anti-rotation days.
+function coreItems(workout) {
+	if (!workout.hasCore) return [];
+	const items = CORE.map((ex) =>
+		item('core', ex.name, { sets: ex.sets, reps: String(ex.reps), note: ex.note }),
+	);
+	if (workout.coreType === 'anti-rotation')
+		items.push(
+			item('core', t('data.items.pallofPress.label'), {
 				sets: 3,
 				reps: '12',
 				sub: t('data.items.pallofPress.sub'),
 				note: t('data.items.pallofPress.note'),
-			});
-	}
+			}),
+		);
+	return items;
+}
 
-	if (workout.legConditioning) {
-		add('finisher', t('data.items.wallSit.label'), {
+// Leg-day finisher (legConditioning days only).
+function finisherItems(workout) {
+	if (!workout.legConditioning) return [];
+	return [
+		item('finisher', t('data.items.wallSit.label'), {
 			sets: 3,
 			reps: t('data.items.wallSit.reps'),
-		});
-		add('finisher', t('data.items.singleLegRdl.label'), {
+		}),
+		item('finisher', t('data.items.singleLegRdl.label'), {
 			sets: 3,
 			reps: '10',
 			sub: t('data.items.singleLegRdl.sub'),
 			note: t('data.items.singleLegRdl.note'),
-		});
-	}
+		}),
+	];
+}
 
-	// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle Stability block (running prehab), not arm work.
-	if (workout.armConditioning) {
-		add('ankle', t('data.items.balanceHold.label'), {
+// 'armConditioning' = the arm-day conditioning slot — it emits the Ankle
+// Stability block (running prehab), not arm work.
+function ankleItems(workout) {
+	if (!workout.armConditioning) return [];
+	return [
+		item('ankle', t('data.items.balanceHold.label'), {
 			sets: 3,
 			reps: t('data.items.balanceHold.reps'),
 			sub: t('data.items.balanceHold.sub'),
 			note: t('data.items.balanceHold.note'),
-		});
-		add('ankle', t('data.items.calfRaises.label'), {
+		}),
+		item('ankle', t('data.items.calfRaises.label'), {
 			sets: 3,
 			reps: '15',
 			sub: t('data.items.calfRaises.sub'),
-		});
-		add('ankle', t('data.items.bandWalks.label'), {
+		}),
+		item('ankle', t('data.items.bandWalks.label'), {
 			sets: 3,
 			reps: '15',
 			sub: t('data.items.bandWalks.sub'),
-		});
-	}
+		}),
+	];
+}
 
-	// Timed cardio shows its duration in the sub line (no numeral block) — the
-	// blueprint's chosen shape (design/workout-data.js:407-408).
-	if (workout.hasStairmaster) {
-		add('cardio', t('data.items.stairmaster.label'), {
-			sub: t('data.items.stairmaster.sub'),
-		});
-	}
+// Timed cardio shows its duration in the sub line (no numeral block) — the
+// blueprint's chosen shape (design/workout-data.js:407-408).
+function cardioItems(workout) {
+	const items = [];
+	if (workout.hasStairmaster)
+		items.push(
+			item('cardio', t('data.items.stairmaster.label'), {
+				sub: t('data.items.stairmaster.sub'),
+			}),
+		);
+	if (workout.hasInclineTreadmill)
+		items.push(
+			item('cardio', t('data.items.inclineTreadmill.label'), {
+				sub: t('data.items.inclineTreadmill.sub'),
+				note: t('data.items.inclineTreadmill.note'),
+			}),
+		);
+	return items;
+}
 
-	if (workout.hasInclineTreadmill) {
-		add('cardio', t('data.items.inclineTreadmill.label'), {
-			sub: t('data.items.inclineTreadmill.sub'),
-			note: t('data.items.inclineTreadmill.note'),
-		});
-	}
+function stretchItems(workout) {
+	return (workout.stretching || []).map((ex) => freeTextItem('stretch', ex));
+}
 
-	if (workout.stretching) {
-		for (const ex of workout.stretching) {
-			add('stretch', ex.name, { sub: ex.reps, note: ex.note });
-		}
-	}
+// Run days list their drills individually when the workout carries them,
+// otherwise a single "drills session" item.
+function drillItems(workout) {
+	if (!workout.hasRun) return [];
+	if (workout.drills) return workout.drills.map((d) => freeTextItem('drills', d));
+	return [
+		item('drills', t('data.items.drillsSession.label'), {
+			sub: t('data.items.drillsSession.sub'),
+			note: t('data.items.drillsSession.note'),
+		}),
+	];
+}
 
-	if (workout.hasRun) {
-		if (workout.drills) {
-			for (const d of workout.drills) {
-				add('drills', d.name, { sub: d.reps, note: d.note });
-			}
-		} else {
-			add('drills', t('data.items.drillsSession.label'), {
-				sub: t('data.items.drillsSession.sub'),
-				note: t('data.items.drillsSession.note'),
-			});
-		}
-		add('run', t('data.items.run.label'), {
+function runItems(workout) {
+	if (!workout.hasRun) return [];
+	return [
+		item('run', t('data.items.run.label'), {
 			sub: t('data.items.run.sub'),
 			note: t('data.items.run.note'),
-		});
-	}
+		}),
+	];
+}
 
-	if (workout.cooldown) {
-		for (const ex of workout.cooldown) {
-			add('cooldown', ex.name, { sub: ex.reps, note: ex.note });
-		}
-	}
+function cooldownItems(workout) {
+	return (workout.cooldown || []).map((ex) => freeTextItem('cooldown', ex));
+}
 
-	return items;
+// Assign the positional ids: the n-th item of a section is `${section}-${n}`.
+function numberItems(items) {
+	const counts = {};
+	return items.map((it) => {
+		counts[it.section] = (counts[it.section] || 0) + 1;
+		return { id: `${it.section}-${counts[it.section]}`, ...it };
+	});
+}
+
+// The section order IS the checklist order — see the id note above before
+// reordering anything here.
+function buildItemList(workout) {
+	const sections = [
+		warmupItems(workout),
+		exerciseItems(workout),
+		coreItems(workout),
+		finisherItems(workout),
+		ankleItems(workout),
+		cardioItems(workout),
+		stretchItems(workout),
+		drillItems(workout),
+		runItems(workout),
+		cooldownItems(workout),
+	];
+	return numberItems(sections.flat());
 }
 
 // ─── Date helpers ────────────────────────────────────────────────────────────

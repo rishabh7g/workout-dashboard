@@ -858,21 +858,23 @@ function insertStorageWarning() {
 
 // The stored item count no longer matched the current workout definition (an
 // exercise was added/removed in data.js). loadState has already dropped any
-// now-unknown ids and set `definitionChanged`; this surfaces a one-line notice
-// via the same raised-notice plumbing as the storage warning.
+// now-unknown ids and reported `definitionChanged` on its record; this
+// surfaces a one-line notice via the same raised-notice plumbing as the
+// storage warning.
 function insertDefinitionNotice() {
 	raiseNotice({ body: t('ui.notice.definitionChanged') });
 }
 
-// loadState (storage.js) sets stateCorrupted when a ws-* record's JSON could
-// not be parsed. It quarantines the raw value first, so name that in the
-// body; if even the quarantine write failed, name that too via describeError
-// rather than letting it pass silently (#173).
-function insertCorruptStateNotice() {
+// loadState (storage.js) reports `corrupted` on its record when a ws-* value's
+// JSON could not be parsed. It quarantines the raw value first, so name that
+// in the body; if even the quarantine write failed, `quarantineError` carries
+// the throw — name that too via describeError rather than letting it pass
+// silently (#173).
+function insertCorruptStateNotice(quarantineError) {
 	raiseNotice({
 		body: t('ui.notice.stateCorrupted'),
-		detail: quarantineFailed
-			? t('ui.notice.quarantineFailed', { detail: describeError(quarantineFailed) })
+		detail: quarantineError
+			? t('ui.notice.quarantineFailed', { detail: describeError(quarantineError) })
 			: t('ui.notice.quarantineOk'),
 	});
 }
@@ -1001,7 +1003,8 @@ function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, 
 	// borrowed day's ticks stay separate.
 	cachedKey = stateKey(key, entry);
 	allItems = buildItemList(workout);
-	completedItems = loadState(cachedKey);
+	const stored = loadState(cachedKey, allItems);
+	completedItems = stored.done;
 
 	const done = allItems.filter((i) => completedItems.has(i.id)).length;
 	const total = allItems.length;
@@ -1039,11 +1042,11 @@ function renderActiveWorkout(key, effectiveKey, entry, workout, swapBannerHTML, 
 
 	if (!storageOK) insertStorageWarning();
 	if (borrowsCorrupted) insertBorrowCorruptNotice();
-	// loadState (line above) sets definitionChanged when the stored item count no
+	// loadState (above) reports definitionChanged when the stored item count no
 	// longer matches this workout — tell the user their progress was re-checked.
-	if (definitionChanged) insertDefinitionNotice();
-	// ...and stateCorrupted when it hit a corrupt ws-* record instead.
-	if (stateCorrupted) insertCorruptStateNotice();
+	if (stored.definitionChanged) insertDefinitionNotice();
+	// ...and corrupted when it hit a corrupt ws-* record instead.
+	if (stored.corrupted) insertCorruptStateNotice(stored.quarantineError);
 }
 
 // Expose the (possibly banner-inflated) sticky-header height so cards and the

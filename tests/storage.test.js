@@ -40,7 +40,7 @@ function load(store, today = '2026-07-14', now = null) {
 	vm.createContext(ctx);
 	vm.runInContext(
 		src +
-			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, pruneOldState, STATE_RETENTION_DAYS, serializeBackup, get definitionChanged(){return definitionChanged;}, get stateCorrupted(){return stateCorrupted;}, get quarantineFailed(){return quarantineFailed;}, get borrowsCorrupted(){return borrowsCorrupted;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
+			'\nthis.__api = { saveState, loadState, toggleAndSave, loadBorrows, saveBorrows, pruneOldBorrows, pruneOldState, STATE_RETENTION_DAYS, serializeBackup, get borrowsCorrupted(){return borrowsCorrupted;}, get completedItems(){return completedItems;}, set completedItems(v){completedItems=v;}, set allItems(v){allItems=v;}, get storageOK(){return storageOK;}, set storageOK(v){storageOK=v;} };',
 		ctx
 	);
 	return ctx.__api;
@@ -52,10 +52,9 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 {
 	const store = makeStore({ 'ws-2026-07-14-legs-A': JSON.stringify(['ex-1', 'ex-3']) });
 	const api = load(store);
-	api.allItems = items3;
-	const set = api.loadState('2026-07-14-legs-A');
+	const { done: set, definitionChanged } = api.loadState('2026-07-14-legs-A', items3);
 	assert.deepStrictEqual([...set].sort(), ['ex-1', 'ex-3']);
-	assert.strictEqual(api.definitionChanged, false, 'v0 load must not flag change');
+	assert.strictEqual(definitionChanged, false, 'v0 load must not flag change');
 	console.log('PASS 1: legacy v0 bare array loads as-is');
 }
 
@@ -70,9 +69,9 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	assert.strictEqual(raw.v, 1, 'stored value carries v:1');
 	assert.strictEqual(raw.n, 3, 'stored value carries item count');
 	assert.deepStrictEqual(raw.done.sort(), ['ex-1', 'ex-2']);
-	const set = api.loadState('2026-07-14-legs-A');
+	const { done: set, definitionChanged } = api.loadState('2026-07-14-legs-A', items3);
 	assert.deepStrictEqual([...set].sort(), ['ex-1', 'ex-2']);
-	assert.strictEqual(api.definitionChanged, false);
+	assert.strictEqual(definitionChanged, false);
 	console.log('PASS 2: envelope round-trip stable, carries v/n');
 }
 
@@ -85,10 +84,10 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	});
 	const api = load(store);
 	// Now the list has 4 items (one inserted) — ex-3 no longer exists; a 4th did.
-	api.allItems = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }, { id: 'ex-4' }];
-	const set = api.loadState('2026-07-14-legs-A');
+	const items4 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }, { id: 'ex-4' }];
+	const { done: set, definitionChanged } = api.loadState('2026-07-14-legs-A', items4);
 	// ex-2 and ex-3 both still exist in the 4-item list, so both kept here...
-	assert.strictEqual(api.definitionChanged, true, 'n-mismatch must flag change');
+	assert.strictEqual(definitionChanged, true, 'n-mismatch must flag change');
 	assert.ok(set.has('ex-2') && set.has('ex-3'));
 	console.log('PASS 3a: n-mismatch flags definitionChanged');
 }
@@ -99,9 +98,9 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 		'ws-2026-07-14-legs-A': JSON.stringify({ v: 1, n: 3, done: ['ex-1', 'ex-2', 'ex-3'] }),
 	});
 	const api = load(store);
-	api.allItems = [{ id: 'ex-1' }, { id: 'ex-2' }]; // ex-3 removed
-	const set = api.loadState('2026-07-14-legs-A');
-	assert.strictEqual(api.definitionChanged, true);
+	const items2 = [{ id: 'ex-1' }, { id: 'ex-2' }]; // ex-3 removed
+	const { done: set, definitionChanged } = api.loadState('2026-07-14-legs-A', items2);
+	assert.strictEqual(definitionChanged, true);
 	assert.deepStrictEqual([...set].sort(), ['ex-1', 'ex-2'], 'unknown id ex-3 dropped');
 	assert.ok(!set.has('ex-3'), 'dropped id must not survive');
 	console.log('PASS 3b: n-mismatch drops now-unknown ids');
@@ -111,8 +110,7 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 {
 	const store = makeStore({ 'ws-2026-07-14-legs-A': '{not json' });
 	const api = load(store);
-	api.allItems = items3;
-	const set = api.loadState('2026-07-14-legs-A');
+	const { done: set } = api.loadState('2026-07-14-legs-A', items3);
 	assert.strictEqual(set.size, 0);
 	assert.strictEqual(store.getItem('ws-corrupt-2026-07-14-legs-A'), '{not json');
 	console.log('PASS 4: corrupt record quarantined (regression guard for #51)');
@@ -247,16 +245,15 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 	console.log('PASS 8b: loadBorrows healthy path leaves borrowsCorrupted false (#173)');
 }
 
-// 9. loadState with corrupt JSON (#173): flags stateCorrupted (quarantine
-//    itself already covered by PASS 4) so the UI can raise a notice.
+// 9. loadState with corrupt JSON (#173): reports corrupted on its record
+//    (quarantine itself already covered by PASS 4) so the UI can raise a notice.
 {
 	const store = makeStore({ 'ws-2026-07-14-legs-A': '{not json' });
 	const api = load(store);
-	api.allItems = items3;
-	api.loadState('2026-07-14-legs-A');
-	assert.strictEqual(api.stateCorrupted, true, 'corrupt ws-* record flags stateCorrupted (#173)');
-	assert.strictEqual(api.quarantineFailed, null, 'quarantine succeeded, so quarantineFailed stays null (#173)');
-	console.log('PASS 9: loadState with corrupt JSON flags stateCorrupted (#173)');
+	const record = api.loadState('2026-07-14-legs-A', items3);
+	assert.strictEqual(record.corrupted, true, 'corrupt ws-* record reports corrupted (#173)');
+	assert.strictEqual(record.quarantineError, null, 'quarantine succeeded, so quarantineError stays null (#173)');
+	console.log('PASS 9: loadState with corrupt JSON reports corrupted (#173)');
 }
 
 // 10. loadState where even the quarantine write fails (#173): nothing more
@@ -269,11 +266,10 @@ const items3 = [{ id: 'ex-1' }, { id: 'ex-2' }, { id: 'ex-3' }];
 		return realSetItem(k, v);
 	};
 	const api = load(store);
-	api.allItems = items3;
-	api.loadState('2026-07-14-legs-A');
-	assert.strictEqual(api.stateCorrupted, true);
-	assert.ok(api.quarantineFailed, 'quarantineFailed carries the throw when quarantining itself fails (#173)');
-	console.log('PASS 10: loadState reports a failed quarantine write via quarantineFailed (#173)');
+	const record = api.loadState('2026-07-14-legs-A', items3);
+	assert.strictEqual(record.corrupted, true);
+	assert.ok(record.quarantineError, 'quarantineError carries the throw when quarantining itself fails (#173)');
+	console.log('PASS 10: loadState reports a failed quarantine write via quarantineError (#173)');
 }
 
 // 11. serializeBackup with a store that throws partway through iteration

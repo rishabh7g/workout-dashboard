@@ -36,22 +36,6 @@ try {
 	storageOK = false;
 }
 
-// Set by loadState when a v1 record's stored item count no longer matches the
-// current workout definition (an exercise was inserted/removed in data.js). The
-// UI reads this after each load to surface an honest "progress re-checked"
-// notice via the same header plumbing as the storage warning.
-let definitionChanged = false;
-
-// Set by loadState when a record's JSON could not be parsed (a corrupt `ws-*`
-// value). The UI reads this after each load to raise the one notice — the
-// user is entitled to know their saved record was unreadable, not just watch
-// it silently reset (#173).
-let stateCorrupted = false;
-// If the corrupt record's quarantine write (below) itself failed, the raw
-// throw is kept here so the UI can name it in the notice's detail line via
-// describeError. null when quarantining succeeded or wasn't attempted.
-let quarantineFailed = null;
-
 // Set by loadBorrows when the stored `day-borrow` JSON could not be parsed. The
 // UI reads this after each call to raise the one notice — a corrupt borrow
 // record otherwise resets to "today's own workout" with no explanation (#173).
@@ -112,64 +96,84 @@ function saveState(key) {
 function toggleAndSave(key, id) {
 	const adding = !completedItems.has(id);
 	if (storageOK) {
-		const merged = loadState(key);
-		if (storageOK) completedItems = merged;
+		const merged = loadState(key, allItems);
+		if (storageOK) completedItems = merged.done;
 	}
 	if (adding) completedItems.add(id);
 	else completedItems.delete(id);
 	saveState(key);
 	return adding;
 }
-function loadState(key) {
-	definitionChanged = false;
-	stateCorrupted = false;
-	quarantineFailed = null;
-	let s = null;
+
+// The record loadState returns. `done` is the set of ticked ids; the other
+// three fields tell the caller what happened on the way, so it can raise the
+// matching notice (#173) instead of reading flags that were written on the
+// side:
+//   definitionChanged — a v1 record's stored item count no longer matched
+//                       `items` (an exercise was inserted/removed in data.js)
+//                       and now-unknown ids were dropped.
+//   corrupted         — the raw value was not valid JSON; it was quarantined
+//                       under `ws-corrupt-<key>` and `done` is empty.
+//   quarantineError   — the throw when even that quarantine write failed, so
+//                       the notice can say the record was NOT preserved; null
+//                       when quarantining succeeded or was not needed.
+function emptyRecord() {
+	return { done: new Set(), definitionChanged: false, corrupted: false, quarantineError: null };
+}
+
+// Decode an already-parsed (valid JSON) record against the current item list.
+// Pure: the caller owns the storage I/O.
+function decodeRecord(parsed, items) {
+	// Legacy v0: a bare id array, written before the schema envelope. Accept
+	// as-is so an upgrade never drops a user's ticks on the first read.
+	if (Array.isArray(parsed)) return { done: new Set(parsed), definitionChanged: false };
+	// Parsed cleanly but is an unrecognized shape — empty state rather than
+	// quarantining valid JSON.
+	if (!parsed || !Array.isArray(parsed.done)) return { done: new Set(), definitionChanged: false };
+	// v1 envelope with a matching count: the ids still mean what they meant.
+	if (parsed.n === items.length) return { done: new Set(parsed.done), definitionChanged: false };
+	// The workout definition changed — keep only ids that still exist in the
+	// current list (drop unknown ids). Worst case a tick is dropped, never
+	// re-shown on a different exercise, and the caller explains why.
+	const current = new Set(items.map((i) => i.id));
+	return { done: new Set(parsed.done.filter((id) => current.has(id))), definitionChanged: true };
+}
+
+// Preserve a corrupt raw value under the quarantine key so the next tap can't
+// overwrite unreadable data with a fresh one-item array. Never throws: returns
+// null on success, or the throw when even the quarantine write failed.
+function quarantineRecord(key, raw) {
 	try {
-		s = localStorage.getItem('ws-' + key);
+		localStorage.setItem('ws-corrupt-' + key, raw);
+		return null;
+	} catch (e) {
+		return e;
+	}
+}
+
+// Read the stored ticks for `key` against `items` (today's built item list —
+// passed in, not read from module scope, so the dependency on buildItemList
+// having run is visible at the call site). Always returns a record (see
+// emptyRecord); a throwing store flips storageOK and yields the empty record.
+function loadState(key, items) {
+	const record = emptyRecord();
+	let raw = null;
+	try {
+		raw = localStorage.getItem('ws-' + key);
 	} catch (e) {
 		storageOK = false;
-		return new Set();
+		return record;
 	}
-	if (s) {
-		try {
-			const parsed = JSON.parse(s);
-			// Legacy v0: a bare id array, written before the schema envelope. Accept
-			// as-is so an upgrade never drops a user's ticks on the first read.
-			if (Array.isArray(parsed)) {
-				return new Set(parsed);
-			}
-			// v1 envelope. If the stored item count no longer matches today's list,
-			// the workout definition changed — keep only ids that still exist in the
-			// current list (drop unknown ids). Worst case a tick is dropped, never
-			// re-shown on a different exercise, and we flag the UI to explain why.
-			if (parsed && Array.isArray(parsed.done)) {
-				if (parsed.n !== allItems.length) {
-					definitionChanged = true;
-					const current = new Set(allItems.map((i) => i.id));
-					return new Set(parsed.done.filter((id) => current.has(id)));
-				}
-				return new Set(parsed.done);
-			}
-			// Parsed cleanly but is an unrecognized shape — fall through to empty
-			// state rather than quarantining valid JSON.
-		} catch (e) {
-			// Corrupt record. Preserve the raw value under a quarantine key FIRST
-			// (in its own try — quarantining must never throw) so the next tap
-			// can't overwrite unreadable data with a fresh one-item array. Flag it
-			// so the UI raises a notice instead of the reset passing silently.
-			stateCorrupted = true;
-			try {
-				localStorage.setItem('ws-corrupt-' + key, s);
-			} catch (e2) {
-				// Nothing more to do if even the quarantine write fails — but say so
-				// in the notice rather than swallowing it, so the user isn't left
-				// thinking their record was preserved when it wasn't.
-				quarantineFailed = e2;
-			}
-		}
+	if (!raw) return record;
+	let parsed;
+	try {
+		parsed = JSON.parse(raw);
+	} catch (e) {
+		record.corrupted = true;
+		record.quarantineError = quarantineRecord(key, raw);
+		return record;
 	}
-	return new Set();
+	return Object.assign(record, decodeRecord(parsed, items));
 }
 
 // How much day history to keep. A year of records costs ~110 KB (365 days ×

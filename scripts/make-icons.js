@@ -3,7 +3,7 @@
 //
 // Run BY HAND after touching assets/icon-512.svg or the CSS colour tokens it
 // uses; commit the regenerated PNGs. This script is NOT wired into
-// scripts/verify.sh, .github/workflows/checks.yml or any deploy path — an
+// scripts/verify.sh or any deploy path — an
 // icon set that regenerates on every build is a binary diff nobody reads.
 //
 //   node scripts/make-icons.js

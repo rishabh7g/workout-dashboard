@@ -7,7 +7,7 @@
 #
 # Contract (for background agents — never stream logs):
 #   * ONE summary line to stdout on success:
-#       SYNTAX ok | TEST 12/12 | SERVE ok | ASSETS 16/16 | RENDER ok | SHOT ok (out/verify-shot.png)
+#       SYNTAX ok | TEST 18/18 | SERVE ok | ASSETS 19/19 | RENDER ok | SHOT ok (out/verify-shot.png)
 #   * All detail goes to out/verify.log. Read it ONLY on FAIL.
 #   * On FAIL: prints "FAIL <STAGE> (exit N)" + a ~20-line log slice + the log path.
 #   * Distinct exit code per stage:

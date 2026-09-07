@@ -56,8 +56,8 @@ standalone test suites can import their pure logic.
 all detail to `out/verify.log`, and uses a distinct exit code per stage (read the
 log only on FAIL). The test suites in `tests/` are zero-dependency Node scripts
 that exit non-zero on failure — they are **not** `node --test`/TAP, so run them
-directly. CI runs the same syntax + test + precache checks on every PR via
-`.github/workflows/checks.yml`.
+directly. `scripts/verify.sh` runs the same syntax + test + precache checks
+locally before a merge to `main`.
 
 ## Deploy
 

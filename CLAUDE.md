@@ -20,7 +20,7 @@ Live: https://rishabh7g.github.io/workout-dashboard/
 - **No npm / zero deps.** Tests are standalone scripts: `node tests/<name>.test.js`
   (NOT `node --test tests/` — the dir-as-glob trap dies with MODULE_NOT_FOUND).
   12 files in `tests/`. Enforcement that runs = `node --check` (verify.sh SYNTAX
-  stage + CI `.github/workflows/checks.yml`).
+  stage).
 - **Load order / one shared global scope.** Five classic scripts load in order in
   `index.html`: data.js → storage.js → workout.js → ui.js → main.js. They share
   one global scope, so order matters. `js/data.js` and `js/workout.js` carry

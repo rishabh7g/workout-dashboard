@@ -199,7 +199,7 @@ function pruneOldState() {
 	try {
 		const d = new Date();
 		d.setDate(d.getDate() - STATE_RETENTION_DAYS);
-		const cutoff = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		const cutoff = fmtDayKey(d);
 		// Real day keys look like ws-YYYY-MM-DD optionally followed by -type-var.
 		const dayKeyRe = /^ws-\d{4}-\d{2}-\d{2}(-|$)/;
 		for (let i = localStorage.length - 1; i >= 0; i--) {

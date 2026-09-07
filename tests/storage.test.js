@@ -6,6 +6,7 @@ const vm = require('vm');
 const assert = require('assert');
 
 const src = fs.readFileSync(path.join(__dirname, '../js/storage.js'), 'utf8');
+const { fmtDayKey } = require('../js/data.js');
 
 function makeStore(seed = {}) {
 	const map = new Map(Object.entries(seed));
@@ -26,7 +27,8 @@ function makeStore(seed = {}) {
 function load(store, today = '2026-07-14', now = null) {
 	// todayKey lives in workout.js at runtime (loaded before main.js calls
 	// pruneOldBorrows); inject a stub so storage.js can resolve it here.
-	const ctx = { localStorage: store, console, todayKey: () => today };
+	// fmtDayKey (pruneOldState's cutoff, #200) is data.js's real one.
+	const ctx = { localStorage: store, console, todayKey: () => today, fmtDayKey };
 	if (now) {
 		const Real = Date;
 		ctx.Date = class extends Real {

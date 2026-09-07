@@ -64,8 +64,7 @@ const CYCLE_VARIATIONS = ['A', 'B', 'B', 'A'];
 function scheduleFor(key) {
 	if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return undefined;
 	if (key < PROGRAM_START) return undefined;
-	const [y, m, d] = key.split('-').map(Number);
-	const date = new Date(y, m - 1, d);
+	const date = parseDayKey(key);
 	// Reject a rolled-over date ('2026-02-31' → Mar 3) so a corrupt stored key
 	// still fails the lookup instead of resolving to some other day's workout.
 	if (fmtDayKey(date) !== key) return undefined;
@@ -81,13 +80,31 @@ function scheduleFor(key) {
 }
 
 // A Date -> 'YYYY-MM-DD' in LOCAL time (toISOString would shift the day for
-// anyone east or west of UTC). workout.js's todayKey() is the same formatter
-// over `new Date()`; this one exists here because scheduleFor() loads first.
+// anyone east or west of UTC). workout.js's todayKey() is this over
+// `new Date()`; the three helpers live here because scheduleFor() loads first.
 function fmtDayKey(date) {
 	const y = date.getFullYear();
 	const m = String(date.getMonth() + 1).padStart(2, '0');
 	const d = String(date.getDate()).padStart(2, '0');
 	return `${y}-${m}-${d}`;
+}
+
+// The inverse: a 'YYYY-MM-DD' key -> that day at LOCAL midnight. Never
+// `new Date(key)` — a bare date string parses as UTC and shifts the day for
+// the same people toISOString does.
+function parseDayKey(key) {
+	const [y, m, d] = key.split('-').map(Number);
+	return new Date(y, m - 1, d);
+}
+
+// Monday of the calendar week holding `key`, at local midnight. Weeks run
+// Mon–Sun, so a Sunday belongs to the Monday six days before it.
+function mondayOf(key) {
+	const date = parseDayKey(key);
+	const dow = date.getDay();
+	const toMon = dow === 0 ? -6 : 1 - dow;
+	date.setDate(date.getDate() + toMon);
+	return date;
 }
 
 // ─── Exercise Database ──────────────────────────────────────────────────────
@@ -905,6 +922,8 @@ if (typeof module !== 'undefined' && module.exports) {
 		CYCLE_VARIATIONS,
 		scheduleFor,
 		fmtDayKey,
+		parseDayKey,
+		mondayOf,
 		CORE,
 		WORKOUTS,
 		DRILLS,

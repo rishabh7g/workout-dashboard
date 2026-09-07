@@ -56,11 +56,10 @@ function openSwapSheet() {
 	// behind the sheet so the whole flow shares one clock.
 	if (cachedDayKey !== todayKey()) render();
 	let rows = '';
-	const base = todayKey();
-	const [y, m, d] = base.split('-').map(Number);
+	const today = parseDayKey(todayKey());
 	for (let i = 1; i <= 7; i++) {
-		const dt = new Date(y, m - 1, d + i);
-		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+		const dt = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+		const k = fmtDayKey(dt);
 		const entry = scheduleFor(k);
 		if (!entry) continue;
 		rows += `<button type="button" class="swap-option" onclick="doBorrow('${k}')">
@@ -783,16 +782,14 @@ const WS_DAY_NAMES = [
 // Week strip: Mon–Sun of the current calendar week as position-based bars —
 // today = accent, past = ink, future = neutral. Bars no longer encode workout
 // type (the day-hue system is retired); the type survives only in each day's
-// aria-label. Monday is computed the same local-time way weekNumber() does.
+// aria-label. mondayOf() (js/data.js) is the same Monday weekNumber() uses.
 function weekStripHTML(key) {
-	const [y, m, d] = key.split('-').map(Number);
-	const dow = new Date(y, m - 1, d).getDay();
-	const toMon = dow === 0 ? -6 : 1 - dow;
+	const monday = mondayOf(key);
 	const letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 	let html = `<div class="week-strip" role="group" aria-label="${t('ui.weekStrip.ariaLabel')}">`;
 	for (let i = 0; i < 7; i++) {
-		const dt = new Date(y, m - 1, d + toMon + i);
-		const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+		const dt = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+		const k = fmtDayKey(dt);
 		const entry = scheduleFor(k);
 		const when = k === key ? 'today' : k < key ? 'past' : 'future';
 		const typeName = WS_GROUP_NAME[dayGroup(entry)];

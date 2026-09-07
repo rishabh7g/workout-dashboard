@@ -189,16 +189,11 @@ function buildItemList(workout) {
 // ─── Date helpers ────────────────────────────────────────────────────────────
 // "Today" as a YYYY-MM-DD key — the format scheduleFor() (js/data.js) takes.
 function todayKey() {
-	const d = new Date();
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, '0');
-	const day = String(d.getDate()).padStart(2, '0');
-	return `${y}-${m}-${day}`;
+	return fmtDayKey(new Date());
 }
 
 function shortDayLabel(key) {
-	const [y, m, d] = key.split('-').map(Number);
-	return new Date(y, m - 1, d).toLocaleDateString('en-AU', {
+	return parseDayKey(key).toLocaleDateString('en-AU', {
 		weekday: 'short',
 		day: 'numeric',
 		month: 'short',
@@ -210,12 +205,7 @@ function shortDayLabel(key) {
 // Unbounded by design — it keeps counting for as long as the user trains, so
 // it is the right input for cycle position but NOT something to display raw.
 function weekNumber(key) {
-	const [y, m, d] = key.split('-').map(Number);
-	const date = new Date(y, m - 1, d);
-	const dow = date.getDay();
-	const toMon = dow === 0 ? -6 : 1 - dow;
-	const monday = new Date(y, m - 1, d + toMon);
-	const days = Math.round((monday - CYCLE_ANCHOR) / 86400000);
+	const days = Math.round((mondayOf(key) - CYCLE_ANCHOR) / 86400000);
 	return Math.floor(days / 7) + 1;
 }
 
@@ -239,13 +229,7 @@ function getWeekType(type, key) {
 	if (['back', 'legs-hamstrings', 'arms-triceps'].includes(type))
 		return t('data.weekType.back');
 	if (type === 'shoulders' && key) {
-		const [y, m, d] = key.split('-').map(Number);
-		const date = new Date(y, m - 1, d);
-		const dow = date.getDay();
-		const toMon = dow === 0 ? -6 : 1 - dow;
-		const weekMon = new Date(y, m - 1, d + toMon);
-		const anchor = CYCLE_ANCHOR;
-		const weekNum = Math.round((weekMon - anchor) / 604800000);
+		const weekNum = Math.round((mondayOf(key) - CYCLE_ANCHOR) / 604800000);
 		return weekNum % 2 === 0 ? t('data.weekType.back') : t('data.weekType.front');
 	}
 	return '';

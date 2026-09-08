@@ -1,6 +1,6 @@
 <!-- Single source of the brand mark geometry (#170). Fill colours here are
      --color-accent and --color-surface from css/styles.css, kept in sync by
-     hand; scripts/make-icons.js re-resolves both tokens at generation time
+     hand; scripts/generate-icons.js re-resolves both tokens at generation time
      when it cuts the PNGs, so this file is never the only place a colour
      change has to land. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">

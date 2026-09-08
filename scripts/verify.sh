@@ -25,9 +25,11 @@
 #     TYPES has no stage here and LINT is node --check: see CLAUDE.md
 #     §"Deviations from the repo standards".
 #
-# Environment: bare Raspberry Pi. Needs node, python3, curl, and the
-# Playwright headless shell already cached under ~/.cache/ms-playwright
-# (see CLAUDE.md). No npm, no installs.
+# Environment: bare Raspberry Pi, and the macOS box the repo is developed on.
+# Needs node, python3, curl, and the Playwright headless shell already cached —
+# ~/.cache/ms-playwright on Linux, ~/Library/Caches/ms-playwright on macOS (see
+# CLAUDE.md). No npm, no installs: with no shell cached anywhere, RENDER and
+# SHOT report "skip" and the run still exits 0.
 #
 # Note: today's date decides which view renders (rest vs workout vs post-
 # program). RENDER/SHOT are liveness checks — "the JS ran and painted #app" —
@@ -56,10 +58,16 @@ STAGE=""
 LOG="/dev/null" # until the first stage() call — nothing logs before it
 trap '[[ -n "$SRV_PID" ]] && kill "$SRV_PID" 2>/dev/null' EXIT
 
+# GNU and BSD userlands disagree on these two flags, and this script runs on
+# both (Pi = GNU, mac = BSD). Probe the GNU form, fall back to the BSD one, so
+# the Pi keeps taking the exact command it always took.
+now() { date -Is 2>/dev/null || date +%Y-%m-%dT%H:%M:%S%z; }
+filesize() { stat -c%s "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null || echo 0; }
+
 stage() { # stage <STAGE> — open that stage's own log and head it
 	STAGE=$1
 	LOG="$LOGDIR/$(printf '%s' "$STAGE" | tr '[:upper:]' '[:lower:]').log"
-	printf '=== %s %s ===\n' "$STAGE" "$(date -Is)" >"$LOG"
+	printf '=== %s %s ===\n' "$STAGE" "$(now)" >"$LOG"
 }
 
 log() { printf '%s\n' "$*" >>"$LOG"; }
@@ -151,11 +159,25 @@ SUMMARY="$SUMMARY | ASSETS $ASSET_OK/$ASSET_N"
 
 # ── Stage 5: RENDER (the JS actually ran and painted #app) ──────────────────
 stage RENDER
-# Headless shell: newest cached build.
-HS=$(ls -d "$HOME"/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/headless_shell 2>/dev/null | sort | tail -1)
+# Headless shell: newest cached build. Two cache layouts — Linux/Pi first, so
+# on the Pi this is the same glob, sort and pick it has always been; macOS only
+# gets looked at when the Linux one matched nothing.
+HS=""
+for hs_glob in \
+	"$HOME/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/headless_shell" \
+	"$HOME/Library/Caches/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-*/chrome-headless-shell"; do
+	# Patterns are quoted above so they reach here unexpanded; expanding them
+	# here keeps the "newest of all matches" pick the original glob had.
+	HS=$(ls -d $hs_glob 2>/dev/null | sort | tail -1)
+	[[ -n "$HS" ]] && break
+done
 if [[ -z "$HS" ]]; then
-	log "headless_shell not found under ~/.cache/ms-playwright — see CLAUDE.md"
-	fail 60
+	# Inapplicable, not broken: say so out loud and still exit 0.
+	log "no headless shell cached under ~/.cache/ms-playwright or ~/Library/Caches/ms-playwright — see CLAUDE.md"
+	stage SHOT
+	log "skipped: RENDER found no headless shell (see render.log)"
+	echo "$SUMMARY | RENDER skip | SHOT skip"
+	exit 0
 fi
 "$HS" --headless --no-sandbox --dump-dom --virtual-time-budget=3000 \
 	"$BASE/" >"$OUT/verify-dom.html" 2>>"$LOG"
@@ -170,7 +192,7 @@ SUMMARY="$SUMMARY | RENDER ok"
 stage SHOT
 "$HS" --headless --no-sandbox --screenshot="$OUT/verify-shot.png" \
 	--window-size=412,900 --virtual-time-budget=3000 "$BASE/" >>"$LOG" 2>&1
-SIZE=$(stat -c%s "$OUT/verify-shot.png" 2>/dev/null || echo 0)
+SIZE=$(filesize "$OUT/verify-shot.png")
 log "shot size=$SIZE bytes"
 [[ $SIZE -ge 10000 ]] || fail 70 # blank/near-blank page compresses tiny
 SUMMARY="$SUMMARY | SHOT ok (out/verify-shot.png)"

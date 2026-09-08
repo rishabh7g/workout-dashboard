@@ -12,6 +12,12 @@ Live: https://rishabh7g.github.io/workout-dashboard/
   start of every run) — open it ONLY on FAIL (the failure block already holds
   the ~20 relevant lines). Exit codes: 20 LINT · 30 TEST · 40 SERVE/LIVE
   · 50 ASSETS · 60 RENDER · 70 SHOT.
+- **RENDER and SHOT need a Playwright headless shell that is already cached** —
+  `~/.cache/ms-playwright/*/chrome-linux/headless_shell` on the Pi,
+  `~/Library/Caches/ms-playwright/*/chrome-headless-shell-*/chrome-headless-shell`
+  on the mac; the script takes whichever of the two is there. With neither, the
+  run prints `RENDER skip | SHOT skip` and still exits 0 — an inapplicable stage
+  says so rather than going red. Never install one: no npm, no browser download.
 - `bash scripts/verify.sh --live` verifies the deployed site — how a cold agent
   confirms a fix landed. Pages needs ~1 min after merge; re-run once before
   treating a live failure as real. (Batch drains: orchestrator runs ONE `--live`

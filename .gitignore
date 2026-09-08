@@ -1,4 +1,7 @@
-# verify.sh artifacts (log, DOM dump, screenshot) — regenerated every run
+# verify.sh per-stage logs — wiped and rewritten at the start of every run
+.verify/
+
+# verify.sh artifacts (DOM dump, screenshot) — regenerated every run
 out/
 
 # Playwright MCP screenshot drops (see ~/.claude/CLAUDE.md)
